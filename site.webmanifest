@@ -1,0 +1,16 @@
+{
+  "name": "Crazy Tuk",
+  "short_name": "Crazy Tuk",
+  "description": "Swap. Drive. Don't Run Out. A crypto-powered tuk-tuk game.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
+  "background_color": "#1a1a2e",
+  "theme_color": "#e94560",
+  "icons": [
+    { "src": "/crazytuk-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/crazytuk-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/crazytuk-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
