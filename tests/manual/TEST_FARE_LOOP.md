@@ -468,3 +468,36 @@ if (finalPlayer.status === 'AVAILABLE' && finalPlayer.completedFares === 1) {
     console.log('\n⚠️  Phase 4 Verification: INCOMPLETE');
 }
 ```
+
+---
+
+## Current Drive Acceptance Addendum
+
+Use the in-app Settings panel while `CONFIG.DEV_MODE` is enabled to make
+stall cases repeatable:
+
+1. Set fuel to `0%`, start a fare, and verify pickup travel reaches `STALLED`
+   with progress below 100%.
+2. Set fuel to `10%` or `25%`, then verify the ride can stall with a passenger
+   after pickup.
+3. Use `REFUEL & CONTINUE` and verify the same leg resumes from the saved
+   progress; fuel spent must not jump when the swap is applied.
+4. Use `CALL FOR RESCUE` and verify the original ride is no longer active,
+   exactly one `ABANDONED_RESCUABLE` opportunity exists, and the feed contains
+   `RESCUE_REQUESTED`.
+5. From an available driver state, claim the rescue opportunity and verify it
+   changes to `RESCUE_CLAIMED`, records `RESCUE_ACCEPTED`, and uses the rescue
+   origin as pickup.
+6. Refresh during pickup, passenger travel, and stalled state. The player,
+   active fare, route leg, progress, fuel, and event log must remain intact.
+
+Accounting invariant:
+
+```javascript
+const before = window.CrazyTukGame.getPlayer();
+const spentBefore = before.activeTrip?.fuelSpent || 0;
+// Apply a confirmed/refuel swap through the normal UI.
+const after = window.CrazyTukGame.getPlayer();
+console.assert((after.activeTrip?.fuelSpent || 0) === spentBefore,
+  'A swap must add fuel without increasing route fuel spent');
+```

@@ -29,6 +29,10 @@ export const DashboardStats = {
           fuel: Math.floor(player.fuel || 20),
           completedFares: player.completedFares || 0,
           stallCount: player.stallCount || 0,
+          abandonedFares: player.abandonedFares || 0,
+          rescuedFares: player.rescuedFares || 0,
+          status: player.status || 'AVAILABLE',
+          fuelCapacity: window.CrazyTukGame?.CONFIG?.FUEL_CAPACITY || 100,
           fuelEarned: player.fuelEarned || 0
         },
         swaps: walletStats || {
@@ -79,6 +83,10 @@ export const DashboardStats = {
         fuel: 20,
         completedFares: 0,
         stallCount: 0,
+        abandonedFares: 0,
+        rescuedFares: 0,
+        status: 'AVAILABLE',
+        fuelCapacity: 100,
         fuelEarned: 0
       },
       swaps: {
@@ -423,7 +431,10 @@ export const DashboardUI = {
               <div class="stat-card"><span class="stat-label">Fuel</span><span class="stat-value" id="stat-fuel">20</span></div>
               <div class="stat-card"><span class="stat-label">Completed</span><span class="stat-value" id="stat-completed">0</span></div>
               <div class="stat-card"><span class="stat-label">Today</span><span class="stat-value" id="stat-today">0</span></div>
+              <div class="stat-card"><span class="stat-label">Stalls</span><span class="stat-value" id="stat-stalls-main">0</span></div>
+              <div class="stat-card"><span class="stat-label">Rescues</span><span class="stat-value" id="stat-rescues">0</span></div>
             </div>
+            <div class="dashboard-status-line"><span>LIVE STATUS</span><b id="stat-status">AVAILABLE</b><span id="stat-fuel-capacity">0 / 100 fuel</span></div>
           </section>
         </div>
 
@@ -472,6 +483,10 @@ export const DashboardUI = {
       volume: document.getElementById('stat-volume'),
       completedSwaps: document.getElementById('stat-completed-swaps'),
       stalls: document.getElementById('stat-stalls'),
+      stallsMain: document.getElementById('stat-stalls-main'),
+      rescues: document.getElementById('stat-rescues'),
+      status: document.getElementById('stat-status'),
+      fuelCapacity: document.getElementById('stat-fuel-capacity'),
       playerName: document.getElementById('dashboardPlayerName'),
       walletLabel: document.getElementById('dashboardWalletLabel')
     };
@@ -484,6 +499,10 @@ export const DashboardUI = {
     if (elements.volume) elements.volume.textContent = `$${Number(stats.totalUsdValue || 0).toFixed(2)}`;
     if (elements.completedSwaps) elements.completedSwaps.textContent = stats.swaps?.completedSwaps ?? 0;
     if (elements.stalls) elements.stalls.textContent = stats.player?.stallCount ?? 0;
+    if (elements.stallsMain) elements.stallsMain.textContent = stats.player?.stallCount ?? 0;
+    if (elements.rescues) elements.rescues.textContent = stats.player?.rescuedFares ?? 0;
+    if (elements.status) elements.status.textContent = stats.player?.status || 'AVAILABLE';
+    if (elements.fuelCapacity) elements.fuelCapacity.textContent = `${stats.fuel ?? 0} / ${stats.player?.fuelCapacity ?? 100} fuel`;
     if (elements.playerName) elements.playerName.textContent = stats.player?.name || 'Crazy Tuk Driver';
     if (elements.walletLabel) elements.walletLabel.textContent = stats.walletLabel || 'Wallet not connected';
   },

@@ -1,6 +1,8 @@
 // Crazy Tuk DFlow API Client
 // Integration with DFlow swap API for authenticated swaps
 
+import { calculateFuelEarned } from './fuel.js';
+
 const DFLOW_API_URL = '/api/dflow';
 
 /**
@@ -345,12 +347,7 @@ export function createSimulatedSwap(params) {
  * @returns {number} Fuel awarded
  */
 function calculateFuelFromUsd(usdValue) {
-  const USDC_TO_SOL = 0.000018;
-
-  if (usdValue < 1) return 1;
-  if (usdValue < 5) return 2;
-  if (usdValue < 10) return 5;
-  return 8;
+  return calculateFuelEarned(usdValue);
 }
 
 /**

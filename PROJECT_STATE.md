@@ -1,7 +1,7 @@
 # Crazy Tuk Project State
 
-> **Status:** Phase 6: DFlow API Integration Complete
-> **Date:** 2026-08-23
+> **Status:** Drive mode hardening in progress; Agent Mode intentionally gated
+> **Date:** 2026-08-24
 
 > **Repository note:** The application was flattened to the repository root for publication. Historical phase notes may reference the original `CrazyTuk/` working directory; current paths are documented in `README.md`.
 
@@ -9,7 +9,13 @@
 
 ## Current Phase
 
-PHASE 6 — DFlow API Integration (COMPLETE)
+PHASE 6 — DFlow API Integration (IMPLEMENTED; BROWSER ACCEPTANCE PENDING)
+
+PHASE 7 — Drive Mode Acceptance Gate (IN PROGRESS)
+
+Agent Tournament work has not started. Per the final build handoff, it remains
+blocked until the human Drive loop passes real-swap, fuel, stall/recovery,
+refresh, feed, leaderboard, and mobile/desktop acceptance checks.
 
 ---
 
@@ -458,6 +464,130 @@ select fare
 
 ---
 
+## Current Drive-Mode Hardening
+
+The latest implementation pass corrected several gaps that were previously
+described as complete:
+
+- Confirmed DFlow swaps now pass through `interpretConfirmedSwap()` before
+  being recorded as game activity, so fuel and fare assignment use one
+  authoritative path.
+- Duplicate transaction signatures remain rejected before fuel is awarded.
+- Fuel is capped by `CONFIG.FUEL_CAPACITY` and route fuel uses the centralized
+  `CONFIG.FUEL_PER_ROUTE_KM` value.
+- Stalled rides expose `REFUEL & CONTINUE` and `CALL FOR RESCUE` actions.
+- Refueling clears the stall while preserving the saved route progress.
+- Abandoning a stalled fare creates an `ABANDONED_RESCUABLE` fare state and a
+  `RESCUE_REQUESTED` game event.
+- Development settings now include repeatable fuel controls for 0%, 10%, 25%,
+  50%, and full capacity stall testing.
+- Stalled refuel resumes the correct leg: pickup travel remains pickup travel,
+  while a passenger ride resumes on the passenger route.
+- Pickup fuel exhaustion now transitions to `STALLED` with persisted progress,
+  matching passenger-leg stall behavior.
+- On reload, persisted pickup/passenger trips rebuild their route timer from
+  authoritative state instead of remaining frozen.
+- Fare fuel budgets now retain separate pickup and passenger-leg totals, with
+  cumulative spend fields available to the HUD and acceptance harness.
+- Game events, including stalls, resumes, rescue requests, and fare expiry,
+  now persist locally across refreshes through the exported event log.
+- Fixed session restoration so `loadOrCreatePlayer(null)` preserves the
+  current wallet/player instead of resetting active state during refresh or
+  game ticks.
+- Bumped the player/game module cache versions so browser sessions load the
+  corrected restoration logic instead of stale module URLs.
+- Corrected swap accounting so refuels add fuel only; they never increase route
+  fuel spent or complete a ride without movement.
+- Corrected stale-snapshot writes in swap interpretation so fuel awards are not
+  overwritten when selected-fare or stalled-trip state is persisted.
+- The existing Global Feed now renders persisted Drive events alongside
+  passenger reviews, including stalls, rescue requests, resumes, completions,
+  and fare expiry.
+- Dashboard stats now expose abandoned-fare counts separately from stalls and
+  completed fares.
+- Added single-claim rescue fares: an available driver can accept an
+  `ABANDONED_RESCUABLE` fare once, atomically marking the rescue origin as the
+  pickup point and emitting `RESCUE_ACCEPTED`.
+- Drive card copy now wraps long passenger/destination text safely, while
+  recovery buttons stay on one intentional line on narrow screens.
+- Fare data now carries normalized road and market traffic levels, rendered as
+  compact labeled indicators in the existing Drive fare card.
+- Extended `tests/manual/TEST_FARE_LOOP.md` with the current stall, rescue,
+  refresh, and refuel-accounting acceptance checks.
+- Global Feed entries are now merged and sorted chronologically across ride
+  reviews and persisted Drive events.
+- Dashboard now shows live status, fuel capacity, stalls, and rescues in the
+  primary Driver Stats view, while retaining the existing swaps/history tabs.
+- Dashboard opening now self-heals missing Drive metric nodes when an older
+  cached dashboard shell is present.
+- Recovery actions are now hidden unless the player is actually `STALLED`;
+  both buttons share compact fit-content styling instead of stretching across
+  the trip card.
+- Fare-sheet, swap-sheet, mock-swap, and development fuel buttons now use
+  intrinsic text-fit widths with mobile-safe max-widths instead of full-width
+  CTA bars.
+- Began the next phase with a minimal Tournament Mode entry shell: a compact
+  lobby panel and navigation entry, reusing the existing start-screen/panel
+  system. Autonomous agent funding, runner, and trading are not implemented in
+  this shell yet.
+- Added the Agent Garage foundation with three driver candidates, strategy
+  presets, hidden-key wallet status, and a create-driver/funding-next state.
+- Refined Garage presentation into a compact responsive modal card with a
+  top-left Back control, tighter hierarchy, and reduced unused vertical space.
+- Fixed Agent Mode panel switching so Garage and Tournament never render
+  simultaneously; standardized both Back controls to the top-left corner on
+  desktop and mobile.
+- Simplified Tournament and Garage to use the same full-height responsive panel
+  treatment as Leaderboard, How To, and Settings.
+- Desktop Agent panels now center their content within the same overlay width as
+  the existing pages, while the desktop background uses the full-size image
+  treatment rather than leaving an unstyled side region.
+- Explicitly forced Tournament/Garage desktop panels to span the full viewport
+  and use the desktop background image with `cover`, eliminating the red
+  fallback strip visible outside the narrow content overlay.
+- Tournament UI now uses the Garage background assets, a large registration
+  timer above driver/bankroll stats, and a note containing the 3 Pit Calls.
+- Removed redundant Garage driving-style controls because each candidate
+  already has a defined persona/style.
+- Added a legible translucent Agent Wallet section and a no-wallet mock Create
+  Driver flow; Tournament-to-Garage navigation now switches instantly without
+  the panel transition.
+- Corrected a later desktop background override that was replacing the Agent
+  assets with the default start image; Tournament/Garage now explicitly use
+  the Garage desktop image, and the Tournament timer is explicitly centered.
+- Fixed the mobile cascade: the shared panel `background:` shorthand was
+  resetting the Garage image, so the final mobile media rule now reapplies
+  `garage-screen.png` after the shared panel styles.
+- The UI currently keeps the existing Drive visual shell; no Agent Mode UI has
+  been added yet.
+
+### Remaining Drive Acceptance Work
+
+These checks still need to be run in a browser against the local server and,
+for the real path, a connected Solana wallet:
+
+1. Verify a confirmed DFlow transaction credits fuel exactly once.
+2. Verify pickup-leg and passenger-leg fuel reconcile with the route preview.
+3. Repeatable stall tests before pickup, with passenger, and at near-zero
+   completion.
+4. Refuel from the stalled card and resume the exact saved progress.
+5. Abandon once and verify one rescue opportunity plus feed/stat updates.
+6. Refresh during pickup, passenger travel, and stalled state without losing
+   authoritative state.
+7. Verify dashboard transaction history, leaderboard, and feed persistence.
+8. Check 320–430px mobile layouts and desktop map/card behavior.
+
+Live browser verification has started. The local app boots and renders fares;
+the first live pass found and fixed the player-reset bug above. The browser
+harness still needs a clean end-to-end stall run after cache-busted modules
+are loaded.
+
+Static JavaScript syntax checks and `git diff --check` pass for the current
+changes. Do not begin Agent Tournament UI or runner work until the list above
+is verified.
+
+---
+
 ## Current Repository Structure
 
 ```
@@ -722,6 +852,131 @@ DFlow is enabled through the same-origin server endpoint. No client-side API key
 ---
 
 ## Assets Status
+
+### Agent Mode: Mock Driver Funding Flow (2026-08-25)
+
+- Garage `CREATE DRIVER` now runs without wallet connection using persisted localStorage state (`crazytuk_mock_agent_v1`).
+- Flow is `NOT_CREATED → MOCK_DRIVER_CREATED → MOCK_DRIVER_FUNDED / DRIVER_READY`.
+- First click creates the selected driver and changes the action to `DEPOSIT 20 USDC`.
+- Second click confirms the mock deposit and changes the action to `DRIVER READY`.
+- Reopening Garage restores the selected driver, configuration visibility, wallet status, and next action.
+- Final ready click is a safe placeholder notification for the next Agent Mode shift-entry phase.
+
+### Agent Mode: Shift Entry Foundation (2026-08-25)
+
+- Added a Live Agent Shift panel after the funded `DRIVER READY` step.
+- The panel hydrates the selected driver and shows time remaining, rank, bankroll, Crazy Score, fares, and Pit Calls.
+- `START AUTONOMOUS SHIFT` starts a ten-minute mock countdown and simulated score/bankroll/fare updates.
+- Shift start is persisted as `shiftStatus: RUNNING`; final results and next-Shift controls remain the next phase.
+- Replaced the decorative Shift viewport with a second MapLibre instance using the Bangkok raster tiles, a GeoJSON route, and a real map marker.
+- Agent marker animates along the route during the shift; autonomous fare cards appear periodically with projected reward/cost context.
+- Agent opportunities now pull from the existing fare/NPC/location data, and route geometry reuses the existing road-route request/cache with authored-route fallback instead of an approximated hardcoded line.
+- Live fare context includes NPC name, pickup location, destination, and point reward.
+- Added an Agent ride card that reuses the Drive-mode language: heading to pickup, passenger on board, destination progress, passenger dialogue, and fare completion.
+- Added a compact autonomous swap decision card before pickup; it exposes only safe, server-style decision labels rather than chain-of-thought.
+- Shift view is now fullscreen map-first, matching the normal Drive scene: MapLibre fills the viewport while the agent header, HUD, status, ride, fare, and swap surfaces layer over the map.
+- Simplified Shift overlay after visual review: removed the redundant large Shift title, moved Back to the top-left, kept one centered mode label and one compact driver bar, moved the route label out of the header stack, and reduced the bottom HUD overlap so the map remains the primary surface.
+- Shift map now initializes as soon as the Shift panel opens, before the user starts the run. Overlay layout uses fixed top/bottom zones: Back top-left, driver bar top-center, HUD above the bottom action area, and status/start controls at the bottom.
+- Shift overlay cleanup: removed the funded/waiting/route labels and driver identity bar; reduced CTA to `START SHIFT` with fit-content width.
+- Agent map now renders available NPC fare pickup icons before start, a destination pin for the selected opportunity, blue pickup geometry, red passenger-leg geometry, and route-focused zoom using shared Drive route data.
+- Replaced the simplified Agent fare pins with the Drive-mode marker structure and avatar helper (`fare-marker`, countdown ring, NPC avatar, place label, destination pin/label); marker selection now reuses the same fare/location data path.
+- Constrained Agent fare/ride/swap overlays to the centered desktop overlay width and moved fare-complete messaging above the HUD; reduced HUD card height and typography for a smaller central score block.
+- Restored NPC pickup messages using the Drive marker thought treatment and switched Agent marker movement to the shared `getCoordinateAlongRoute` interpolation for smoother animation.
+
+### Agent Mode: Drive Surface Reuse (2026-08-25)
+
+- Agent Shift now opens the existing Drive `#game` / `#map` surface instead of the parallel Agent map canvas.
+- It reuses Drive-mode fare markers, fare sheet, swap sheet treatment, destination marker, route cache, trip card, NPC dialogue, pickup/passenger timers, and bottom HUD.
+- A compact Agent-only top strip provides time left, bankroll, and the automatic `START SHIFT` action; existing dashboard menu remains available.
+- Shift start automatically selects a fare, presents the existing fare sheet, confirms a mock swap without player input, and starts the normal pickup-drive flow.
+- Autonomous Shift now chains runs: after the normal Drive-mode passenger timer completes, it waits briefly, returns to fare selection, refreshes opportunities if needed, and starts the next fare automatically. Leaving the map cancels the pending agent cycle and shift clock.
+
+### Agent Mode: Pit Call & Desktop Overlay Polish (2026-08-25)
+
+- In desktop Agent Mode, the reused Drive trip card is constrained to the same centered overlay width as the fare sheet and has no border.
+- Agent top strip now centers time left and bankroll, with a smaller vertically centered Shift control.
+- Added a tool-only Pit Call button beside the HUD. Its sheet uses the existing swap-sheet treatment and only permits risk, activity, and priority tuning; confirmation consumes one of three Pit Calls and records the selected mandate in the local mock state.
+- Fixed desktop Agent trip-card centering by preserving the horizontal translate in its entrance animation; Pit Call now aligns immediately beside the centered HUD, and Shift control uses the requested `margin-bottom: 5px`.
+- On the third Pit Call, the control is disabled and an immediate “Pit Calls depleted” toast confirms that tuning is locked.
+- Started Agent Dashboard phase by extending the existing dashboard with Current Shift and Current Strategy sections that are only shown in Agent Mode.
+- Expanded the existing dashboard’s Agent Mode view with the handoff’s Agent Driver hero, Current Shift (rank, bankroll, PnL, Crazy Score, live metadata), Current Strategy (priority, risk, activity, token whitelist, Pit Calls), and Career cards. Standard Driver Stats hide while Agent Mode is active.
+
+### Agent Mode: Shift Results & Next Shift (2026-08-25)
+
+- Added mock Shift results using the existing completion-sheet visual language: final rank, Crazy Score, bankroll, PnL, completed fares, stalls, and Pit Call record.
+- At clock expiry the agent stops scheduling new fares and opens results; `PREPARE NEXT SHIFT` returns to the existing tournament lobby and resets the mock Shift controls for a new run.
+
+### Shared Dashboard Navigation (2026-08-25)
+
+- Combined dashboard Swaps and History into a single `Activity` view for both Drive and Agent modes.
+- Replaced the third dashboard-nav tab with `Feed`, which opens the existing public-feed sheet.
+
+### Shared Ride Card & Feed Simplification (2026-08-25)
+
+- Removed duplicate Current Fuel and Total Score metrics from the shared Drive/Agent ride card; fuel use now appears in the single post-progress line as fuel left, gas spent, and fare points.
+- Feed now contains only passenger review cards: passenger name, star rating, and review message. Drive/system updates and fare-point badges are excluded.
+- Completed mock Agent Shift results are now written into the existing leaderboard as a labeled Agent entry, reusing the shared score ranking surface.
+- Dashboard Feed is now the third in-dashboard view alongside Dashboard and Activity, retaining the shared bottom navigation; the map star shortcut remains the only floating Feed modal entry point.
+
+### Tournament Live Lobby (2026-08-25)
+
+- Tournament lobby now reads persisted mock Shift state: Registration presents driver/bankroll/entry, while a running Shift presents time left, active/stalled field count, rank, and `WATCH DRIVER`.
+- Starting, completing, and preparing the next Shift now persist `RUNNING`, `FINISHED`, and `READY` statuses respectively.
+
+### Tournament Standings (2026-08-25)
+
+- Existing leaderboard now renders a deterministic tournament field whenever a mock Agent driver exists, with the Agent entry ranked by its current Crazy Score.
+- Dynamic rank is shared by the live lobby, Agent Dashboard hero/current-shift card, and Shift results.
+
+### Leaderboard & Panel Navigation (2026-08-25)
+
+- Leaderboard now has separate Drive and Tournament pages in the existing panel; Drive retains player score standings and Tournament uses mock Agent Shift standings.
+- Leaderboard, How to Play, and Settings Back buttons now use the in-game scene Back styling and top-left placement.
+- Fixed leaderboard tab visibility so the inactive board honors its `hidden` state; reinforced the three panel Back controls as absolute top-left scene buttons after desktop overrides.
+
+### Agent Activity Timeline (2026-08-25)
+
+- Extended the shared Activity tab with a persisted Agent Shift timeline: Shift start, fare evaluation, mock swap confirmation, fare completion, Pit Calls, idle re-evaluation, and Shift results.
+- Timeline uses user-facing event summaries only; no chain-of-thought or raw model reasoning is displayed.
+
+### Drive / Agent HUD Separation (2026-08-25)
+
+- Removed the redundant map Feed shortcut; Feed remains available from the shared Dashboard navigation.
+- Agent Shift now uses a dedicated persisted Agent Run record for HUD fuel, Crazy Score, bankroll, and fares.
+- Drive player state is snapshotted before Agent Mode and restored when leaving it, so Agent mock swaps/rides do not alter Drive-mode HUD/state. Normal Drive startup explicitly hides all Agent Shift controls.
+
+### Agent Strip Visibility (2026-08-25)
+
+- Added an explicit hidden-state style for the Agent Shift strip. Its layout rule can no longer override `hidden`, preventing Agent time, bankroll, and Start Shift controls from leaking into Drive mode.
+
+### Agent Mode: Tournament Awards (2026-08-25)
+
+- Completed mock Shifts now award compact outcome badges: `FULL AUTONOMY` for no Pit Calls, `FARE MACHINE` for sustained fare volume, `PODIUM FINISH` for top-three rank, and `CENTURY SCORE` for 100+ Crazy Score.
+- Awards are saved with Shift results, shown on the results sheet, and the primary award is surfaced alongside the player’s completed tournament-leaderboard entry.
+
+### Agent Mode: Management Records (2026-08-25)
+
+- Autonomous mock swaps are now persisted with their fare, fuel credit, mock volume, market signal, and timestamp; Agent Activity renders the resulting confirmed-swap rows and summary totals.
+- Completed Shifts persist as a history record with rank, score, bankroll, PnL, fares, and earned awards. The Agent Dashboard Career card now derives shifts, wins, podiums, and best rank from those records.
+- Reformatted Agent Activity into compact, dashboard-level scrolling records. The three record groups no longer create nested scrollbars or oversized feed cards, and each presents its eight most recent entries.
+
+### Agent Mode: Single Drive Surface (2026-08-25)
+
+- Removed the obsolete standalone Agent Shift panel, second MapLibre canvas, and its independent mock timer/route simulation.
+- Tournament play now has one authoritative frontend surface: the existing Drive map, markers, fare card, swap treatment, ride animation, HUD, and timer. This enforces the handoff requirement to reuse Drive components rather than maintain a parallel Agent application.
+
+### Agent Mode: Compressed Shift Test Harness (2026-08-25)
+
+- Centralized mock tournament duration, starting bankroll, Pit Call allowance, and mock swap volume in `data/config.js`.
+- Development builds support `?agentShiftSeconds=30` through the configured duration for a repeatable compressed end-to-end Shift test; production/default behavior remains the configured ten-minute Shift.
+- Ran the 30-second owner flow through Tournament → Garage → create/fund/ready → autonomous Shift → repeated fares → Results. It produced score, bankroll, fare, rank, and award results; an Agent HUD guard now prevents the shared Drive animation from repainting Agent fuel/score during or immediately after an active ride.
+- Verified the Tournament registration scene at the 390px mobile breakpoint: no horizontal document overflow, with the registration CTA and Back control both exposed as visible controls.
+
+### Agent Infrastructure: Railway Project (2026-08-25)
+
+- Installed and authenticated the official Railway CLI, then created and linked the `crazy-tuk` Railway project in the `Jose's Projects` workspace.
+- No Agent Runner service, wallet vault, database connection, or signing environment variables have been created yet. The next safe step is to scaffold the credential-free Runner and Neon schema locally before deployment.
+- Free-plan constraint: keep the initial deployment to one minimal Node service with no polling loop, no worker fleet, no automatic swaps, and no database connection until the required credentials are deliberately supplied. Any future autonomous work should be event-driven and use bounded, short-lived jobs rather than continuous high-frequency processing.
 
 ### ✅ Ready
 - Background images

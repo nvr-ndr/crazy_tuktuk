@@ -1896,6 +1896,8 @@ export function createFare(playerWallet, npcId) {
   const pointValue = pointValues[Math.floor(Math.random() * pointValues.length)];
   const minimumUsdValues = [1, 1, 5, 10, 25];
   const minimumUsd = minimumUsdValues[Math.floor(Math.random() * minimumUsdValues.length)];
+  const roadTrafficLevel = pointValue >= 70 ? 'RED' : pointValue >= 35 ? 'YELLOW' : 'GREEN';
+  const marketTrafficLevel = minimumUsd >= 25 || condition === 'VOLATILE_TO_STABLE' ? 'RED' : minimumUsd >= 10 ? 'YELLOW' : 'GREEN';
 
   // Random expiration time
   const expiryMin = CONFIG.FARE_EXPIRY_MINUTES;
@@ -1913,6 +1915,9 @@ export function createFare(playerWallet, npcId) {
     condition: condition,
     minimumUsd: condition === "MIN_USD" ? minimumUsd : 1,
     pointValue: pointValue,
+    roadTrafficLevel,
+    marketTrafficLevel,
+    routeQuality: roadTrafficLevel === 'RED' ? 'DIFFICULT' : roadTrafficLevel === 'YELLOW' ? 'MODERATE' : 'CLEAR',
     expiresAt: expiresAt,
     status: "AVAILABLE"
   };

@@ -1,24 +1,12 @@
 // Crazy Tuk Swap Interpretation
 // Authoritative bridge between confirmed swaps and game actions
 
-import { CONFIG } from '../data/config.js';
-import { FARE_CONDITION_TYPES } from '../data/config.js';
 import { FUEL_TIERS } from '../data/config.js';
 import {
   loadOrCreatePlayer,
   updatePlayer,
   addFuel,
-  useFuel,
-  addPoints,
-  setSelectedFare,
-  clearSelectedFare,
-  startTrip,
-  completeFare,
-  resumeTrip,
-  isStalled,
-  getStallDuration,
-  getPlayer
-} from '../data/player.js';
+} from '../data/player.js?v=20260824world2';
 import {
   matchesFareCondition,
   findQualifyingFares,
@@ -28,9 +16,7 @@ import {
 import {
   getAvailableFares,
   updateFare,
-  getPlayerFare,
-  removeFare,
-  refreshFares
+  getPlayerFare
 } from './game.js';
 import { CONFIG as GAME_CONFIG } from '../data/config.js';
 
@@ -106,19 +92,15 @@ export function interpretConfirmedSwap(swapEvent) {
   }
 
   // 7. Add fuel to player
-  updatePlayer(player => {
-    player.fuel += fuelEarned;
-    player.updatedAt = Date.now();
-    return player;
-  });
+  addFuel(fuelEarned);
 
   // 8. Check conditions
   const { qualifies, reasons } = matchesFareCondition(swapEvent, {
     wallet: swapEvent.wallet,
     inputToken: swapEvent.inputMint,
     outputToken: swapEvent.outputMint,
-    inputCategory: CONFIG.STABLE_TOKENS.includes(swapEvent.inputMint) ? 'stable' : 'volatile',
-    outputCategory: CONFIG.STABLE_TOKENS.includes(swapEvent.outputMint) ? 'stable' : 'volatile',
+    inputCategory: GAME_CONFIG.STABLE_TOKENS.includes(swapEvent.inputMint) ? 'stable' : 'volatile',
+    outputCategory: GAME_CONFIG.STABLE_TOKENS.includes(swapEvent.outputMint) ? 'stable' : 'volatile',
     usdValue: swapEvent.usdValue
   });
 
@@ -127,7 +109,7 @@ export function interpretConfirmedSwap(swapEvent) {
 
   // 9. Handle based on player state
 
-  if (player.status === CONFIG.PLAYER_STATES.AVAILABLE) {
+  if (player.status === GAME_CONFIG.PLAYER_STATES.AVAILABLE) {
     // AVAILABLE state: award fuel, then handle fare
     console.log(`Player AVAILABLE: awarding ${fuelEarned} fuel`);
 
@@ -147,7 +129,7 @@ export function interpretConfirmedSwap(swapEvent) {
             fareContext = 'SELECTED_FARE';
           } else {
             // SELECTED_FARE_STRICT mode - do not auto-match
-            if (CONFIG.SELECTED_FARE_STRICT) {
+            if (GAME_CONFIG.SELECTED_FARE_STRICT) {
               console.log('Selected fare does not qualify and STRICT mode is enabled');
               fareAssigned = null;
             }
@@ -180,13 +162,16 @@ export function interpretConfirmedSwap(swapEvent) {
         });
 
         // Mark selected fare
-        player.selectedFareId = fareAssigned;
+        updatePlayer(current => {
+          current.selectedFareId = fareAssigned;
+          return current;
+        });
       }
     } else {
       console.log('Swap does not qualify any fare');
     }
 
-  } else if (player.status === CONFIG.PLAYER_STATES.PICKUP) {
+  } else if (player.status === GAME_CONFIG.PLAYER_STATES.PICKUP) {
     // PICKUP state: just award fuel (pickup fuel already consumed)
 
     console.log(`Player PICKUP: awarding ${fuelEarned} fuel (for next fare)`);
@@ -195,74 +180,41 @@ export function interpretConfirmedSwap(swapEvent) {
       selectedByWallet: player.wallet,
       selectedAt: Date.now()
     });
-    player.selectedFareId = fareAssigned;
+    updatePlayer(current => {
+      current.selectedFareId = fareAssigned;
+      return current;
+    });
 
-  } else if (player.status === CONFIG.PLAYER_STATES.DRIVING) {
+  } else if (player.status === GAME_CONFIG.PLAYER_STATES.DRIVING) {
     // DRIVING state: add fuel to ongoing trip
 
     console.log(`Player DRIVING: awarding ${fuelEarned} fuel to active trip`);
 
     if (player.activeTrip) {
-      player.activeTrip.fuelSpent += fuelEarned;
-      player.activeTrip.updatedAt = Date.now();
-      updatePlayer(player => {
-        return player;
+      updatePlayer(current => {
+        if (current.activeTrip) current.activeTrip.updatedAt = Date.now();
+        return current;
       });
 
-      // Check if trip can now complete
-      const trip = player.activeTrip;
-      const routeCost = trip.fuelCost || 0;
-
-      if (player.fuel >= routeCost) {
-        // Trip completes
-        player.activeFareId = null;
-        player.activeTrip = null;
-        player.status = CONFIG.PLAYER_STATES.AVAILABLE;
-        player.selectedFareId = null;
-
-        const fare = getPlayerFare(player.wallet, fareAssigned);
-        if (fare) {
-          removeFare(fare.id);
-        }
-
-        refreshFares(player.wallet);
-      }
     }
 
-  } else if (player.status === CONFIG.PLAYER_STATES.STALLED) {
+  } else if (player.status === GAME_CONFIG.PLAYER_STATES.STALLED) {
     // STALLED state: refuel and resume
 
     console.log(`Player STALLED: awarding ${fuelEarned} fuel, checking completion`);
 
     const trip = player.activeTrip;
     if (trip) {
-      // Add fuel to remaining trip
-      const remainingCost = trip.fuelCost - trip.fuelSpent;
-      const fuelAdded = Math.min(fuelEarned, remainingCost);
-
-      trip.fuelSpent += fuelAdded;
-      trip.stalledAt = null;
-      trip.updatedAt = Date.now();
-
-      // Check if trip completes
-      if (player.fuel >= trip.fuelCost) {
-        player.activeFareId = null;
-        player.activeTrip = null;
-        player.status = CONFIG.PLAYER_STATES.AVAILABLE;
-        player.selectedFareId = null;
-
-        const fare = getPlayerFare(player.wallet, fareAssigned);
-        if (fare) {
-          removeFare(fare.id);
-        }
-
-        refreshFares(player.wallet);
-
-        console.log('Trip resumed and completed');
-      } else {
-        console.log('Trip resumed, still stalled');
-        player.status = CONFIG.PLAYER_STATES.DRIVING;
-      }
+      updatePlayer(current => {
+        if (!current.activeTrip) return current;
+        current.activeTrip.stalledAt = null;
+        current.activeTrip.updatedAt = Date.now();
+        current.status = current.activeTrip.leg === 'PICKUP'
+          ? GAME_CONFIG.PLAYER_STATES.PICKUP
+          : GAME_CONFIG.PLAYER_STATES.DRIVING;
+        return current;
+      });
+      console.log('Trip refueled and resumed at saved progress');
     }
   }
 

@@ -141,9 +141,7 @@ export function calculateFuelFromCoordinates(coord1, coord2) {
   // In production, calculate based on actual route distance
 
   const distance = calculateDistance(coord1, coord2);
-  const costPerKm = 0.05; // 0.05 fuel per km
-
-  return Math.max(1, Math.round(distance * costPerKm));
+  return Math.max(1, Math.ceil(distance * CONFIG.FUEL_PER_ROUTE_KM));
 }
 
 // Recalculate fuel cost for a full route

@@ -11,6 +11,8 @@ import {
   testDFlowConnection
 } from './dflow.js?v=20260823o';
 import { signTransaction } from './wallet.js?v=20260823e';
+import { interpretConfirmedSwap } from './interpretSwap.js';
+import { calculateFuelEarned } from './fuel.js';
 const DFLOW_ENABLED = true; // Set to false to force simulated mode
 
 /**
@@ -41,7 +43,14 @@ export async function processSwap(swap) {
     const result = await processWithDFlowAPI(swap);
 
     if (result.state === 'SUCCESS') {
-      storeSwapHistory(swap.wallet, result.swap);
+      const interpreted = interpretConfirmedSwap({ ...result.swap, signature: result.signature, wallet: swap.wallet, confirmedAt: Date.now() });
+      if (!interpreted.success && interpreted.reason !== 'duplicate_signature') {
+        throw new Error(`Swap could not be applied to game state: ${interpreted.reason}`);
+      }
+      result.fuelAwarded = interpreted.fuelAwarded;
+      result.fareAssigned = interpreted.fareAssigned;
+      result.fareContext = interpreted.fareContext;
+      storeSwapHistory(swap.wallet, { ...result.swap, fuelAwarded: interpreted.fuelAwarded, fareId: interpreted.fareAssigned });
     }
 
     return result;
@@ -157,10 +166,7 @@ async function processWithDFlowAPI(swap) {
  * @returns {number} Fuel awarded
  */
 function calculateFuelFromUsd(usdValue) {
-  if (usdValue < 1) return 1;
-  if (usdValue < 5) return 2;
-  if (usdValue < 10) return 5;
-  return 8;
+  return calculateFuelEarned(usdValue);
 }
 
 /**

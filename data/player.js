@@ -52,7 +52,9 @@ export function createNewPlayer(wallet) {
 export function loadOrCreatePlayer(wallet) {
   let player = getPlayer();
 
-  if (!player || player.wallet !== wallet) {
+  // A null wallet is the runtime's request to restore the current session.
+  // Do not wipe an active wallet-owned player during refresh or game ticks.
+  if (!player || (wallet !== null && player.wallet !== wallet)) {
     player = createNewPlayer(wallet);
     savePlayer(player);
   }
@@ -76,7 +78,7 @@ export function updatePlayer(fn) {
 
 export function addFuel(amount) {
   return updatePlayer(player => {
-    player.fuel += amount;
+    player.fuel = Math.min(CONFIG.FUEL_CAPACITY, Math.max(0, player.fuel + amount));
     return player;
   });
 }
@@ -218,12 +220,14 @@ export function resumeTrip(fuelAdded, fuelNeededRemaining) {
 
     if (!trip) return null;
 
-    trip.fuelSpent += fuelAdded;
+    const added = Math.min(Math.max(0, fuelAdded), Math.max(0, fuelNeededRemaining ?? trip.fuelCost - trip.fuelSpent));
+    trip.fuelSpent += added;
+    player.fuel = Math.min(CONFIG.FUEL_CAPACITY, player.fuel + Math.max(0, fuelAdded));
     trip.progress = Math.min(1, trip.fuelSpent / trip.fuelCost);
 
     // Check if trip completes
     if (trip.progress >= 1) {
-      player.status = PLAYER_STATES.AVAILABLE;
+      player.status = PLAYER_STATES.DRIVING;
       trip.stalledAt = null;
     }
 

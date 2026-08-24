@@ -6,9 +6,10 @@ import { getRandomNPC, createFare } from '../data/npcs.js?v=20260824world1';
 import { getLocationById } from '../data/locations.js?v=20260824world1';
 import { ROUTES, getRoute, getRoutesFromLocation } from '../data/routes.js';
 import { PLAYER_STATES } from '../data/config.js';
-import { PLAYER_KEY, getPlayer, loadOrCreatePlayer, updatePlayer, hasEnoughFuel, loadLeaderboard, saveLeaderboard } from '../data/player.js';
+import { PLAYER_KEY, getPlayer, loadOrCreatePlayer, updatePlayer, hasEnoughFuel, loadLeaderboard, saveLeaderboard } from '../data/player.js?v=20260824world2';
 
 const FARES_KEY = "crazytuk_faresV4";
+const GAME_EVENTS_KEY = "crazytuk_gameEventsV1";
 
 export function getAvailableFares() {
   const saved = localStorage.getItem(FARES_KEY);
@@ -129,7 +130,71 @@ export function getPickupFuelCost(locationId, fromLocationId = null) {
   const startId = fromLocationId || player?.locationId;
   if (!startId || !locationId || startId === locationId) return 0;
   const distanceKm = getLocationDistanceKm(startId, locationId);
-  return Number.isFinite(distanceKm) ? Math.max(1, Math.ceil(distanceKm / 3)) : Infinity;
+  return Number.isFinite(distanceKm) ? Math.max(1, Math.ceil(distanceKm * CONFIG.FUEL_PER_ROUTE_KM)) : Infinity;
+}
+
+export function getRemainingTripFuel(player = getPlayer()) {
+  const trip = player?.activeTrip;
+  return trip ? Math.max(0, (trip.fuelCost || 0) - (trip.fuelSpent || 0)) : 0;
+}
+
+export function getFareFuelBudget(fare, player = getPlayer()) {
+  if (!fare) return null;
+  const pickupFuel = getPickupFuelCost(fare.pickupLocationId, player?.locationId);
+  const rideFuel = getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
+  return {
+    pickupFuel,
+    rideFuel,
+    totalRequiredFuel: Number.isFinite(pickupFuel) && Number.isFinite(rideFuel) ? pickupFuel + rideFuel : Infinity
+  };
+}
+
+export function resumeStalledTrip(fareId, playerWallet) {
+  return updatePlayer(player => {
+    if (player.status !== PLAYER_STATES.STALLED || player.activeFareId !== fareId || !player.activeTrip) return null;
+    player.activeTrip.stalledAt = null;
+    player.status = player.activeTrip.leg === 'PICKUP' ? PLAYER_STATES.PICKUP : PLAYER_STATES.DRIVING;
+    emitGameEvent('TRIP_RESUMED', { fareId, progress: player.activeTrip.progress || 0 });
+    return player;
+  });
+}
+
+export function abandonStalledFare(fareId, playerWallet) {
+  return updatePlayer(player => {
+    if (player.status !== PLAYER_STATES.STALLED || player.activeFareId !== fareId) return null;
+    const fare = getPlayerFare(playerWallet, fareId);
+    if (!fare) return null;
+    player.status = PLAYER_STATES.AVAILABLE;
+    player.activeFareId = null;
+    player.selectedFareId = null;
+    player.activeTrip = null;
+    player.abandonedFares = (player.abandonedFares || 0) + 1;
+    updateFare(fareId, { status: 'ABANDONED_RESCUABLE', rescueOriginLocationId: player.locationId });
+    emitGameEvent('RESCUE_REQUESTED', { fareId, originLocationId: player.locationId });
+    return player;
+  });
+}
+
+export function claimRescueFare(fareId, playerWallet) {
+  return updatePlayer(player => {
+    if (player.status !== PLAYER_STATES.AVAILABLE || player.activeFareId || player.selectedFareId) return null;
+    const fare = getPlayerFare(playerWallet, fareId);
+    if (!fare || fare.status !== 'ABANDONED_RESCUABLE') return null;
+    const rescueOrigin = fare.rescueOriginLocationId || fare.pickupLocationId;
+    const claimed = updateFare(fareId, {
+      status: 'RESCUE_CLAIMED',
+      selectedByWallet: player.wallet,
+      selectedAt: Date.now(),
+      originalPickupLocationId: fare.originalPickupLocationId || fare.pickupLocationId,
+      pickupLocationId: rescueOrigin,
+      rescueClaimedBy: player.wallet
+    });
+    if (!claimed) return null;
+    player.selectedFareId = fareId;
+    player.rescuedFares = (player.rescuedFares || 0);
+    emitGameEvent('RESCUE_ACCEPTED', { fareId, originLocationId: rescueOrigin });
+    return player;
+  });
 }
 
 // Game event emitter
@@ -142,13 +207,21 @@ export function emitGameEvent(type, payload) {
 
   console.log('Game event:', event);
 
-  // Store in game state (in-memory for MVP)
+  const persistedEvents = JSON.parse(localStorage.getItem(GAME_EVENTS_KEY) || '[]');
+  persistedEvents.unshift(event);
+  localStorage.setItem(GAME_EVENTS_KEY, JSON.stringify(persistedEvents.slice(0, 100)));
+
+  // Keep the runtime cache for map/HUD consumers.
   if (!window.CrazyTukGameState) {
     window.CrazyTukGameState = {
       events: []
     };
   }
   window.CrazyTukGameState.events.push(event);
+}
+
+export function getGameEvents(limit = 50) {
+  return JSON.parse(localStorage.getItem(GAME_EVENTS_KEY) || '[]').slice(0, limit);
 }
 
 // Main game tick - called every frame
@@ -166,12 +239,13 @@ export function gameLoop() {
     const fare = getPlayerFare(player.wallet, player.activeFareId);
     if (fare && fare.expiresAt < Date.now()) {
       // Fare expired
+      const expiredFareId = player.activeFareId;
       player.status = PLAYER_STATES.AVAILABLE;
       player.activeFareId = null;
       player.selectedFareId = null;
       player.activeTrip = null;
       updatePlayer(player);
-      emitGameEvent('FARE_EXPIRED', { fareId: player.activeFareId });
+      emitGameEvent('FARE_EXPIRED', { fareId: expiredFareId });
     }
   }
 
@@ -221,6 +295,9 @@ export function claimFare(fareId, playerWallet) {
       destinationLocationId: fare.destinationLocationId,
       fuelSpent: 0,
       fuelCost: pickupFuel,
+      pickupFuelCost: pickupFuel,
+      totalFuelCost: pickupFuel,
+      totalFuelSpent: 0,
       progress: 0
     };
 
@@ -249,8 +326,8 @@ export function completePickup(fareId, playerWallet) {
     // Preserve authored routes where available and price new world locations by distance.
     const route = getRoute(fare.pickupLocationId, fare.destinationLocationId, true) || {
       id: `direct-${fare.pickupLocationId}-${fare.destinationLocationId}`,
-      fuelCost: Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : 5,
-      durationMs: Math.max(6000, (Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : 5) * 1800)
+      fuelCost: Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : CONFIG.FALLBACK_ROUTE_FUEL,
+      durationMs: Math.max(CONFIG.FALLBACK_ROUTE_DURATION_MS, (Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : CONFIG.FALLBACK_ROUTE_FUEL) * CONFIG.ROUTE_DURATION_PER_FUEL_MS)
     };
 
     player.activeTrip = {
@@ -260,6 +337,10 @@ export function completePickup(fareId, playerWallet) {
       destinationLocationId: fare.destinationLocationId,
       fuelCost: route.fuelCost,
       fuelSpent: 0,
+      pickupFuelCost: player.activeTrip?.pickupFuelCost || player.activeTrip?.fuelCost || 0,
+      pickupFuelSpent: player.activeTrip?.fuelSpent || 0,
+      totalFuelCost: (player.activeTrip?.pickupFuelCost || player.activeTrip?.fuelCost || 0) + route.fuelCost,
+      totalFuelSpent: player.activeTrip?.fuelSpent || 0,
       progress: 0,
       routeId: route.id
     };
@@ -285,12 +366,27 @@ export function simulatePickupProgress(fareId, playerWallet) {
     if (!getPlayerFare(playerWallet, fareId)) return null;
 
     const progress = trip.progress || 0;
-    const requestedProgress = Math.min(.02, 1 - progress);
+    const requestedProgress = Math.min(CONFIG.PICKUP_PROGRESS_STEP, 1 - progress);
     const requestedFuel = trip.fuelCost * requestedProgress;
     const fuelConsumed = Math.min(player.fuel, requestedFuel);
     player.fuel = Math.max(0, player.fuel - fuelConsumed);
     trip.fuelSpent = (trip.fuelSpent || 0) + fuelConsumed;
+    trip.totalFuelSpent = (trip.pickupFuelSpent || 0) + trip.fuelSpent;
     trip.progress = Math.min(1, progress + (trip.fuelCost > 0 ? fuelConsumed / trip.fuelCost : requestedProgress));
+
+    if (fuelConsumed + Number.EPSILON < requestedFuel && trip.progress < 1) {
+      trip.progressAtStall = trip.progress;
+      trip.stalledAt = Date.now();
+      trip.remainingFuelRequired = Math.max(0, trip.fuelCost - trip.fuelSpent);
+      player.status = PLAYER_STATES.STALLED;
+      player.stallCount = (player.stallCount || 0) + 1;
+      emitGameEvent('PLAYER_STALLED', {
+        fareId,
+        leg: 'PICKUP',
+        progress: trip.progress,
+        locationId: trip.fromLocationId || player.locationId
+      });
+    }
 
     return player;
   });
@@ -380,7 +476,7 @@ export function simulateTripProgress(fareId, playerWallet, isStalled = false) {
       player.status = PLAYER_STATES.STALLED;
       player.stallCount = (player.stallCount || 0) + 1;
     } else {
-      const requestedProgress = Math.min(.01, 1 - progress);
+      const requestedProgress = Math.min(CONFIG.RIDE_PROGRESS_STEP, 1 - progress);
       const requestedFuel = trip.fuelCost * requestedProgress;
       const fuelConsumed = Math.min(player.fuel, requestedFuel);
       player.fuel = Math.max(0, player.fuel - fuelConsumed);

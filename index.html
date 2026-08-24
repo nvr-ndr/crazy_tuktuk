@@ -46,7 +46,7 @@
     }
     #bootScreen {
       position: fixed; z-index: 100; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; background: radial-gradient(circle at 50% 38%, #e94560, #1a1a2e 68%);
+      align-items: center; justify-content: center; background: radial-gradient(circle at 50% 38%, #e94560, #ff0000 68%);
       color: #fff5cf; font: 800 22px/1 system-ui, sans-serif; letter-spacing: .12em;
       transition: opacity .35s ease, visibility .35s ease;
     }
@@ -94,6 +94,7 @@
     .title-tools .leaderboard-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; }
     .title-tools .rules-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; background: #287e68; box-shadow: 0 7px #15503f, 0 12px 22px rgba(0,0,0,.28); }
     .title-tools .settings-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; background: #6250a9; box-shadow: 0 7px #352b67, 0 12px 22px rgba(0,0,0,.28); }
+    .title-tools .tournament-button { flex: 0 0 auto; min-height: clamp(42px, 11vw, 46px); padding-inline: 13px; background: #d69b2d; box-shadow: 0 7px #80591a, 0 12px 22px rgba(0,0,0,.28); }
     .start-connect-button {
       position: absolute;
       z-index: 3;
@@ -539,6 +540,37 @@
       font-weight: 900;
       color: white;
     }
+    .dashboard-status-line { display:flex; align-items:center; gap:8px; margin-top:8px; padding:8px 10px; border-radius:10px; background:rgba(246,212,107,.1); color:rgba(255,255,255,.62); font-size:9px; font-weight:900; letter-spacing:.06em; }
+    .dashboard-status-line b { color:var(--good); }
+    .dashboard-status-line span:last-child { margin-left:auto; white-space:nowrap; }
+    .garage-candidates { display:grid; gap:8px; margin:12px 0 16px; }
+    .garage-driver-card { display:flex; align-items:center; gap:10px; width:100%; padding:10px; border:1px solid rgba(255,255,255,.18); border-radius:14px; background:rgba(0,0,0,.22); color:white; text-align:left; }
+    .garage-driver-card:hover, .garage-driver-card.selected { border-color:var(--warn); background:rgba(246,212,107,.12); }
+    .garage-driver-card b, .garage-driver-card small { display:block; }
+    .garage-driver-card b { font-size:12px; }
+    .garage-driver-card small { margin-top:3px; color:rgba(255,255,255,.64); font-size:10px; line-height:1.25; }
+    .garage-portrait { display:grid; width:42px; height:42px; flex:0 0 42px; place-items:center; border-radius:12px; background:var(--panel2); font-size:24px; }
+    .garage-presets { display:flex; flex-wrap:wrap; gap:7px; }
+    .garage-presets .ui-button { width:fit-content; padding:9px 12px; font-size:10px; }
+    #tournamentPanel, #garagePanel { background-image:linear-gradient(rgba(5,8,18,.3), rgba(5,8,18,.3)), url('assets/backgrounds/garage-screen-desktop.png'); background-size:cover; background-position:center; }
+    #tournamentPanel .tournament-countdown { margin:4px 0 16px; padding:10px 12px 14px; border-radius:16px; background:rgba(5,12,28,.42); }
+    #tournamentPanel .tournament-countdown .stat-label { text-align:center; }
+    #tournamentPanel .tournament-countdown .stat-value { text-align:center; font-size:clamp(2.8rem, 10vw, 4.8rem); line-height:.95; letter-spacing:.04em; }
+    #tournamentPanel .tournament-note { margin-top:12px; }
+    #garagePanel .garage-wallet { background:rgba(5,12,28,.52); border:1px solid rgba(255,255,255,.14); }
+    #garagePanel, #tournamentPanel { width:min(100vw, calc(100dvh * .5625)); height:100dvh; max-height:none; padding:max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); border-radius:0; }
+    #garagePanel h2, #tournamentPanel h2 { max-width:100%; margin-bottom:18px; font-size:clamp(2rem, 7vw, 3rem); line-height:.98; }
+    #garagePanel .core-panel-back, #tournamentPanel .core-panel-back { order:-1; align-self:flex-start; position:static; margin:0 0 18px; padding:8px 13px; font-size:12px; }
+    #garagePanel .dashboard-section { margin-top:4px; padding:12px; border-radius:15px; background:rgba(0,0,0,.14); }
+    #garagePanel .dashboard-section h3 { margin-bottom:9px; }
+    #garagePanel .dashboard-status-line { margin-top:10px; }
+    #garagePanel .fare-sheet-action { margin-top:13px; }
+    @media (max-width:520px) {
+      #garagePanel, #tournamentPanel { width:100vw; padding:max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }
+      #tournamentPanel, #garagePanel { background-image:linear-gradient(rgba(5,8,18,.3), rgba(5,8,18,.3)), url('assets/backgrounds/garage-screen.png'); }
+      #garagePanel h2 { font-size:clamp(1.9rem, 9vw, 2.5rem); }
+      #garagePanel .garage-driver-card { padding:9px; }
+    }
     .transaction-list {
       min-height: 108px;
       max-height: 38vh;
@@ -635,7 +667,6 @@
       right: auto;
       width: min(100%, calc(min(100vw, calc(100dvh * .5625)) - 24px));
       transform: translateX(-50%);
-      background: linear-gradient(180deg, rgba(11,16,32,0), rgba(11,16,32,.96) 30%);
       padding: 14px 12px 16px;
       display: flex;
       justify-content: center;
@@ -821,6 +852,11 @@
       margin: 0;
       box-shadow: 0 16px 30px rgba(0,0,0,.3);
     }
+    .fare-signals { display:flex; justify-content:flex-end; gap:10px; margin-top:5px; color:rgba(255,255,255,.64); font-size:8px; font-weight:900; letter-spacing:.06em; }
+    .fare-signals b { font-size:13px; line-height:0; }
+    .signal-green { color:var(--good); }
+    .signal-yellow { color:var(--warn); }
+    .signal-red { color:var(--danger); }
     .fare-header {
       display: flex;
       justify-content: space-between;
@@ -1029,7 +1065,7 @@
     .fare-sheet-timer-meta { display: flex; justify-content: space-between; margin-bottom: 6px; color: rgba(255,255,255,.68); font-size: 9px; font-weight: 900; letter-spacing: .09em; }
     .fare-sheet-timer-track { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.18); }
     .fare-sheet-timer-bar { width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--danger), var(--warn)); transition: width 1s linear; }
-    .fare-sheet-action { width: 100%; min-height: 48px; font-size: 15px; }
+    .fare-sheet-action { display: block; width: fit-content; max-width: 100%; min-height: 48px; margin-inline: auto; padding-inline: 22px; font-size: 15px; }
     @keyframes fare-sheet-in {
       from { opacity: 0; transform: translateY(calc(-50% + 22px)) scale(.98); }
       to { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -1103,7 +1139,7 @@
       text-transform: uppercase;
     }
     .swap-attribution { margin: 7px 0 0; color: rgba(255,255,255,.72); font-size: 9px; font-weight: 700; text-align: center; text-shadow: 0 2px 5px rgba(0,0,0,.8); }
-    .dev-swap-button { width: 100%; margin-top: 8px; min-height: 38px; background: rgba(255,255,255,.1); box-shadow: none; color: var(--warn); font-size: 11px; }
+    .dev-swap-button { display: block; width: fit-content; max-width: 100%; margin: 8px auto 0; padding-inline: 18px; min-height: 38px; background: rgba(255,255,255,.1); box-shadow: none; color: var(--warn); font-size: 11px; }
     .dev-swap-button[hidden] { display: none; }
     @media (max-width: 340px) {
       .swap-sheet-body { grid-template-columns: 1fr; }
@@ -1119,6 +1155,13 @@
     }
     @keyframes trip-card-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
     .trip-card[hidden] { display: none; }
+    .trip-card-actions { display: grid; justify-items: center; gap: 7px; margin-top: 10px; pointer-events: auto; }
+    .trip-card-actions[hidden] { display: none; }
+    .trip-card-actions button { width: fit-content; max-width: 100%; min-height: 38px; padding: 9px 18px; border: 1px solid rgba(255,255,255,.24); border-radius: 11px; background: rgba(0,0,0,.22); box-shadow: 0 4px 0 rgba(0,0,0,.2); color: white; font: inherit; font-weight: 900; white-space: nowrap; }
+    .trip-card-actions button:hover { background: rgba(255,255,255,.12); }
+    .trip-card-title, .trip-card-message { overflow-wrap: anywhere; }
+    .trip-card-actions button { white-space: nowrap; }
+    #devFuelControls button { width: fit-content; justify-self: start; padding-inline: 12px; }
     .trip-card-head { display: flex; align-items: center; gap: 10px; }
     .trip-card-avatar { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: rgba(255,255,255,.12); font-size: 24px; }
     .trip-card-copy { min-width: 0; flex: 1; }
@@ -1256,7 +1299,7 @@
     #leaderboardPanel { position: fixed; isolation: isolate; background: linear-gradient(135deg, var(--panel2), var(--bg)) center / cover no-repeat; background-blend-mode: normal; overflow: hidden; }
     #leaderboardPanel::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: rgba(5,8,18,.19); }
     #leaderboardPanel > :not(.leaderboard-decoration) { position: relative; z-index: 2; }
-    #rulesPanel, #settingsPanel { position: fixed; isolation: isolate; background: linear-gradient(135deg, var(--panel2), var(--bg)) center / cover no-repeat; background-blend-mode: normal; overflow: hidden; }
+    #rulesPanel, #settingsPanel, #tournamentPanel, #garagePanel { position: fixed; isolation: isolate; background: linear-gradient(135deg, var(--panel2), var(--bg)) center / cover no-repeat; background-blend-mode: normal; overflow: hidden; }
     #rulesPanel::before, #settingsPanel::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: rgba(5,8,18,.19); }
     #rulesPanel > *, #settingsPanel > * { position: relative; z-index: 2; }
     .leaderboard-decoration { position: absolute; z-index: 0; inset: 0; pointer-events: none; overflow: hidden; }
@@ -1300,11 +1343,12 @@
         background-color: #fc0000;
         background-position: center;
         background-repeat: no-repeat;
-        background-size: contain;
+        background-size: cover;
       }
       .leaderboard-panel h2,
       .leaderboard-intern-note,
       #leaderboardBoard,
+      #tournamentLeaderboardBoard,
       .rules-content,
       .settings-list,
       .settings-row {
@@ -1314,12 +1358,59 @@
       }
       #leaderboardBack,
       #rulesBack,
-      #settingsBack {
+      #settingsBack,
+      #tournamentPanel .core-panel-back,
+      #garagePanel .core-panel-back {
         width: fit-content;
         min-width: 0;
         padding-inline: 18px;
         margin-left: auto;
         margin-right: auto;
+      }
+      #tournamentPanel > *,
+      #garagePanel > * {
+        width: min(100%, calc(var(--desktop-overlay-width) - 48px));
+        margin-left: auto;
+        margin-right: auto;
+      }
+      #tournamentPanel > button,
+      #garagePanel > button {
+        width: fit-content;
+      }
+      #tournamentPanel .core-panel-back,
+      #garagePanel .core-panel-back {
+        width: fit-content;
+        margin-left: max(24px, calc((100vw - var(--desktop-overlay-width)) / 2 + 24px));
+        margin-right: 0;
+      }
+      #tournamentPanel,
+      #garagePanel {
+        left: 0;
+        width: 100vw;
+        transform: none;
+        background-color: transparent;
+        background-image:
+          linear-gradient(rgba(5,8,18,.24), rgba(5,8,18,.24)),
+          url('assets/backgrounds/start-screen-desktop.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-blend-mode: multiply, normal;
+      }
+      #tournamentPanel {
+        background-image:
+          linear-gradient(rgba(5,8,18,.3), rgba(5,8,18,.3)),
+          url('assets/backgrounds/garage-screen-desktop.png');
+      }
+      #garagePanel {
+        background-image:
+          linear-gradient(rgba(5,8,18,.3), rgba(5,8,18,.3)),
+          url('assets/backgrounds/garage-screen-desktop.png');
+      }
+      #tournamentPanel .tournament-countdown {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
       }
       .start-screen {
         left: 0;
@@ -1362,6 +1453,19 @@
         right: auto;
         width: calc(var(--desktop-overlay-width) - 24px);
         transform: translateX(-50%);
+      }
+      .stage.agent-mode .trip-card {
+        left: 50%;
+        right: auto;
+        width: calc(var(--desktop-overlay-width) - 24px);
+        box-sizing: border-box;
+        transform: translateX(-50%);
+        border: 0;
+        animation: agent-trip-card-in .22s ease-out both;
+      }
+      .stage.agent-mode .agent-pit-call {
+        right: auto;
+        left: calc(50% + (var(--desktop-overlay-width) / 2) + 8px);
       }
       .swap-sheet-backdrop {
         left: 50%;
@@ -1408,6 +1512,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       .start-screen, .game { width: 100vw; max-width: none; left: 0; right: auto; transform: none; margin-inline: 0; min-height: -webkit-fill-available; }
       .game { position: fixed; top: 0; right: auto; bottom: auto; left: 0; height: var(--game-viewport-height, 100dvh); min-height: -webkit-fill-available; }
       .leaderboard-panel { width: 100vw; max-width: none; left: 0; right: auto; transform: none; }
+      #tournamentPanel, #garagePanel {
+        background-image: linear-gradient(rgba(5,8,18,.3), rgba(5,8,18,.3)), url('assets/backgrounds/garage-screen.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
       /* Keep every mobile scene at the title screen's brighter treatment. */
       .start-screen { background: #1b2244 url('assets/backgrounds/start-screen.png') center center / cover no-repeat; }
       .start-logo { top: max(42px, calc(env(safe-area-inset-top) + 28px)); width: clamp(214px, 58vw, 330px); }
@@ -1450,6 +1560,58 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       100% { transform: scale(1); opacity: 1; }
     }
     .hint { font-size: .85rem; color: var(--muted); max-width: 330px; }
+    /* Agent Mode deliberately reuses the Drive map, sheets, trip card and HUD. */
+    .agent-top-strip { position:absolute; top:10px; left:50%; z-index:4; display:flex; align-items:center; gap:10px; width:min(calc(100vw - 180px), 480px); padding:7px 10px; transform:translateX(-50%); border:1px solid rgba(255,255,255,.18); border-radius:12px; background:rgba(15,25,48,.9); box-shadow:0 6px 18px rgba(0,0,0,.28); }
+    .agent-top-strip[hidden] { display:none; }
+    .agent-top-strip span { display:grid; gap:1px; color:rgba(255,255,255,.62); font-size:9px; font-weight:900; letter-spacing:.06em; }
+    .agent-top-strip b { color:#fff; font-size:14px; letter-spacing:0; }
+    .agent-top-strip button { width:fit-content; margin-left:auto; padding:7px 12px; font-size:11px; }
+    .stage.agent-mode .agent-top-strip { display:grid; grid-template-columns:1fr 1fr auto; min-height:42px; box-sizing:border-box; }
+    .stage.agent-mode .agent-top-strip span { text-align:center; }
+    .stage.agent-mode .agent-top-strip button { align-self:center; padding:6px 10px; line-height:1; }
+    .stage.agent-mode .agent-top-strip button { margin-bottom:5px; }
+    .agent-pit-call { position:absolute; z-index:960; right:12px; bottom:12px; display:none; width:40px; height:40px; min-height:40px; padding:0; place-items:center; border-radius:12px; font-size:18px; }
+    .stage.agent-mode .agent-pit-call { display:grid; }
+    .pit-call-controls { display:grid; gap:14px; margin:16px 0; }
+    .pit-call-controls label { display:grid; gap:6px; color:#fff5cf; font-size:11px; font-weight:900; letter-spacing:.08em; }
+    .pit-call-controls label span { color:rgba(255,255,255,.62); font-size:9px; text-align:center; }
+    .pit-call-controls input { width:100%; accent-color:var(--warn); }
+    .pit-call-controls fieldset { margin:0; padding:0; border:0; }
+    .pit-call-controls legend { margin-bottom:7px; color:#fff5cf; font-size:11px; font-weight:900; letter-spacing:.08em; }
+    .pit-call-controls fieldset div { display:flex; gap:6px; }
+    .pit-priority { flex:1; padding:8px 5px; border:1px solid rgba(255,255,255,.2); border-radius:9px; background:rgba(255,255,255,.08); color:#fff; font-size:10px; font-weight:900; cursor:pointer; }
+    .pit-priority.active { border-color:var(--warn); background:rgba(246,212,107,.18); color:var(--warn); }
+    .pit-call-warning { margin:0 0 10px; color:var(--warn); font-size:10px; font-weight:900; letter-spacing:.08em; text-align:center; }
+    .agent-strategy-details { display:grid; gap:7px; margin-top:10px; padding:10px; border-radius:11px; background:rgba(0,0,0,.18); }
+    .agent-strategy-details span { display:flex; justify-content:space-between; gap:12px; color:rgba(255,255,255,.72); font-size:11px; font-weight:800; }
+    .agent-strategy-details b { color:#fff5cf; font-size:10px; letter-spacing:.05em; }
+    .agent-results-sheet { width:min(calc(100% - 32px), 460px); }
+    .agent-results-grid { margin:14px 0; }
+    .agent-awards { display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin:0 0 14px; }
+    .agent-award { padding:6px 9px; border:1px solid rgba(246,212,107,.5); border-radius:999px; background:rgba(246,212,107,.12); color:#fff5cf; font-size:9px; font-weight:900; letter-spacing:.06em; line-height:1.1; }
+    .agent-award.is-rare { border-color:rgba(128,220,142,.58); background:rgba(128,220,142,.12); color:#9af0a6; }
+    .agent-record-list { display:grid; gap:7px; min-height:0; max-height:none; overflow:visible; }
+    .agent-record-list + h3 { margin-top:16px; }
+    .agent-record { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:10px; align-items:center; padding:9px 10px; border-radius:11px; background:rgba(7,18,39,.76); }
+    .agent-record-copy { min-width:0; }
+    .agent-record strong, .agent-record span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .agent-record strong { color:#fff; font-size:11px; line-height:1.2; }
+    .agent-record span { margin-top:3px; color:rgba(255,255,255,.68); font-size:10px; line-height:1.2; }
+    .agent-record small { color:#f6d46b; font-size:9px; font-weight:900; line-height:1.2; text-align:right; white-space:nowrap; }
+    .agent-record .agent-record-muted { color:rgba(255,255,255,.55); }
+    .leaderboard-tabs { display:flex; justify-content:center; gap:8px; margin:0 0 8px; }
+    .leaderboard-tabs button { width:fit-content; min-height:34px; padding:7px 13px; font-size:11px; }
+    #tournamentLeaderboardBoard { display:grid; align-content:start; flex:1; gap:8px; min-height:0; margin:12px 0 18px; overflow-y:auto; }
+    #tournamentLeaderboardBoard[hidden], #leaderboardBoard[hidden] { display:none; }
+    #leaderboardBack.panel-scene-back, #rulesBack.panel-scene-back, #settingsBack.panel-scene-back { position:absolute; z-index:3; top:12px; left:12px; width:fit-content; margin:0 !important; }
+    #leaderboardPanel > h2, #rulesPanel > h2, #settingsPanel > h2 { margin-top:52px; }
+    @keyframes agent-trip-card-in { from { opacity:0; transform:translate(-50%, 18px) scale(.98); } to { opacity:1; transform:translateX(-50%) scale(1); } }
+    .stage.agent-mode .top-connect-container { display:none; }
+    .stage.agent-mode #hud .fuel .hud-stat-label, .stage.agent-mode #hud .points .hud-stat-label, .stage.agent-mode #hudActionLabel { font-size:0; }
+    .stage.agent-mode #hud .fuel .hud-stat-label::after { content:'FUEL'; font-size:10px; }
+    .stage.agent-mode #hud .points .hud-stat-label::after { content:'SCORE'; font-size:10px; }
+    .stage.agent-mode #hudActionLabel::after { content:'AUTONOMOUS SHIFT'; font-size:11px; }
+    @media (max-width: 540px) { .agent-top-strip { top:58px; width:min(calc(100vw - 32px), 480px); } .agent-top-strip span { font-size:8px; } .agent-top-strip b { font-size:12px; } .stage.agent-mode .agent-pit-call { right:14px; bottom:78px; } }
 </style>
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
@@ -1490,10 +1652,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         getStallDuration,
         getTopPlayers,
         setPlayerStatus
-      } from './data/player.js?v=20260824world1';
+      } from './data/player.js?v=20260824world2';
 
       // Import game logic modules
-      import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress } from './js/game.js?v=20260824pickup2';
+        import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, getFareFuelBudget, getRemainingTripFuel, resumeStalledTrip, abandonStalledFare, claimRescueFare, getGameEvents, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress } from './js/game.js?v=20260824pickup4';
       import { matchesFareCondition, findQualifyingFares, autoMatchFare, canReachFare } from './js/fareMatcher.js?v=20260823h';
       import { calculateFuelEarned, calculateProgress, isTripCompletable } from './js/fuel.js';
       import { simulateFakeSwap, interpretConfirmedSwap as interpretSwap } from './js/interpretSwap.js';
@@ -1514,7 +1676,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         LeaderboardDisplay,
         Notifications,
         DashboardUI
-      } from './js/dashboard.js?v=20260823b';
+      } from './js/dashboard.js?v=20260824c';
 
       // Validate routes on startup
       validateRoutes();
@@ -1562,6 +1724,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         refreshFares,
         getAvailableFares,
         getPickupFuelCost,
+        getFareFuelBudget,
         matchesFareCondition,
         findQualifyingFares,
         autoMatchFare,
@@ -1571,6 +1734,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         isTripCompletable,
         simulatePickupProgress,
         simulateTripProgress,
+        startPickupDrive,
+        startPassengerDrive,
+        getRemainingTripFuel,
+        resumeStalledTrip,
+        abandonStalledFare,
+        claimRescueFare,
+        getGameEvents,
         simulateFakeSwap,
         gameLoop,
 
@@ -1713,6 +1883,23 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         bindSheetAction('swapSheetClose', closeSwapSheet);
         bindSheetAction('swapSubmit', submitDFlowSwap);
         bindSheetAction('mockSwapSubmit', runMockFareLoop);
+        bindSheetAction('tripRefuel', () => {
+          const player = getPlayer();
+          if (player?.activeFareId) openSwapSheet({ context: 'STALLED_REFUEL', fareId: player.activeFareId });
+        });
+        bindSheetAction('tripAbandon', () => {
+          const player = getPlayer();
+          if (!player?.activeFareId) return;
+          const abandoned = abandonStalledFare(player.activeFareId, player.wallet);
+          if (abandoned) {
+            updateHUD(abandoned);
+            window.CrazyTukGame.syncMapState?.(abandoned);
+            showNotification('Rescue requested. Another driver can take this passenger.', 'info');
+          }
+        });
+        document.querySelectorAll('[data-dev-fuel]').forEach((button) => {
+          button.addEventListener('click', () => setDevelopmentFuel(button.dataset.devFuel));
+        });
         bindSheetAction('completionClose', closeCompletionSheet);
 
         // Set up wallet button listeners
@@ -1730,7 +1917,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
         document.getElementById('mapBackButton')?.addEventListener('click', returnToStartScreen);
         document.getElementById('dashboardToggle')?.addEventListener('click', handleDashboardToggle);
-        document.getElementById('feedOpenButton')?.addEventListener('click', openFeedModal);
         console.log('Map navigation listeners attached');
 
         document.getElementById('feedClose')?.addEventListener('click', closeFeedModal);
@@ -1747,9 +1933,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
 
         document.getElementById('nav-dashboard')?.addEventListener('click', () => showDashboardView('dashboard'));
-        document.getElementById('nav-swaps')?.addEventListener('click', () => showDashboardView('swaps'));
-        document.getElementById('nav-history')?.addEventListener('click', () => showDashboardView('history'));
+        document.getElementById('nav-activity')?.addEventListener('click', () => showDashboardView('activity'));
+        document.getElementById('nav-feed')?.addEventListener('click', () => {
+          showDashboardView('feed');
+          renderDashboardFeed();
+        });
         setupFrontSettingsControls();
+        const devFuelControls = document.getElementById('devFuelControls');
+        if (devFuelControls) devFuelControls.hidden = !CONFIG.DEV_MODE;
 
         // Set up fare click listener
         document.addEventListener('fare-click', handleFareClick);
@@ -1760,6 +1951,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         // Initialize HUD
         updateHUD(player);
         window.CrazyTukGame.syncMapState?.(player);
+        // Rebuild animation/timer state from the persisted authoritative trip.
+        // A refresh must not silently leave an active fare frozen.
+        if (player.activeFareId && player.activeTrip && player.status !== PLAYER_STATES.STALLED) {
+          setTimeout(() => {
+            const current = getPlayer();
+            if (!current?.activeFareId || current.status === PLAYER_STATES.STALLED) return;
+            if (current.status === PLAYER_STATES.PICKUP) {
+              startPickupDrive(current.activeFareId, current.wallet);
+            } else if (current.status === PLAYER_STATES.DRIVING) {
+              startPassengerDrive(current.activeFareId, current.wallet);
+            }
+          }, 0);
+        }
 
         console.log('Crazy Tuk game initialized successfully');
       }
@@ -1795,7 +1999,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
 
         if (player.status === PLAYER_STATES.STALLED) {
-          showNotification('Trip stalled. Refuel flow is not fully wired yet.', 'error');
+          const fareId = player.activeFareId;
+          openSwapSheet({ context: 'STALLED_REFUEL', fareId });
           return;
         }
 
@@ -1866,9 +2071,21 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
                 <span class="feed-stars" aria-label="${rating} out of 5 stars">${renderStars(rating)}</span>
               </div>
             </div>
-            <b class="feed-points">+${entry.points || 0}</b>
           </article>
         `;
+      }
+
+      function renderGameEventCard(event) {
+        const labels = {
+          PLAYER_STALLED: ['🔧', 'Driver stalled', 'Out of fuel on route'],
+          RESCUE_REQUESTED: ['🛟', 'Rescue requested', 'A stranded passenger is waiting'],
+          RESCUE_ACCEPTED: ['🚕', 'Rescue accepted', 'Another driver is heading to the passenger'],
+          TRIP_RESUMED: ['⛽', 'Trip resumed', 'Driver refueled and continued'],
+          FARE_COMPLETED: ['⭐', 'Fare completed', 'Passenger ride completed'],
+          FARE_EXPIRED: ['⌛', 'Fare expired', 'The opportunity timed out']
+        };
+        const [icon, title, detail] = labels[event.type] || ['🛺', 'Drive update', event.type];
+        return `<article class="feed-item game-event-item"><div class="feed-avatar">${icon}</div><div class="feed-copy"><strong>${title}</strong><span>${detail}</span><div class="feed-meta"><span>${new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div></div></article>`;
       }
 
       function closeFareSheet(preserveSelection = false) {
@@ -1910,12 +2127,21 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (feedModalList) {
           const entries = loadRideFeed();
           feedModalList.innerHTML = entries.length
-            ? entries.map((entry) => renderFeedCard(entry)).join('')
-            : '<div class="empty-feed">No passenger reviews yet. Finish a fare and their comment will land here.</div>';
+            ? entries.map(renderFeedCard).join('')
+              : '<div class="empty-feed">No passenger reviews yet. Complete a fare to populate the feed.</div>';
         }
         if (feedBackdrop) {
           feedBackdrop.hidden = false;
         }
+      }
+
+      function renderDashboardFeed() {
+        const list = document.getElementById('dashboardFeedList');
+        if (!list) return;
+        const entries = loadRideFeed();
+        list.innerHTML = entries.length
+          ? entries.map(renderFeedCard).join('')
+          : '<div class="empty-feed">No passenger reviews yet. Complete a fare to populate the feed.</div>';
       }
 
       function closeFeedModal() {
@@ -2135,7 +2361,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           }
 
           status.textContent = 'SWAP CONFIRMED. STARTING ENGINE...';
-          if (swapContext.fareId) {
+          if (swapContext.context === 'STALLED_REFUEL') {
+            const resumed = resumeStalledTrip(swapContext.fareId, getPlayer()?.wallet);
+            if (resumed) {
+              updateHUD(resumed);
+              window.CrazyTukGame.syncMapState?.(resumed);
+              if (resumed.status === PLAYER_STATES.PICKUP) {
+                startPickupDrive(swapContext.fareId, resumed.wallet);
+              } else {
+                startPassengerDrive(swapContext.fareId, resumed.wallet);
+              }
+            }
+          } else if (swapContext.fareId) {
             const claimed = claimFare(swapContext.fareId, getPlayer()?.wallet);
             if (claimed) {
               updateHUD(claimed);
@@ -2247,6 +2484,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         startPickupDrive(fareId, claimed.wallet, () => showCompletionSheet(mockFare));
       }
 
+      function setDevelopmentFuel(percent) {
+        if (!CONFIG.DEV_MODE) return;
+        const player = getPlayer();
+        if (!player) return;
+        player.fuel = Math.round(CONFIG.FUEL_CAPACITY * (Number(percent) / 100));
+        savePlayer(player);
+        updateHUD(player);
+        window.CrazyTukGame.syncMapState?.(player);
+        showNotification(`Development fuel set to ${percent}%`, 'info');
+      }
+
       async function handleDashboardToggle() {
         const dashboard = document.getElementById('dashboard');
         if (!dashboard) return;
@@ -2261,6 +2509,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const stats = await DashboardStats.getStats();
         const history = await TransactionHistory.getHistory();
         showDashboardView('dashboard');
+        ensureDriveDashboardMetrics();
         updateDashboardHero(stats.player);
         DashboardUI.updateStats({
           ...stats,
@@ -2271,19 +2520,32 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         DashboardUI.updateTransactions(history.swaps);
       }
 
+      function ensureDriveDashboardMetrics() {
+        const statsGrid = document.querySelector('#dashboard .stats-grid');
+        if (!statsGrid || document.getElementById('stat-stalls-main')) return;
+        statsGrid.insertAdjacentHTML('beforeend', `
+          <div class="stat-card"><span class="stat-label">Stalls</span><span class="stat-value" id="stat-stalls-main">0</span></div>
+          <div class="stat-card"><span class="stat-label">Rescues</span><span class="stat-value" id="stat-rescues">0</span></div>
+        `);
+        if (!document.getElementById('stat-status')) {
+          statsGrid.insertAdjacentHTML('afterend', '<div class="dashboard-status-line"><span>LIVE STATUS</span><b id="stat-status">AVAILABLE</b><span id="stat-fuel-capacity">0 / 100 fuel</span></div>');
+        }
+      }
+
       function showDashboardView(view) {
         const views = {
           dashboard: document.getElementById('dashboardView'),
-          swaps: document.getElementById('swapActivityView'),
-          history: document.getElementById('transactionHistoryView')
+          activity: [document.getElementById('swapActivityView'), document.getElementById('transactionHistoryView')],
+          feed: document.getElementById('dashboardFeedView')
         };
         const buttons = {
           dashboard: document.getElementById('nav-dashboard'),
-          swaps: document.getElementById('nav-swaps'),
-          history: document.getElementById('nav-history')
+          activity: document.getElementById('nav-activity'),
+          feed: document.getElementById('nav-feed')
         };
         Object.entries(views).forEach(([key, element]) => {
-          if (element) element.hidden = key !== view;
+          const items = Array.isArray(element) ? element : [element];
+          items.forEach((item) => { if (item) item.hidden = key !== view; });
         });
         Object.entries(buttons).forEach(([key, button]) => {
           button?.classList.toggle('primary', key === view);
@@ -2661,6 +2923,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             activeFareDisplay.querySelector('.fare-stalls').textContent = isSelectedOnly
               ? `${fareToShow.condition} • $${fareToShow.minimumUsd}+`
               : `${stalls} stalls`;
+            const signalClass = (level) => `signal-${String(level || 'GREEN').toLowerCase()}`;
+            const roadSignal = activeFareDisplay.querySelector('.fare-road-signal');
+            const marketSignal = activeFareDisplay.querySelector('.fare-market-signal');
+            if (roadSignal) {
+              roadSignal.className = `fare-road-signal ${signalClass(fareToShow.roadTrafficLevel)}`;
+              roadSignal.title = `Road: ${fareToShow.roadTrafficLevel || 'GREEN'}`;
+            }
+            if (marketSignal) {
+              marketSignal.className = `fare-market-signal ${signalClass(fareToShow.marketTrafficLevel)}`;
+              marketSignal.title = `Market: ${fareToShow.marketTrafficLevel || 'GREEN'}`;
+            }
 
             activeFareDisplay.classList.remove('hidden');
             activeFareDisplay.hidden = !isSelectedOnly;
@@ -2670,6 +2943,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               const tripFuelSpent = player.activeTrip?.fuelSpent || 0;
               const fuelRemaining = Math.max(0, tripFuelCost - tripFuelSpent);
               const isStalled = player.status === PLAYER_STATES.STALLED;
+              const stalledActions = tripCard.querySelector('[data-stalled-actions]');
+              if (stalledActions) stalledActions.hidden = !isStalled;
               tripCard.classList.toggle('stalled', isStalled);
               setNpcAvatar(document.getElementById('tripCardAvatar'), npc);
               document.getElementById('tripCardKicker').textContent = isStalled ? 'OUT OF FUEL · TRIP STALLED' : player.status === PLAYER_STATES.PICKUP ? 'HEADING TO PICKUP' : 'PASSENGER ON BOARD';
@@ -2678,10 +2953,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               document.getElementById('tripCardPercent').textContent = `${roundedProgress}%`;
               document.getElementById('tripCardProgress').style.width = `${progress}%`;
               document.getElementById('tripCardPassenger').textContent = npc?.name || 'Passenger';
-              document.getElementById('tripCardReward').textContent = `${Math.ceil(fuelRemaining)} FUEL LEFT · +${fareToShow.pointValue || 0} PTS`;
-              document.getElementById('tripCardFuel').textContent = Number(player.fuel || 0).toFixed(1).replace('.0', '');
-              document.getElementById('tripCardFuelSpent').textContent = `${tripFuelSpent.toFixed(1).replace('.0', '')} / ${tripFuelCost}`;
-              document.getElementById('tripCardScore').textContent = player.points || 0;
+              document.getElementById('tripCardReward').textContent = `${Math.ceil(fuelRemaining)} FUEL LEFT · GAS ${tripFuelSpent.toFixed(1).replace('.0', '')} / ${tripFuelCost} · +${fareToShow.pointValue || 0} PTS`;
               tripCard.hidden = false;
             } else if (tripCard) {
               tripCard.classList.remove('stalled');
@@ -2920,6 +3192,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     <button id="titleLeaderboard" type="button" class="ui-button primary leaderboard-button" aria-label="Leaderboard">🏆</button>
     <button id="titleRules" type="button" class="ui-button rules-button" aria-label="How to play">📖</button>
     <button id="titleSettings" type="button" class="ui-button settings-button" aria-label="Settings">⚙</button>
+    <button id="titleTournament" type="button" class="ui-button tournament-button" aria-label="Open tournament">TOURNAMENT</button>
   </div>
   <p id="support" class="hint"></p>
   <footer class="start-footer">
@@ -2941,10 +3214,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <p id="tripCardMessage" class="trip-card-message"></p>
       <div class="trip-progress"><div id="tripCardProgress" class="trip-progress-bar"></div></div>
       <div class="trip-card-meta"><span id="tripCardPassenger"></span><span id="tripCardReward"></span></div>
-      <div class="trip-card-metrics">
-        <div class="trip-card-metric"><span>CURRENT FUEL</span><b id="tripCardFuel">0</b></div>
-        <div class="trip-card-metric"><span>GAS SPENT</span><b id="tripCardFuelSpent">0 / 0</b></div>
-        <div class="trip-card-metric"><span>TOTAL SCORE</span><b id="tripCardScore">0</b></div>
+      <div class="trip-card-actions" data-stalled-actions hidden>
+        <button id="tripRefuel" class="primary-button" type="button">REFUEL &amp; CONTINUE</button>
+        <button id="tripAbandon" class="secondary-button" type="button">CALL FOR RESCUE</button>
       </div>
     </section>
 
@@ -3013,10 +3285,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
     <div class="map-topbar">
       <button id="mapBackButton" type="button" class="ui-button map-back-button" aria-label="Back to main screen">BACK</button>
+      <div id="agentTopStrip" class="agent-top-strip" hidden><span>TIME LEFT <b id="agentTopTime">10:00</b></span><span>BANKROLL <b id="agentTopBankroll">20 USDC</b></span><button id="agentStartShift" class="ui-button primary" type="button">START SHIFT</button></div>
       <div class="map-topbar-right">
         <div class="map-topbar-actions">
           <button id="dashboardToggle" type="button" class="ui-button dashboard-toggle" aria-label="Open core menu">☰</button>
-          <button id="feedOpenButton" type="button" class="ui-button feed-toggle" aria-label="Open public feed">★</button>
         </div>
         <div class="top-connect-container">
           <button id="topWalletButton" type="button" class="ui-button top-connect-button" aria-label="Connect wallet">
@@ -3053,11 +3325,44 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
                 <span class="fare-status">DRIVING</span>
                 <span class="fare-stalls">0 stalls</span>
               </div>
+              <div class="fare-signals" aria-label="Road and market conditions"><span>ROAD <b class="fare-road-signal">●</b></span><span>MARKET <b class="fare-market-signal">●</b></span></div>
             </div>
           </div>
         </div>
     </div>
     </div>
+    <button id="agentPitCallButton" class="ui-button agent-pit-call" type="button" aria-label="Make a Pit Call" hidden>🛠</button>
+  </div>
+
+  <div id="pitCallBackdrop" class="swap-sheet-backdrop" hidden>
+    <section class="swap-sheet pit-call-sheet" role="dialog" aria-modal="true" aria-labelledby="pitCallTitle">
+      <button id="pitCallClose" class="fare-sheet-close" type="button" aria-label="Close Pit Call">×</button>
+      <div class="swap-sheet-title-row"><h2 id="pitCallTitle">PIT CALL</h2><div id="pitCallRemaining" class="swap-status">3 OF 3 REMAINING</div></div>
+      <div class="pit-call-controls">
+        <label>RISK <input id="pitRisk" type="range" min="1" max="10" value="6"><span>SAFE → DEGEN</span></label>
+        <label>ACTIVITY <input id="pitActivity" type="range" min="1" max="10" value="6"><span>PATIENT → HYPER</span></label>
+        <fieldset><legend>PRIORITY</legend><div><button class="pit-priority" data-priority="PROFIT" type="button">PROFIT</button><button class="pit-priority active" data-priority="BALANCED" type="button">BALANCED</button><button class="pit-priority" data-priority="SCORE" type="button">SCORE</button></div></fieldset>
+      </div>
+      <p class="pit-call-warning">THIS USES 1 PIT CALL</p>
+      <button id="pitCallConfirm" class="ui-button primary fare-sheet-action" type="button">CONFIRM PIT CALL</button>
+    </section>
+  </div>
+
+  <div id="agentResultsBackdrop" class="completion-backdrop" hidden>
+    <section class="completion-sheet agent-results-sheet" role="dialog" aria-modal="true" aria-labelledby="agentResultsTitle">
+      <div class="completion-avatar">🏁</div>
+      <h2 id="agentResultsTitle">SHIFT COMPLETE</h2>
+      <p id="agentResultsRank" class="completion-review">#184 · BANGKOK SHIFT #0042</p>
+      <div class="stats-grid agent-results-grid">
+        <div class="stat-card"><span class="stat-label">Crazy Score</span><span id="agentResultsScore" class="stat-value">0</span></div>
+        <div class="stat-card"><span class="stat-label">Bankroll</span><span id="agentResultsBankroll" class="stat-value">20 USDC</span></div>
+        <div class="stat-card"><span class="stat-label">PnL</span><span id="agentResultsPnl" class="stat-value">+0.0%</span></div>
+        <div class="stat-card"><span class="stat-label">Fares</span><span id="agentResultsFares" class="stat-value">0</span></div>
+      </div>
+      <p id="agentResultsMeta" class="completion-review">0 stalls · Pit Calls ●●●</p>
+      <div id="agentResultsAwards" class="agent-awards" aria-label="Shift awards"></div>
+      <button id="agentResultsNext" class="ui-button primary fare-sheet-action" type="button">PREPARE NEXT SHIFT</button>
+    </section>
   </div>
 
   <div id="feedBackdrop" class="completion-backdrop" hidden>
@@ -3091,7 +3396,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           </div>
         </section>
 
-        <section class="dashboard-section">
+        <section id="driverDashboardStats" class="dashboard-section">
           <h3>Driver Stats</h3>
           <div class="stats-grid">
             <div class="stat-card"><span class="stat-label">Points</span><span class="stat-value" id="stat-points">0</span></div>
@@ -3099,6 +3404,25 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             <div class="stat-card"><span class="stat-label">Completed</span><span class="stat-value" id="stat-completed">0</span></div>
             <div class="stat-card"><span class="stat-label">Today</span><span class="stat-value" id="stat-today">0</span></div>
           </div>
+        </section>
+        <section id="agentDashboardShift" class="dashboard-section" hidden>
+          <h3>Current Shift</h3>
+          <div class="stats-grid">
+            <div class="stat-card"><span class="stat-label">Rank</span><span id="agentDashboardRank" class="stat-value">#184</span></div>
+            <div class="stat-card"><span class="stat-label">Bankroll</span><span id="agentDashboardBankroll" class="stat-value">20 USDC</span></div>
+            <div class="stat-card"><span class="stat-label">PnL</span><span id="agentDashboardPnl" class="stat-value">+0.0%</span></div>
+            <div class="stat-card"><span class="stat-label">Crazy Score</span><span id="agentDashboardScore" class="stat-value">0</span></div>
+          </div>
+          <div id="agentDashboardMeta" class="dashboard-status-line"><span>0 fares · $0 volume</span><b>10:00 LEFT</b><span>● LIVE</span></div>
+        </section>
+        <section id="agentDashboardStrategy" class="dashboard-section" hidden>
+          <h3>Current Strategy</h3>
+          <div class="dashboard-status-line"><span id="agentStrategyPriority">BALANCED</span><b id="agentStrategyPitCalls">PIT CALLS ●●●</b><span>Autonomous</span></div>
+          <div class="agent-strategy-details"><span>Risk <b id="agentStrategyRisk">██████░░░░</b></span><span>Activity <b id="agentStrategyActivity">██████░░░░</b></span><span>Tokens <b>USDC · SOL · BONK · WIF</b></span></div>
+        </section>
+        <section id="agentDashboardCareer" class="dashboard-section" hidden>
+          <h3>Career</h3>
+          <div class="stats-grid"><div class="stat-card"><span class="stat-label">Shifts</span><span id="agentCareerShifts" class="stat-value">0</span></div><div class="stat-card"><span class="stat-label">Wins</span><span id="agentCareerWins" class="stat-value">0</span></div><div class="stat-card"><span class="stat-label">Podiums</span><span id="agentCareerPodiums" class="stat-value">0</span></div><div class="stat-card"><span class="stat-label">Best Rank</span><span id="agentCareerBestRank" class="stat-value">—</span></div></div>
         </section>
       </div>
 
@@ -3112,6 +3436,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             <div class="mini-card"><span>Stalls</span><b id="stat-stalls">0</b></div>
           </div>
         </section>
+        <section id="agentActivitySection" class="dashboard-section" hidden>
+          <h3>Agent Swap Activity</h3>
+          <div id="agentSwapList" class="transaction-list agent-record-list"><div class="empty-state">Autonomous swaps will appear during the Shift.</div></div>
+          <h3>Agent Shift Activity</h3>
+          <div id="agentActivityList" class="transaction-list agent-record-list"><div class="empty-state">Agent decisions will appear during the Shift.</div></div>
+          <h3>Shift History</h3>
+          <div id="agentShiftHistoryList" class="transaction-list agent-record-list"><div class="empty-state">Completed Shifts will appear here.</div></div>
+        </section>
       </div>
 
       <div id="transactionHistoryView" class="dashboard-view" hidden>
@@ -3121,10 +3453,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         </section>
       </div>
 
+      <div id="dashboardFeedView" class="dashboard-view" hidden>
+        <section class="dashboard-section">
+          <h3>Passenger Reviews</h3>
+          <div id="dashboardFeedList" class="feed-list"><div class="empty-feed">No passenger reviews yet. Complete a fare to populate the feed.</div></div>
+        </section>
+      </div>
+
       <div class="dashboard-nav">
         <button class="nav-btn primary" id="nav-dashboard"><span>📊</span> Dashboard</button>
-        <button class="nav-btn" id="nav-swaps"><span>↔</span> Swaps</button>
-        <button class="nav-btn" id="nav-history"><span>▤</span> History</button>
+        <button class="nav-btn" id="nav-activity"><span>↔</span> Activity</button>
+        <button class="nav-btn" id="nav-feed"><span>★</span> Feed</button>
       </div>
     </div>
   </div>
@@ -3135,8 +3474,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <div class="leaderboard-decoration" aria-hidden="true">
   </div>
   <h2>LEADERBOARD</h2>
+  <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard mode"><button id="leaderboardDriveTab" class="ui-button primary" role="tab" type="button">DRIVE</button><button id="leaderboardTournamentTab" class="ui-button" role="tab" type="button">TOURNAMENT</button></div>
   <div id="leaderboardBoard"></div>
-  <button id="leaderboardBack" class="ui-button primary" type="button">Back</button>
+  <div id="tournamentLeaderboardBoard" hidden></div>
+  <button id="leaderboardBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
 </section>
 
 <section id="rulesPanel" class="leaderboard-panel rules-panel" hidden aria-labelledby="rulesTitle">
@@ -3159,7 +3500,38 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <p>Drive from pickup to destination, avoid stalling, and collect points when the passenger arrives.</p>
     </section>
   </div>
-  <button id="rulesBack" class="ui-button primary" type="button">Back</button>
+  <button id="rulesBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
+</section>
+
+<section id="tournamentPanel" class="leaderboard-panel settings-panel" hidden aria-labelledby="tournamentTitle">
+  <div id="tournamentPhase" class="fare-sheet-kicker">TOURNAMENT MODE</div>
+  <h2 id="tournamentTitle">BANGKOK SHIFT #0042</h2>
+  <div class="tournament-countdown"><span id="tournamentCountdownLabel" class="stat-label">STARTS IN</span><span id="tournamentCountdownValue" class="stat-value">03:42:18</span></div>
+  <div class="dashboard-section">
+    <h3 id="tournamentStatusTitle">REGISTRATION</h3>
+    <div class="stats-grid">
+      <div class="stat-card"><span id="tournamentStatOneLabel" class="stat-label">Drivers</span><span id="tournamentStatOneValue" class="stat-value">183</span></div>
+      <div class="stat-card"><span id="tournamentStatTwoLabel" class="stat-label">Bankroll</span><span id="tournamentStatTwoValue" class="stat-value">20 USDC</span></div>
+    </div>
+  </div>
+  <p id="tournamentNote" class="fare-sheet-request tournament-note">Hire a driver, configure a strategy, and watch the same Crazy Tuk economy play autonomously. You get <b>3 Pit Calls</b> during the Shift to adjust your driver.</p>
+  <button id="tournamentGarage" class="ui-button primary fare-sheet-action" type="button">ENTER TOURNAMENT</button>
+  <button id="tournamentBack" class="ui-button core-panel-back" type="button">Back</button>
+</section>
+
+<section id="garagePanel" class="leaderboard-panel settings-panel" hidden aria-labelledby="garageTitle">
+  <div class="fare-sheet-kicker">AGENT GARAGE</div>
+  <h2 id="garageTitle">HIRE YOUR DRIVER</h2>
+  <div class="garage-candidates">
+    <button class="garage-driver-card" data-driver="degen-dao" type="button"><span class="garage-portrait">🤖</span><span><b>DEGEN DAO</b><small>AGGRESSIVE · “Traffic laws are suggestions.”</small></span></button>
+    <button class="garage-driver-card" data-driver="uncle-lek" type="button"><span class="garage-portrait">🧓</span><span><b>UNCLE LEK</b><small>BALANCED · “Every route has a price.”</small></span></button>
+    <button class="garage-driver-card" data-driver="speedy-somchai" type="button"><span class="garage-portrait">🏎️</span><span><b>SPEEDY SOMCHAI</b><small>CONSERVATIVE · “Slow is still moving.”</small></span></button>
+  </div>
+  <div id="garageConfig" hidden>
+    <div class="dashboard-status-line garage-wallet"><span>AGENT WALLET</span><b id="garageWalletState">NOT CREATED</b><span>Private keys stay hidden</span></div>
+    <button id="garageCreateDriver" class="ui-button primary fare-sheet-action" type="button">CREATE DRIVER</button>
+  </div>
+  <button id="garageBack" class="ui-button core-panel-back" type="button">Back</button>
 </section>
 
 <section id="settingsPanel" class="leaderboard-panel settings-panel" hidden aria-labelledby="settingsTitle">
@@ -3186,7 +3558,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <label class="toggle-switch"><input type="checkbox" id="setting-fuel-warnings" checked><span class="toggle-slider"></span></label>
     </div>
   </div>
-  <button id="settingsBack" class="ui-button primary" type="button">Back</button>
+  <div id="devFuelControls" class="settings-list" hidden>
+    <h3>DEVELOPMENT FUEL HARNESS</h3>
+    <div class="settings-row"><span>Set fuel for repeatable stall tests</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
+      <button class="ui-button" data-dev-fuel="0" type="button">0%</button>
+      <button class="ui-button" data-dev-fuel="10" type="button">10%</button>
+      <button class="ui-button" data-dev-fuel="25" type="button">25%</button>
+      <button class="ui-button" data-dev-fuel="50" type="button">50%</button>
+      <button class="ui-button" data-dev-fuel="100" type="button">FILL</button>
+    </div>
+  </div>
+  <button id="settingsBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
 </section>
 
 <script>
@@ -3194,6 +3577,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   const $ = id => document.getElementById(id);
   const fallbackEl = (tag = "div") => document.createElement(tag);
   const startScreenEl = $("startScreen"), gameEl = $("game"), stageEl = gameEl.querySelector(".stage");
+  const tournamentPanelEl = $("tournamentPanel"), titleTournamentEl = $("titleTournament"), garagePanelEl = $("garagePanel");
   const fuelEl = $("fuel"), pointsEl = $("points"), walletEl = document.querySelector(".wallet");
   const enableBtn = $("enable");
   const leaderboardPanelEl = $("leaderboardPanel");
@@ -4007,6 +4391,96 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     return player?.name || "Guest Driver";
   }
 
+  const MOCK_TOURNAMENT_RIVALS = [
+    ['Soi Sprinter', 980], ['Bangkok Betty', 840], ['Khlong King', 710], ['Ari Ace', 640],
+    ['Silom Swerve', 560], ['Chatuchak Champ', 490], ['Rama Racer', 420], ['Sukhumvit Sam', 350],
+    ['Thonburi Thunder', 280]
+  ];
+  const AGENT_ACTIVITY_KEY = 'crazytuk_agent_activity_v1';
+  const AGENT_SWAP_KEY = 'crazytuk_agent_swaps_v1';
+  const AGENT_SHIFT_HISTORY_KEY = 'crazytuk_agent_shift_history_v1';
+  function loadAgentRecords(key) {
+    try {
+      const records = JSON.parse(localStorage.getItem(key) || '[]');
+      return Array.isArray(records) ? records : [];
+    } catch { return []; }
+  }
+  function saveAgentRecord(key, record) {
+    const records = loadAgentRecords(key);
+    records.unshift(record);
+    localStorage.setItem(key, JSON.stringify(records.slice(0, 30)));
+    return records;
+  }
+  function loadAgentActivity() {
+    try {
+      const entries = JSON.parse(localStorage.getItem(AGENT_ACTIVITY_KEY) || '[]');
+      return Array.isArray(entries) ? entries : [];
+    } catch { return []; }
+  }
+  function recordAgentActivity(title, detail, meta = 'AGENT') {
+    const entries = loadAgentActivity();
+    entries.unshift({ title, detail, meta, timestamp: Date.now() });
+    localStorage.setItem(AGENT_ACTIVITY_KEY, JSON.stringify(entries.slice(0, 30)));
+    renderAgentActivity();
+  }
+  function renderAgentActivity() {
+    const list = $('agentActivityList');
+    if (!list) return;
+    const entries = loadAgentActivity();
+    list.innerHTML = entries.length
+      ? entries.slice(0, 8).map((entry) => `<article class="agent-record"><div class="agent-record-copy"><strong>${entry.title}</strong><span>${entry.detail}</span></div><small>${entry.meta}<br>${new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small></article>`).join('')
+      : '<div class="empty-state">Agent decisions will appear during the Shift.</div>';
+  }
+  function renderAgentManagement() {
+    const swaps = loadAgentRecords(AGENT_SWAP_KEY);
+    const shifts = loadAgentRecords(AGENT_SHIFT_HISTORY_KEY);
+    const swapVolume = swaps.reduce((total, swap) => total + Number(swap.volume || 0), 0);
+    const setText = (id, value) => { const el = $(id); if (el) el.textContent = value; };
+    setText('stat-swaps', swaps.length);
+    setText('stat-completed-swaps', swaps.length);
+    setText('stat-volume', `$${swapVolume.toFixed(2)}`);
+    setText('stat-stalls', 0);
+    const swapList = $('agentSwapList');
+    if (swapList) swapList.innerHTML = swaps.length
+      ? swaps.slice(0, 8).map((swap) => `<article class="agent-record"><div class="agent-record-copy"><strong>USDC → FUEL</strong><span>${swap.passenger} · +${swap.fuel} fuel · $${Number(swap.volume).toFixed(2)}</span></div><small>${swap.market}<br>${new Date(swap.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</small></article>`).join('')
+      : '<div class="empty-state">Autonomous swaps will appear during the Shift.</div>';
+    const bestRank = shifts.length ? Math.min(...shifts.map((shift) => Number(shift.rank) || 999)) : null;
+    setText('agentCareerShifts', shifts.length);
+    setText('agentCareerWins', shifts.filter((shift) => Number(shift.rank) === 1).length);
+    setText('agentCareerPodiums', shifts.filter((shift) => Number(shift.rank) <= 3).length);
+    setText('agentCareerBestRank', bestRank ? `#${bestRank}` : '—');
+    const historyList = $('agentShiftHistoryList');
+    if (historyList) historyList.innerHTML = shifts.length
+      ? shifts.slice(0, 8).map((shift) => `<article class="agent-record"><div class="agent-record-copy"><strong>SHIFT #0042 · #${shift.rank}</strong><span>${shift.fares} fares · ${Number(shift.score).toLocaleString()} score · ${shift.pnl}</span></div><small>${shift.awards?.[0]?.label || 'COMPLETE'}<br>${new Date(shift.finishedAt).toLocaleDateString()}</small></article>`).join('')
+      : '<div class="empty-state">Completed Shifts will appear here.</div>';
+  }
+  function getTournamentStandings() {
+    const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    if (!state?.funded) return null;
+    const driver = MOCK_DRIVER_DETAILS[state.driver] || MOCK_DRIVER_DETAILS['degen-dao'];
+    const score = Number(agentRun?.score ?? loadAgentRun()?.score ?? 0);
+    const entries = MOCK_TOURNAMENT_RIVALS.map(([name, points]) => ({ name, points }));
+    const lastResult = JSON.parse(localStorage.getItem('crazytuk_agent_result_v1') || 'null');
+    entries.push({ name: driver.name, points: score, isCurrentUser: true, isAgent: true, awards: state.shiftStatus === 'FINISHED' ? (lastResult?.awards || []) : [] });
+    entries.sort((a, b) => b.points - a.points);
+    return { entries, rank: entries.findIndex((entry) => entry.isAgent) + 1, score };
+  }
+  function getAgentShiftAwards({ rank, fares, pitCallsRemaining, score }) {
+    const awards = [];
+    if (pitCallsRemaining === 3) awards.push({ label: 'FULL AUTONOMY', rare: true });
+    if (fares >= 3) awards.push({ label: 'FARE MACHINE', rare: false });
+    if (rank <= 3) awards.push({ label: 'PODIUM FINISH', rare: true });
+    if (score >= 100) awards.push({ label: 'CENTURY SCORE', rare: false });
+    return awards;
+  }
+  function renderAgentShiftAwards(awards) {
+    const awardsEl = $('agentResultsAwards');
+    if (!awardsEl) return;
+    awardsEl.innerHTML = awards.length
+      ? awards.map((award) => `<span class="agent-award${award.rare ? ' is-rare' : ''}">${award.label}</span>`).join('')
+      : '<span class="agent-award">FIRST SHIFT COMPLETE</span>';
+  }
+
   function renderLeaderboard() {
     const boardEl = $("leaderboardBoard");
     const player = window.CrazyTukGame?.getPlayer?.();
@@ -4042,12 +4516,44 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     });
   }
 
+  function renderTournamentLeaderboard() {
+    const boardEl = $("tournamentLeaderboardBoard");
+    const tournament = getTournamentStandings();
+    boardEl.replaceChildren();
+    if (!tournament) {
+      boardEl.innerHTML = '<div class="board-empty">Create an Agent driver to join tournament standings.</div>';
+      return;
+    }
+    tournament.entries.slice(0, 10).forEach((entry, index) => {
+      const row = document.createElement("div");
+      row.className = `board-row${entry.isCurrentUser ? " is-me" : ""}`;
+      const rank = index + 1;
+      const badge = rank === 1 ? "👑" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
+      const awardLabel = entry.awards?.[0] ? ` · ${entry.awards[0].label}` : '';
+      row.innerHTML = `<b><span>#${rank}</span><span>${badge}</span></b><span>${entry.name}${entry.isAgent ? ' · AGENT' : ''}${awardLabel}</span><strong>${entry.points.toLocaleString()}</strong>`;
+      boardEl.append(row);
+      setTimeout(() => row.classList.add("show"), index * 70);
+    });
+  }
+
+  function setLeaderboardMode(mode) {
+    const isTournament = mode === 'tournament';
+    $("leaderboardBoard").hidden = isTournament;
+    $("tournamentLeaderboardBoard").hidden = !isTournament;
+    $("leaderboardDriveTab").classList.toggle('primary', !isTournament);
+    $("leaderboardTournamentTab").classList.toggle('primary', isTournament);
+    if (isTournament) renderTournamentLeaderboard(); else renderLeaderboard();
+  }
+
   function openPanel(panelEl, beforeOpen) {
     if (panelTransitioning) return;
     panelTransitioning = true;
     beforeOpen?.();
     irisTransition(() => {
       startScreenEl.hidden = true;
+      [leaderboardPanelEl, rulesPanelEl, settingsPanelEl, tournamentPanelEl, garagePanelEl]
+        .filter((panel) => panel && panel !== panelEl)
+        .forEach((panel) => { panel.hidden = true; });
       panelEl.hidden = false;
       panelTransitioning = false;
     });
@@ -4065,6 +4571,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
   function startGame() {
     irisTransition(() => {
+      clearInterval(agentHudGuard);
+      restoreDrivePlayer();
+      stageEl.classList.remove('agent-mode');
+      gameEl.classList.remove('agent-mode');
+      $("agentTopStrip").hidden = true;
+      $("agentPitCallButton").hidden = true;
       startScreenEl.hidden = true;
       gameEl.hidden = false;
       map?.resize();
@@ -4073,13 +4585,386 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     });
   }
 
+  function enterAgentDriveMode() {
+    irisTransition(() => {
+      [tournamentPanelEl, garagePanelEl].forEach((panel) => { if (panel) panel.hidden = true; });
+      startScreenEl.hidden = true;
+      gameEl.hidden = false;
+      gameEl.classList.add('agent-mode');
+      stageEl.classList.add('agent-mode');
+      $("agentTopStrip").hidden = false;
+      $("agentPitCallButton").hidden = false;
+      $("agentDashboardShift").hidden = false;
+      $("agentDashboardStrategy").hidden = false;
+      $("agentDashboardCareer").hidden = false;
+      $("agentActivitySection").hidden = false;
+      renderAgentActivity();
+      renderAgentManagement();
+      $("driverDashboardStats").hidden = true;
+      const agentState = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+      const agentDetails = MOCK_DRIVER_DETAILS[agentState?.driver] || MOCK_DRIVER_DETAILS['degen-dao'];
+      document.querySelector('.driver-hero-art').textContent = agentDetails.portrait;
+      document.querySelector('.driver-hero-copy span').textContent = 'Agent Driver';
+      $("dashboardPlayerName").textContent = agentDetails.name;
+      $("dashboardWalletLabel").textContent = `#${getTournamentStandings()?.rank || 184} · Bangkok Shift #0042 · ● LIVE`;
+      $("agentDashboardRank").textContent = `#${getTournamentStandings()?.rank || 184}`;
+      map?.resize();
+      const player = window.CrazyTukGame?.getPlayer?.();
+      if (!drivePlayerSnapshot && player) drivePlayerSnapshot = JSON.parse(JSON.stringify(player));
+      agentRun = loadAgentRun() || { fuel: 100, score: 0, bankroll: 20, fares: 0 };
+      clearInterval(agentHudGuard);
+      agentHudGuard = setInterval(syncAgentHud, 250);
+      window.CrazyTukGame?.updateHUD?.(player);
+      window.CrazyTukGame?.initFareMarkers?.();
+      window.CrazyTukGame?.syncMapState?.(player);
+      syncAgentHud();
+    });
+  }
+
+  let agentDriveClock = null;
+  let agentShiftRunning = false;
+  let agentNextFareTimer = null;
+  let agentHudGuard = null;
+  let agentPitCallsRemaining = 3;
+  let agentPriority = 'BALANCED';
+  let agentFareCount = 0;
+  const AGENT_RUN_KEY = 'crazytuk_agent_run_v1';
+  let drivePlayerSnapshot = null;
+  let agentRun = null;
+  function getTournamentConfig() {
+    const config = window.CrazyTukGame?.CONFIG || {};
+    return {
+      duration: Number(config.TOURNAMENT_SHIFT_DURATION_SECONDS) || 600,
+      bankroll: Number(config.TOURNAMENT_STARTING_BANKROLL) || 20,
+      pitCalls: Number(config.TOURNAMENT_PIT_CALLS) || 3,
+      mockSwapUsd: Number(config.TOURNAMENT_MOCK_SWAP_USD) || 3
+    };
+  }
+  function getAgentShiftDuration() {
+    const configured = getTournamentConfig().duration;
+    const override = Number(new URLSearchParams(window.location.search).get('agentShiftSeconds'));
+    return window.CrazyTukGame?.CONFIG?.DEV_MODE && Number.isFinite(override) && override >= 30 && override <= configured ? override : configured;
+  }
+  function loadAgentRun() {
+    try { return JSON.parse(localStorage.getItem(AGENT_RUN_KEY) || 'null'); } catch { return null; }
+  }
+  function saveAgentRun() {
+    if (agentRun) localStorage.setItem(AGENT_RUN_KEY, JSON.stringify(agentRun));
+  }
+  function syncAgentHud() {
+    if (!agentRun || !stageEl.classList.contains('agent-mode')) return;
+    $("fuel").textContent = Math.max(0, Math.round(agentRun.fuel)).toString();
+    $("points").textContent = Math.max(0, Math.round(agentRun.score)).toString();
+    $("agentTopBankroll").textContent = `${agentRun.bankroll.toFixed(2)} USDC`;
+  }
+  function restoreDrivePlayer() {
+    if (!drivePlayerSnapshot) return;
+    const restored = window.CrazyTukGame?.savePlayer?.(drivePlayerSnapshot);
+    window.CrazyTukGame?.updateHUD?.(restored);
+    window.CrazyTukGame?.syncMapState?.(restored);
+    drivePlayerSnapshot = null;
+  }
+  function finishAgentShift() {
+    if (!agentShiftRunning) return;
+    agentShiftRunning = false;
+    clearInterval(agentDriveClock);
+    clearTimeout(agentNextFareTimer);
+    const bankroll = `${(agentRun?.bankroll || getTournamentConfig().bankroll).toFixed(2)} USDC`;
+    const score = String(Math.round(agentRun?.score || 0));
+    const tournament = getTournamentStandings();
+    const pnl = ((Number.parseFloat(bankroll) - 20) / 20) * 100;
+    $("agentResultsScore").textContent = score;
+    $("agentResultsBankroll").textContent = bankroll;
+    $("agentResultsPnl").textContent = `+${pnl.toFixed(1)}%`;
+    $("agentResultsFares").textContent = String(agentFareCount);
+    $("agentResultsRank").textContent = `#${tournament?.rank || 184} · BANGKOK SHIFT #0042`;
+    $("agentResultsMeta").textContent = `0 stalls · Pit Calls ${'●'.repeat(agentPitCallsRemaining)}${'○'.repeat(3 - agentPitCallsRemaining)}`;
+    const awards = getAgentShiftAwards({ rank: tournament?.rank || 184, fares: agentFareCount, pitCallsRemaining: agentPitCallsRemaining, score: Number(score) || 0 });
+    renderAgentShiftAwards(awards);
+    const mockState = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    const driver = MOCK_DRIVER_DETAILS[mockState?.driver] || MOCK_DRIVER_DETAILS['degen-dao'];
+    const result = { name: driver.name, rank: tournament?.rank || 184, score: Number(score) || 0, bankroll, pnl: `+${pnl.toFixed(1)}%`, fares: agentFareCount, awards, finishedAt: Date.now() };
+    localStorage.setItem('crazytuk_agent_result_v1', JSON.stringify(result));
+    saveAgentRecord(AGENT_SHIFT_HISTORY_KEY, result);
+    if (mockState) localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({ ...mockState, shiftStatus: 'FINISHED', finishedAt: Date.now() }));
+    recordAgentActivity('Shift complete', `Finished #${tournament?.rank || 184} with ${score} Crazy Score.`, 'RESULT');
+    renderAgentManagement();
+    $("agentResultsBackdrop").hidden = false;
+    $("agentStartShift").textContent = 'SHIFT COMPLETE';
+  }
+  async function runAutonomousFareCycle() {
+    if (!agentShiftRunning) return;
+    const game = window.CrazyTukGame;
+    const player = game?.getPlayer?.();
+    let fare = game?.getAvailableFares?.().find((entry) => entry.expiresAt > Date.now());
+    if (!game || !player) return;
+    if (!fare) {
+      game.refreshFares?.(player.wallet);
+      fare = game.getAvailableFares?.().find((entry) => entry.expiresAt > Date.now());
+    }
+    if (!fare) {
+      recordAgentActivity('Looking for a fare', 'No valid opportunities right now; checking again shortly.', 'IDLE');
+      agentNextFareTimer = setTimeout(runAutonomousFareCycle, 1500);
+      return;
+    }
+    $("hudActionLabel").textContent = 'CHOOSING FARE';
+    const npc = game.getNPCById?.(fare.npcId);
+    recordAgentActivity('Fare selected', `${npc?.name || 'Passenger'} · ${fare.pointValue || 0} Crazy Score potential.`, 'EVALUATING');
+    const selected = game.selectFare(fare.id, player.wallet);
+    game.showFareDetails?.(fare);
+    const sheetAction = $("fareSheetAction");
+    if (sheetAction) { sheetAction.textContent = 'AGENT CONFIRMING SWAP'; sheetAction.disabled = true; }
+    setTimeout(async () => {
+      if (!agentShiftRunning) return;
+      game.addFuel?.(25);
+      const claimed = game.claimFare?.(fare.id, selected?.wallet);
+      if (!claimed) { agentNextFareTimer = setTimeout(runAutonomousFareCycle, 800); return; }
+      saveAgentRecord(AGENT_SWAP_KEY, {
+        passenger: npc?.name || 'Passenger',
+        fuel: 25,
+        volume: getTournamentConfig().mockSwapUsd,
+        market: fare.marketTrafficLevel || 'NORMAL',
+        timestamp: Date.now()
+      });
+      recordAgentActivity('Swap confirmed', `Fuel credited for ${npc?.name || 'passenger'} pickup.`, 'SWAP');
+      renderAgentManagement();
+      game.updateHUD?.(claimed);
+      game.syncMapState?.(claimed);
+      syncAgentHud();
+      $("fareSheet").hidden = true;
+      $("hudActionLabel").textContent = 'AUTONOMOUS SHIFT';
+      await game.startPickupDrive?.(fare.id, claimed.wallet, () => {
+        if (!agentShiftRunning) return;
+        agentFareCount += 1;
+        agentRun.fares += 1;
+        agentRun.score += Number(fare.pointValue || 0);
+        agentRun.fuel = Math.max(0, agentRun.fuel - 2);
+        saveAgentRun();
+        syncAgentHud();
+        recordAgentActivity('Fare complete', `${npc?.name || 'Passenger'} delivered · ${fare.pointValue || 0} points.`, 'DRIVING');
+        agentNextFareTimer = setTimeout(runAutonomousFareCycle, 900);
+      });
+    }, 1100);
+  }
+  async function startAutonomousDriveShift() {
+    if (agentShiftRunning) return;
+    const game = window.CrazyTukGame;
+    if (!game?.getPlayer?.()) return;
+    agentShiftRunning = true;
+    agentFareCount = 0;
+    const tournamentConfig = getTournamentConfig();
+    const duration = getAgentShiftDuration();
+    agentPitCallsRemaining = tournamentConfig.pitCalls;
+    agentRun = { fuel: 100, score: 0, bankroll: tournamentConfig.bankroll, fares: 0 };
+    saveAgentRun();
+    syncAgentHud();
+    recordAgentActivity('Shift started', 'Agent is evaluating its first fare opportunity.', 'LIVE');
+    const mockState = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    if (mockState) localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({ ...mockState, shiftStatus: 'RUNNING', shiftStartedAt: Date.now() }));
+    $("agentStartShift").textContent = 'SHIFT RUNNING';
+    $("agentStartShift").disabled = true;
+    $("hudActionLabel").textContent = 'AUTONOMOUS SHIFT';
+    let remaining = duration;
+    clearInterval(agentDriveClock);
+    agentDriveClock = setInterval(() => {
+      remaining = Math.max(0, remaining - 1);
+      $("agentTopTime").textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+      agentRun.bankroll = tournamentConfig.bankroll + (duration - remaining) * .015;
+      saveAgentRun();
+      syncAgentHud();
+      $("agentDashboardBankroll").textContent = $("agentTopBankroll").textContent;
+      $("agentDashboardScore").textContent = $("points").textContent;
+      $("agentDashboardRank").textContent = `#${getTournamentStandings()?.rank || 184}`;
+      const agentFares = Math.floor((duration - remaining) / 25);
+      $("agentDashboardPnl").textContent = `+${(((duration - remaining) * .015 / tournamentConfig.bankroll) * 100).toFixed(1)}%`;
+      $("agentDashboardMeta").innerHTML = `<span>${agentFares} fares · $${(agentFares * tournamentConfig.mockSwapUsd).toFixed(0)} volume</span><b>${$("agentTopTime").textContent} LEFT</b><span>● LIVE</span>`;
+      if (!remaining) finishAgentShift();
+    }, 1000);
+    runAutonomousFareCycle();
+  }
+
   enableBtn.addEventListener("click", startGame);
-  titleLeaderboardEl.addEventListener("click", () => openPanel(leaderboardPanelEl, renderLeaderboard));
+  titleLeaderboardEl.addEventListener("click", () => openPanel(leaderboardPanelEl, () => setLeaderboardMode('drive')));
   titleRulesEl.addEventListener("click", () => openPanel(rulesPanelEl));
   titleSettingsEl.addEventListener("click", () => openPanel(settingsPanelEl));
+  titleTournamentEl.addEventListener("click", () => openPanel(tournamentPanelEl, renderTournamentLobby));
+  const devFuelControls = $("devFuelControls");
+  if (devFuelControls && window.CrazyTukGame?.CONFIG?.DEV_MODE) devFuelControls.hidden = false;
   $("leaderboardBack").addEventListener("click", () => closePanel(leaderboardPanelEl));
+  $("leaderboardDriveTab").addEventListener("click", () => setLeaderboardMode('drive'));
+  $("leaderboardTournamentTab").addEventListener("click", () => setLeaderboardMode('tournament'));
   $("rulesBack").addEventListener("click", () => closePanel(rulesPanelEl));
   $("settingsBack").addEventListener("click", () => closePanel(settingsPanelEl));
+  $("tournamentBack").addEventListener("click", () => closePanel(tournamentPanelEl));
+  $("tournamentGarage").addEventListener("click", () => {
+    const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    if (state?.shiftStatus === 'RUNNING') {
+      enterAgentDriveMode();
+      return;
+    }
+    tournamentPanelEl.hidden = true;
+    garagePanelEl.hidden = false;
+  });
+  $("garageBack").addEventListener("click", () => closePanel(garagePanelEl));
+  const MOCK_DRIVER_DETAILS = {
+    'degen-dao': { name: 'DEGEN DAO', style: 'AGGRESSIVE', portrait: '🤖' },
+    'uncle-lek': { name: 'UNCLE LEK', style: 'BALANCED', portrait: '🧓' },
+    'speedy-somchai': { name: 'SPEEDY SOMCHAI', style: 'CONSERVATIVE', portrait: '🏎️' }
+  };
+  function renderTournamentLobby() {
+    const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    const isLive = state?.shiftStatus === 'RUNNING';
+    if (!isLive) {
+      $("tournamentPhase").textContent = 'TOURNAMENT MODE';
+      $("tournamentCountdownLabel").textContent = 'STARTS IN';
+      $("tournamentCountdownValue").textContent = '03:42:18';
+      $("tournamentStatusTitle").textContent = 'REGISTRATION';
+      $("tournamentStatOneLabel").textContent = 'DRIVERS';
+      $("tournamentStatOneValue").textContent = '183';
+      $("tournamentStatTwoLabel").textContent = 'BANKROLL';
+      $("tournamentStatTwoValue").textContent = '20 USDC';
+      $("tournamentNote").innerHTML = 'Hire a driver, configure a strategy, and watch the same Crazy Tuk economy play autonomously. You get <b>3 Pit Calls</b> during the Shift to adjust your driver.';
+      $("tournamentGarage").textContent = 'ENTER TOURNAMENT';
+      return;
+    }
+    const elapsed = Math.max(0, Math.floor((Date.now() - (state.shiftStartedAt || Date.now())) / 1000));
+    const remaining = Math.max(0, 600 - elapsed);
+    $("tournamentPhase").textContent = 'LIVE SHIFT';
+    $("tournamentCountdownLabel").textContent = 'TIME LEFT';
+    $("tournamentCountdownValue").textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
+    $("tournamentStatusTitle").textContent = 'YOUR DRIVER IS LIVE';
+    $("tournamentStatOneLabel").textContent = 'ACTIVE / STALLED';
+    $("tournamentStatOneValue").textContent = '176 / 7';
+    $("tournamentStatTwoLabel").textContent = 'YOUR RANK';
+    $("tournamentStatTwoValue").textContent = `#${getTournamentStandings()?.rank || 184}`;
+    $("tournamentNote").innerHTML = 'Your driver is choosing fares autonomously. You have <b>3 Pit Calls</b> available for strategy tuning.';
+    $("tournamentGarage").textContent = 'WATCH DRIVER';
+  }
+  function hydrateAgentShift() {
+    const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    return state;
+  }
+  document.querySelectorAll('.garage-driver-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.garage-driver-card').forEach((candidate) => candidate.classList.remove('selected'));
+      card.classList.add('selected');
+      $('garageConfig').hidden = false;
+      $('garageWalletState').textContent = 'READY TO CREATE';
+    });
+  });
+  document.querySelectorAll('[data-strategy]').forEach((button) => {
+    button.addEventListener('click', () => {
+      document.querySelectorAll('[data-strategy]').forEach((candidate) => candidate.classList.remove('primary'));
+      button.classList.add('primary');
+    });
+  });
+  const MOCK_AGENT_KEY = 'crazytuk_mock_agent_v1';
+  function updateMockAgentUI() {
+    const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    const button = $('garageCreateDriver');
+    const walletState = $('garageWalletState');
+    if (!button || !walletState || !state) return;
+    const selectedCard = document.querySelector(`.garage-driver-card[data-driver="${state.driver}"]`);
+    if (selectedCard) {
+      document.querySelectorAll('.garage-driver-card').forEach((card) => card.classList.remove('selected'));
+      selectedCard.classList.add('selected');
+      $('garageConfig').hidden = false;
+    }
+    if (state.funded) {
+      walletState.textContent = 'MOCK DRIVER FUNDED';
+      button.textContent = 'DRIVER READY';
+      button.disabled = false;
+    } else {
+      walletState.textContent = 'MOCK DRIVER CREATED';
+      button.textContent = 'DEPOSIT 20 USDC';
+      button.disabled = false;
+    }
+  }
+  $('garageCreateDriver').addEventListener('click', () => {
+    const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    if (!state) {
+      localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({ driver: document.querySelector('.garage-driver-card.selected')?.dataset.driver || 'degen-dao', strategy: 'AGGRESSIVE', funded: false, createdAt: Date.now() }));
+      updateMockAgentUI();
+      window.CrazyTukGame?.showNotification?.('Mock driver created. Deposit the Shift bankroll to continue.', 'info');
+      return;
+    }
+    if (!state.funded) {
+      localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({ ...state, funded: true, fundedAt: Date.now() }));
+      updateMockAgentUI();
+      window.CrazyTukGame?.showNotification?.('Mock deposit confirmed. Your driver is ready for the Shift.', 'success');
+      return;
+    }
+    enterAgentDriveMode();
+  });
+  $("agentStartShift").addEventListener("click", startAutonomousDriveShift);
+  $("agentPitCallButton").addEventListener("click", () => {
+    if (!agentShiftRunning || agentPitCallsRemaining <= 0) return;
+    $("pitCallRemaining").textContent = `${agentPitCallsRemaining} OF 3 REMAINING`;
+    $("pitCallBackdrop").hidden = false;
+  });
+  $("pitCallClose").addEventListener("click", () => { $("pitCallBackdrop").hidden = true; });
+  document.querySelectorAll('.pit-priority').forEach((button) => button.addEventListener('click', () => {
+    agentPriority = button.dataset.priority;
+    document.querySelectorAll('.pit-priority').forEach((candidate) => candidate.classList.toggle('active', candidate === button));
+  }));
+  $("pitCallConfirm").addEventListener("click", () => {
+    if (!agentShiftRunning || agentPitCallsRemaining <= 0) return;
+    agentPitCallsRemaining -= 1;
+    $("pitCallBackdrop").hidden = true;
+    window.CrazyTukGame?.showNotification?.(`Strategy updated · ${agentPitCallsRemaining} Pit Call${agentPitCallsRemaining === 1 ? '' : 's'} remaining · ${agentPriority}`, 'success');
+    recordAgentActivity('Pit Call confirmed', `${agentPriority} mandate applied. ${agentPitCallsRemaining} Pit Calls remaining.`, 'PIT CALL');
+    $("agentStrategyPriority").textContent = agentPriority;
+    $("agentStrategyPitCalls").textContent = `PIT CALLS ${'●'.repeat(agentPitCallsRemaining)}${'○'.repeat(3 - agentPitCallsRemaining)}`;
+    $("agentStrategyRisk").textContent = `${'█'.repeat(Number($("pitRisk").value))}${'░'.repeat(10 - Number($("pitRisk").value))}`;
+    $("agentStrategyActivity").textContent = `${'█'.repeat(Number($("pitActivity").value))}${'░'.repeat(10 - Number($("pitActivity").value))}`;
+    if (!agentPitCallsRemaining) {
+      $("agentPitCallButton").disabled = true;
+      $("agentPitCallButton").title = 'No Pit Calls remaining';
+      window.CrazyTukGame?.showNotification?.('Pit Calls depleted · tuning is locked for this Shift.', 'warning');
+    }
+  });
+  $("agentResultsNext").addEventListener("click", () => {
+    $("agentResultsBackdrop").hidden = true;
+    clearInterval(agentHudGuard);
+    stageEl.classList.remove('agent-mode');
+    gameEl.classList.remove('agent-mode');
+    restoreDrivePlayer();
+    gameEl.hidden = true;
+    $("agentTopStrip").hidden = true;
+    $("agentPitCallButton").hidden = true;
+    $("agentDashboardShift").hidden = true;
+    $("agentDashboardStrategy").hidden = true;
+    $("agentDashboardCareer").hidden = true;
+    $("agentActivitySection").hidden = true;
+    $("driverDashboardStats").hidden = false;
+    startScreenEl.hidden = true;
+    tournamentPanelEl.hidden = false;
+    agentPitCallsRemaining = getTournamentConfig().pitCalls;
+    $("agentPitCallButton").disabled = false;
+    $("agentStartShift").textContent = 'START SHIFT';
+    $("agentStartShift").disabled = false;
+    $("agentTopTime").textContent = '10:00';
+    $("agentTopBankroll").textContent = '20 USDC';
+    const mockState = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    if (mockState) localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({ ...mockState, shiftStatus: 'READY' }));
+  });
+  $("mapBackButton").addEventListener("click", () => {
+    clearInterval(agentDriveClock);
+    clearTimeout(agentNextFareTimer);
+    clearInterval(agentHudGuard);
+    agentShiftRunning = false;
+    $("pitCallBackdrop").hidden = true;
+    stageEl.classList.remove('agent-mode');
+    gameEl.classList.remove('agent-mode');
+    restoreDrivePlayer();
+    $("agentTopStrip").hidden = true;
+    $("agentPitCallButton").hidden = true;
+    $("agentDashboardShift").hidden = true;
+    $("agentDashboardStrategy").hidden = true;
+    $("agentDashboardCareer").hidden = true;
+    $("driverDashboardStats").hidden = false;
+  });
+  updateMockAgentUI();
 })();
 </script>
 </body>
