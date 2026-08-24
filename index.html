@@ -94,6 +94,33 @@
     .title-tools .leaderboard-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; }
     .title-tools .rules-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; background: #287e68; box-shadow: 0 7px #15503f, 0 12px 22px rgba(0,0,0,.28); }
     .title-tools .settings-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; background: #6250a9; box-shadow: 0 7px #352b67, 0 12px 22px rgba(0,0,0,.28); }
+    .start-connect-button {
+      position: absolute;
+      z-index: 3;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,245,207,.34);
+      background: rgba(42,24,14,.88);
+      color: #fff5cf;
+      box-shadow: 0 6px #170c07, 0 12px 20px rgba(0,0,0,.32);
+      font-size: .72rem;
+      font-weight: 900;
+      letter-spacing: .02em;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+    .start-connect-button.connected {
+      border-color: var(--good);
+      color: #d9ffe9;
+      box-shadow: 0 6px #0f5c33, 0 12px 20px rgba(0,0,0,.32);
+      background: rgba(20,70,45,.88);
+    }
     .start-footer { position: absolute; bottom: max(12px, env(safe-area-inset-bottom)); left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .78rem; font-weight: 800; text-shadow: 0 2px 8px #000; }
     .start-footer a { color: #fff; text-decoration: none; }
     .install-interstitial { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: max(22px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom)); overflow: hidden; background: radial-gradient(circle at 50% 24%, rgba(246,212,107,.3), transparent 34%), linear-gradient(155deg, #173d2e, #352014 72%); color: #fff5cf; opacity: 0; transition: opacity .48s ease; }
@@ -132,9 +159,9 @@
     /* HUD for Crazy Tuk - Fuel, Points, Wallet, Action */
     .hud {
       background: color-mix(in srgb, var(--panel) 92%, transparent);
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 8px 10px;
+      border: 0;
+      border-radius: 12px;
+      padding: 4px 6px;
       flex: none;
       backdrop-filter: blur(8px);
       box-shadow: 0 12px 28px rgba(0,0,0,.28);
@@ -143,25 +170,25 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(128px, 1.2fr) minmax(0, 1fr);
       align-items: stretch;
-      gap: 6px;
-      font-size: .68rem;
+      gap: 4px;
+      font-size: .58rem;
       color: var(--muted);
       font-variant-numeric: tabular-nums;
     }
-    .hudrow b { margin-left: 0; font-size: 1.22rem; color: var(--text); }
+    .hudrow b { margin-left: 0; font-size: .9rem; color: var(--text); }
     .fuel, .points {
       margin: 0;
-      padding: 6px 9px 7px;
-      border-radius: 12px;
+      padding: 2px 6px 3px;
+      border-radius: 9px;
       background: rgba(255,255,255,.06);
-      text-align: left;
+      text-align: center;
       font-weight: 800;
       display: grid;
-      gap: 2px;
+      gap: 0;
     }
     .hud-stat-label {
       color: rgba(255,255,255,.62);
-      font-size: 9px;
+      font-size: 7px;
       font-weight: 900;
       letter-spacing: .12em;
       text-transform: uppercase;
@@ -169,16 +196,27 @@
     .hud-stat-value {
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 3px;
     }
     .hud-stat-icon {
-      font-size: 16px;
+      font-size: 12px;
       line-height: 1;
     }
     .hud-action {
       display: flex;
       justify-content: center;
       align-items: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.76);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      text-align: center;
     }
     /* Wallet Container */
     .wallet-container {
@@ -208,8 +246,8 @@
     .hud-wallet-display {
       justify-content: center;
       min-height: 100%;
-      border-radius: 12px;
-      padding: 8px 10px;
+      border-radius: 9px;
+      padding: 3px 6px;
       background: rgba(255,255,255,.06);
     }
     .wallet-connector-badge {
@@ -220,21 +258,14 @@
       color: var(--text);
       font-variant-numeric: tabular-nums;
     }
-    /* Dashboard Button */
-    .hud-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-top: 6px;
-    }
-    .dashboard-btn {
-      margin: 0;
-    }
     .dashboard-toggle {
-      width: 100%;
-      min-height: 100%;
-      padding: 6px 12px;
-      font-size: 13px;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      font-size: 18px;
+      line-height: 1;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 12px;
@@ -242,10 +273,13 @@
       transition: all 0.2s ease;
     }
     .feed-toggle {
-      width: 100%;
-      min-height: 100%;
-      padding: 6px 12px;
-      font-size: 13px;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      font-size: 17px;
+      line-height: 1;
       background: var(--panel);
       border: 1px solid rgba(246, 212, 107, .45);
       border-radius: 12px;
@@ -277,14 +311,15 @@
       transform: none;
       display: flex;
       justify-content: flex-end;
-      flex: 1 1 auto;
+      flex: 0 0 auto;
     }
+    .map-topbar-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .map-topbar-actions { display: flex; align-items: center; gap: 6px; }
     .map-back-button {
       min-width: 0;
-      min-height: clamp(40px, 9vw, 48px);
-      padding: 0 clamp(14px, 4vw, 18px);
+      padding: 7px 10px;
       border-radius: 999px;
-      font-size: clamp(.8rem, 2.8vw, .95rem);
+      font-size: 10px;
       white-space: nowrap;
     }
     .top-connect-button {
@@ -359,26 +394,35 @@
     /* Dashboard Styles */
     .dashboard {
       position: fixed;
-      inset: 0;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: min(100vw, calc(100dvh * .5625));
+      height: 100dvh;
+      transform: translateX(-50%);
       z-index: 1300;
-      background: var(--panel2);
-      overflow-y: auto;
-      padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      background: rgba(5,8,18,.66);
+      backdrop-filter: blur(5px);
+      overflow: hidden;
+      padding: max(24px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
     }
     .dashboard-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 24px;
+      margin-bottom: 14px;
+      width: min(100%, calc(min(100vw, calc(100dvh * .5625)) - 36px));
+      margin-left: auto;
+      margin-right: auto;
     }
     .dashboard-header h2 {
       margin: 0;
-      font-size: 24px;
-      color: var(--text);
+      font-size: 25px;
+      color: white;
     }
     .dashboard-close {
-      background: var(--panel);
-      border: none;
+      background: rgba(255,255,255,.08);
+      border: 0;
       color: var(--text);
       font-size: 20px;
       padding: 8px;
@@ -394,46 +438,115 @@
       background: var(--panel2);
     }
     .dashboard-content {
-      margin-bottom: 80px;
+      height: calc(100dvh - 94px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      overflow-y: auto;
+      padding-bottom: 82px;
+      width: min(100%, calc(min(100vw, calc(100dvh * .5625)) - 36px));
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .dashboard-view {
+      display: grid;
+      gap: 8px;
+    }
+    .dashboard-view[hidden] {
+      display: none;
+    }
+    .driver-hero {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      min-height: 104px;
+      padding: 12px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 25% 30%, rgba(246,212,107,.24), transparent 34%),
+        linear-gradient(135deg, rgba(18,44,70,.92), rgba(13,19,34,.95));
+      box-shadow: inset 0 1px rgba(255,255,255,.08);
+    }
+    .driver-hero-art {
+      display: grid;
+      width: 70px;
+      height: 70px;
+      place-items: center;
+      border-radius: 20px;
+      background: linear-gradient(145deg, #f6d46b, #e94560);
+      color: #0d1322;
+      font-size: 34px;
+      box-shadow: 0 12px 24px rgba(0,0,0,.28);
+    }
+    .driver-hero-copy {
+      min-width: 0;
+      display: grid;
+      gap: 5px;
+    }
+    .driver-hero-copy span {
+      color: rgba(255,255,255,.58);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .driver-hero-copy b {
+      overflow: hidden;
+      color: white;
+      font-size: 20px;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .driver-hero-copy small {
+      overflow: hidden;
+      color: rgba(255,255,255,.7);
+      font-size: 11px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .dashboard-section {
-      margin-bottom: 32px;
+      margin-bottom: 0;
+      padding: 11px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.04);
     }
     .dashboard-section h3 {
-      margin: 0 0 16px;
-      font-size: 18px;
-      color: var(--text);
+      margin: 0 0 8px;
+      font-size: 15px;
+      color: white;
     }
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
     }
     .stat-card {
-      background: var(--panel);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
+      background: rgba(0,0,0,.22);
+      border-radius: 11px;
+      padding: 9px 11px;
+      text-align: left;
     }
     .stat-label {
       display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 8px;
+      font-size: 10px;
+      color: rgba(255,255,255,.62);
+      margin-bottom: 5px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
     }
     .stat-value {
       display: block;
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--line);
+      font-size: 19px;
+      font-weight: 900;
+      color: white;
     }
     .transaction-list {
-      max-height: 300px;
+      min-height: 108px;
+      max-height: 38vh;
       overflow-y: auto;
     }
     .transaction-item {
-      background: var(--panel);
-      border-radius: 8px;
+      background: rgba(0,0,0,.24);
+      border-radius: 14px;
       padding: 12px;
       margin-bottom: 8px;
     }
@@ -493,8 +606,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--panel);
-      border-radius: 8px;
+      background: rgba(0,0,0,.24);
+      border-radius: 14px;
       padding: 12px;
       margin-bottom: 8px;
     }
@@ -516,12 +629,14 @@
       color: var(--line);
     }
     .dashboard-nav {
-      position: fixed;
+      position: absolute;
       bottom: 0;
-      left: 0;
-      right: 0;
-      background: var(--panel2);
-      padding: 12px;
+      left: 50%;
+      right: auto;
+      width: min(100%, calc(min(100vw, calc(100dvh * .5625)) - 24px));
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, rgba(11,16,32,0), rgba(11,16,32,.96) 30%);
+      padding: 14px 12px 16px;
       display: flex;
       justify-content: center;
       gap: 8px;
@@ -530,12 +645,14 @@
       flex: 1;
       max-width: 150px;
       padding: 12px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      color: var(--text);
+      appearance: none;
+      background: rgba(42,24,14,.85);
+      border: 0;
+      border-radius: 999px;
+      box-shadow: 0 7px #170c07, 0 12px 22px rgba(0,0,0,.28);
+      color: #fff5cf;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 900;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -543,30 +660,62 @@
       gap: 6px;
     }
     .nav-btn:hover {
-      background: var(--panel2);
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+      box-shadow: 0 9px #170c07, 0 15px 27px rgba(0,0,0,.34);
     }
     .nav-btn.primary {
-      background: var(--line);
-      border-color: var(--line);
+      background: #e8483f;
+      box-shadow: 0 7px #9f2d28, 0 12px 22px rgba(0,0,0,.28);
       color: white;
     }
     .nav-btn.primary:hover {
-      background: #d6305f;
+      box-shadow: 0 9px #9f2d28, 0 15px 27px rgba(0,0,0,.34);
+    }
+    .nav-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px #170c07;
     }
     .dashboard-panel {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: 1310;
-      background: var(--panel2);
+      background:
+        radial-gradient(circle at top, rgba(246,212,107,.14), transparent 28%),
+        linear-gradient(180deg, #10182f 0%, #0b1020 100%);
       overflow-y: auto;
       padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
     }
     .dashboard-panel.hidden {
       display: none;
     }
+    .dashboard-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .mini-card {
+      padding: 9px 11px;
+      border-radius: 11px;
+      background: rgba(0,0,0,.22);
+    }
+    .mini-card span {
+      display: block;
+      color: rgba(255,255,255,.6);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .mini-card b {
+      display: block;
+      margin-top: 5px;
+      color: white;
+      font-size: 15px;
+    }
     .settings-list {
-      background: var(--panel);
-      border-radius: 8px;
+      background: rgba(255,255,255,.04);
+      border-radius: 18px;
       padding: 16px;
     }
     .setting-item {
@@ -625,23 +774,9 @@
     .toggle-switch input:checked + .toggle-slider:before {
       transform: translateX(20px);
     }
-    .reset-settings {
-      width: 100%;
-      padding: 12px;
-      margin-top: 16px;
-      background: var(--danger);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .reset-settings:hover {
-      background: #c0392b;
-    }
     .help-content {
-      background: var(--panel);
-      border-radius: 8px;
+      background: rgba(255,255,255,.04);
+      border-radius: 18px;
       padding: 16px;
     }
     .close-help {
@@ -658,6 +793,7 @@
     .close-help:hover {
       background: var(--panel2);
     }
+    .core-panel-back { width: fit-content; margin-top: 16px; padding: 9px 16px; }
     /* Active Fare Display */
     .map-overlay-stack {
       position: absolute;
@@ -736,35 +872,80 @@
     }
     .feed-list {
       display: grid;
-      gap: 8px;
-      max-height: 172px;
+      align-content: start;
+      gap: 9px;
+      min-height: 0;
+      height: auto;
       overflow: auto;
-      padding-right: 2px;
+      padding: 0 3px 2px 0;
     }
     .feed-item {
       display: grid;
-      gap: 3px;
-      padding: 9px 10px;
-      border-radius: 12px;
-      background: rgba(0,0,0,.24);
+      grid-template-columns: 50px minmax(0, 1fr) 38px;
+      gap: 10px;
+      align-items: center;
+      min-height: 78px;
+      padding: 10px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, rgba(7,18,39,.9), rgba(12,43,76,.9));
+      box-shadow: inset 0 1px rgba(255,255,255,.07), 0 10px 22px rgba(0,0,0,.16);
+    }
+    .feed-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.08);
+      border: 0;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 900;
+      overflow: hidden;
+    }
+    .feed-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; display: block; }
+    .feed-copy {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+      text-align: center;
     }
     .feed-item strong {
-      font-size: 11px;
+      overflow: hidden;
+      font-size: 13px;
       color: white;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .feed-item span {
-      color: rgba(255,255,255,.66);
-      font-size: 10px;
-      line-height: 1.35;
+      color: rgba(255,255,255,.72);
+      font-size: 11px;
+      line-height: 1.3;
     }
-    .feed-item b {
+    .feed-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       color: var(--warn);
-      font-size: 9px;
-      letter-spacing: .08em;
+      font-size: 10px;
+      font-weight: 900;
+    }
+    .feed-stars {
+      color: #f6d46b;
+      letter-spacing: 1px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .feed-points {
+      min-width: 34px;
+      color: #42e889;
+      font-size: 12px;
+      font-weight: 900;
+      text-align: right;
     }
     .empty-feed {
-      padding: 10px;
-      border-radius: 12px;
+      padding: 14px;
+      border-radius: 14px;
       background: rgba(0,0,0,.2);
       color: rgba(255,255,255,.62);
       font-size: 10px;
@@ -774,6 +955,13 @@
     .feed-sheet {
       position: relative;
       text-align: left;
+      display: grid;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
+      width: 100%;
+      height: min(78vh, 680px);
+      min-height: 0;
+      overflow: hidden;
+      animation: modal-sheet-in .24s ease-out both;
     }
     .feed-sheet h2 {
       margin-bottom: 12px;
@@ -783,19 +971,20 @@
       z-index: 1000;
       left: 12px;
       right: 12px;
-      bottom: calc(210px + env(safe-area-inset-bottom));
+      top: calc(50% + 138px);
+      bottom: auto;
       padding: 16px;
-      border: 2px solid rgba(246, 212, 107, .78);
       border-radius: 22px;
       background:
         linear-gradient(145deg, rgba(35, 25, 24, .98), rgba(15, 52, 96, .97));
-      box-shadow: 0 18px 42px rgba(0, 0, 0, .55), inset 0 1px rgba(255,255,255,.14);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, .55);
       color: var(--text);
       animation: fare-sheet-in .22s ease-out both;
       pointer-events: auto;
       isolation: isolate;
     }
     .fare-sheet[hidden] { display: none; }
+    .stage.swap-open > .fare-sheet { display: none; }
     .fare-sheet.is-switching { animation: fare-sheet-switch .3s cubic-bezier(.2, 1.5, .4, 1); }
     .fare-sheet-head { display: flex; gap: 12px; align-items: center; padding-right: 34px; }
     .fare-sheet-portrait {
@@ -842,20 +1031,22 @@
     .fare-sheet-timer-bar { width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--danger), var(--warn)); transition: width 1s linear; }
     .fare-sheet-action { width: 100%; min-height: 48px; font-size: 15px; }
     @keyframes fare-sheet-in {
-      from { opacity: 0; transform: translateY(22px) scale(.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(calc(-50% + 22px)) scale(.98); }
+      to { opacity: 1; transform: translateY(-50%) scale(1); }
     }
     @keyframes fare-sheet-switch {
-      0% { transform: scale(1); }
-      48% { transform: scale(.96) translateY(5px); }
-      100% { transform: scale(1); }
+      0% { transform: translateY(-50%) scale(1); }
+      48% { transform: translateY(calc(-50% + 5px)) scale(.96); }
+      100% { transform: translateY(-50%) scale(1); }
     }
     .swap-sheet-backdrop {
       position: absolute;
       z-index: 1000;
       left: 12px;
       right: 12px;
-      bottom: calc(74px + env(safe-area-inset-bottom));
+      top: calc(50% + 138px);
+      bottom: auto;
+      transform: translateY(-50%);
       display: block;
       padding: 0;
       background: transparent;
@@ -864,16 +1055,25 @@
     .swap-sheet {
       position: relative;
       padding: 16px;
-      border: 2px solid rgba(246, 212, 107, .82);
       border-radius: 24px;
       background: linear-gradient(155deg, #231918, #0f3460 78%);
-      box-shadow: 0 18px 42px rgba(0,0,0,.55), inset 0 1px rgba(255,255,255,.14);
+      box-shadow: 0 18px 42px rgba(0,0,0,.55);
       color: white;
-      animation: fare-sheet-in .24s ease-out both;
+      animation: swap-sheet-in .24s ease-out both;
     }
-    .swap-sheet h2 { margin: 2px 38px 4px 0; font-size: 23px; }
-    .swap-sheet-subtitle { margin: 0 0 14px; color: rgba(255,255,255,.68); font-size: 11px; }
-    .swap-row { display: grid; grid-template-columns: 110px 1fr; gap: 8px; margin-bottom: 9px; }
+    @keyframes swap-sheet-in { from { opacity: 0; transform: translateY(22px) scale(.98); } to { opacity: 1; transform: none; } }
+    .swap-sheet-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-right: 36px;
+      margin-bottom: 8px;
+    }
+    .swap-sheet h2 { flex: 1 1 auto; margin: 0; font-size: 23px; line-height: 1; }
+    .swap-sheet-subtitle { margin: 0 0 10px; color: rgba(255,255,255,.68); font-size: 11px; }
+    .swap-sheet-body { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(112px, .85fr); gap: 10px; align-items: stretch; }
+    .swap-inputs { display: grid; gap: 8px; }
+    .swap-row { display: grid; grid-template-columns: minmax(72px, .8fr) minmax(0, 1.2fr); gap: 7px; }
     .swap-row select, .swap-row input {
       width: 100%;
       min-width: 0;
@@ -886,21 +1086,38 @@
       font: inherit;
       font-weight: 800;
     }
-    .swap-impact { display: grid; gap: 6px; margin: 13px 0; padding: 12px; border-radius: 14px; background: rgba(0,0,0,.22); font-size: 12px; }
-    .swap-impact div { display: flex; justify-content: space-between; gap: 12px; }
-    .swap-impact span { color: rgba(255,255,255,.62); }
-    .swap-status { min-height: 18px; margin: 10px 0; color: var(--warn); font-size: 11px; text-align: center; }
-    .swap-attribution { margin: 10px 0 0; color: rgba(255,255,255,.55); font-size: 10px; text-align: center; }
+    .swap-impact { display: grid; align-content: center; gap: 8px; margin: 0; padding: 10px; border-radius: 14px; background: rgba(0,0,0,.22); font-size: 11px; }
+    .swap-impact div { display: grid; gap: 2px; }
+    .swap-impact span { color: rgba(255,255,255,.62); font-size: 8px; font-weight: 800; letter-spacing: .06em; }
+    .swap-impact b { line-height: 1.15; }
+    .swap-status {
+      flex: 0 0 auto;
+      max-width: 42%;
+      min-height: 0;
+      margin: 0;
+      color: var(--warn);
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+    .swap-attribution { margin: 7px 0 0; color: rgba(255,255,255,.72); font-size: 9px; font-weight: 700; text-align: center; text-shadow: 0 2px 5px rgba(0,0,0,.8); }
     .dev-swap-button { width: 100%; margin-top: 8px; min-height: 38px; background: rgba(255,255,255,.1); box-shadow: none; color: var(--warn); font-size: 11px; }
     .dev-swap-button[hidden] { display: none; }
+    @media (max-width: 340px) {
+      .swap-sheet-body { grid-template-columns: 1fr; }
+      .swap-impact { grid-template-columns: repeat(3, 1fr); }
+    }
     .trip-card {
       position: absolute; z-index: 900; left: 12px; right: 12px;
-      top: calc(max(76px, env(safe-area-inset-top) + 62px)); padding: 13px 14px;
+      bottom: calc(84px + env(safe-area-inset-bottom)); padding: 13px 14px;
       border: 2px solid rgba(246, 212, 107, .82); border-radius: 18px;
       background: linear-gradient(135deg, rgba(35, 25, 24, .96), rgba(15, 52, 96, .95));
       box-shadow: 0 12px 32px rgba(0,0,0,.42); color: white; pointer-events: none;
-      animation: fare-sheet-in .22s ease-out both;
+      animation: trip-card-in .22s ease-out both;
     }
+    @keyframes trip-card-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
     .trip-card[hidden] { display: none; }
     .trip-card-head { display: flex; align-items: center; gap: 10px; }
     .trip-card-avatar { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: rgba(255,255,255,.12); font-size: 24px; }
@@ -920,10 +1137,22 @@
     .trip-card.stalled .trip-card-kicker, .trip-card.stalled .trip-card-percent { color: #ff7783; }
     .completion-backdrop { position: absolute; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,8,18,.66); backdrop-filter: blur(5px); }
     .completion-backdrop[hidden] { display: none; }
-    .completion-sheet { width: 100%; padding: 24px 20px 20px; border: 2px solid var(--warn); border-radius: 24px; background: linear-gradient(155deg, #231918, #0f3460 78%); box-shadow: 0 22px 60px rgba(0,0,0,.65); color: white; text-align: center; animation: fare-sheet-in .3s cubic-bezier(.2,1.35,.4,1) both; }
+    #feedBackdrop {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      right: auto;
+      width: min(100vw, calc(100dvh * .5625));
+      height: 100dvh;
+      transform: translateX(-50%);
+      padding: max(24px, env(safe-area-inset-top) + 18px) 20px max(24px, env(safe-area-inset-bottom) + 18px);
+    }
+    .completion-sheet { width: 100%; padding: 24px 20px 20px; border-radius: 24px; background: linear-gradient(155deg, #231918, #0f3460 78%); box-shadow: 0 22px 60px rgba(0,0,0,.65); color: white; text-align: center; animation: modal-sheet-in .3s cubic-bezier(.2,1.15,.4,1) both; }
+    @keyframes modal-sheet-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
     .completion-avatar { display: grid; width: 72px; height: 72px; margin: 0 auto 10px; place-items: center; border: 3px solid var(--warn); border-radius: 22px; background: rgba(255,255,255,.1); font-size: 38px; }
     .completion-sheet h2 { margin: 2px 0 4px; font-size: 26px; }
-    .completion-destination { margin: 0; color: var(--warn); font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+    .completion-destination { display: none; }
     .completion-review { margin: 16px 0; padding: 13px; border-radius: 14px; background: rgba(0,0,0,.22); font-size: 13px; line-height: 1.4; }
     .completion-points { margin: 0 0 16px; color: #42e889; font-size: 22px; font-weight: 900; }
     .score-overlay {
@@ -940,7 +1169,7 @@
     .state-light.red { background: #ff5263; box-shadow: 0 0 0 3px rgba(0,0,0,.35), 0 0 22px 8px rgba(255,82,99,.72); }
     .points b {
       display: inline-block;
-      min-width: 4ch;
+      min-width: 0;
       padding: 0;
       border: 0;
       border-radius: 0;
@@ -948,10 +1177,10 @@
       color: var(--text);
       text-align: center;
       font-family: ui-rounded, system-ui, sans-serif;
-      font-size: clamp(2rem, 10vw, 4rem);
+      font-size: .9rem;
       font-weight: 800;
       letter-spacing: normal;
-      filter: drop-shadow(0 3px 3px rgba(0,0,0,.35));
+      filter: none;
     }
     .points b.score-pop { animation: score-pop .34s cubic-bezier(.16, 1.35, .3, 1); }
     @keyframes score-pop {
@@ -982,7 +1211,6 @@
       appearance: none;
       border: 2px solid rgba(255,255,255,.24);
       border-radius: 999px;
-      padding: 10px 16px;
       background: rgba(42,24,14,.85);
       color: #fff5cf;
       box-shadow: 0 7px #170c07, 0 12px 22px rgba(0,0,0,.28);
@@ -1062,8 +1290,113 @@
     .rules-content p { margin: 0; color: #fff5cf; font-size: .9rem; line-height: 1.35; }
     #rulesBack { align-self: center; width: fit-content; }
     @media (min-width: 541px) {
-      /* Keep the right edge aligned with the game frame while covering the small left seam. */
-      .leaderboard-panel { width: calc(min(100vw, calc(100dvh * .5625)) + 6px); transform: translateX(calc(-50% - 3px)); }
+      :root {
+        --desktop-overlay-width: min(100vw, calc(100dvh * .5625));
+      }
+      .leaderboard-panel {
+        left: 0;
+        width: 100vw;
+        transform: none;
+        background-color: #fc0000;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+      }
+      .leaderboard-panel h2,
+      .leaderboard-intern-note,
+      #leaderboardBoard,
+      .rules-content,
+      .settings-list,
+      .settings-row {
+        width: min(100%, calc(var(--desktop-overlay-width) - 48px));
+        margin-left: auto;
+        margin-right: auto;
+      }
+      #leaderboardBack,
+      #rulesBack,
+      #settingsBack {
+        width: fit-content;
+        min-width: 0;
+        padding-inline: 18px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .start-screen {
+        left: 0;
+        right: 0;
+        width: 100vw;
+        height: 100dvh;
+        transform: none;
+        background-color: #fc0000;
+        background-image: url('assets/backgrounds/start-screen-desktop.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        box-shadow: none;
+      }
+      .game {
+        width: 100vw;
+        max-width: none;
+        margin: 0;
+        box-shadow: none;
+      }
+      .dashboard {
+        left: 0;
+        width: 100vw;
+        transform: none;
+        background: rgba(5,8,18,.66);
+        backdrop-filter: blur(5px);
+      }
+      .dashboard-header,
+      .dashboard-content {
+        width: min(100%, calc(var(--desktop-overlay-width) - 36px));
+      }
+      .dashboard-nav {
+        width: min(100%, calc(var(--desktop-overlay-width) - 24px));
+      }
+      .hud {
+        width: var(--desktop-overlay-width);
+        margin-inline: auto;
+      }
+      .fare-sheet {
+        left: 50%;
+        right: auto;
+        width: calc(var(--desktop-overlay-width) - 24px);
+        transform: translateX(-50%);
+      }
+      .swap-sheet-backdrop {
+        left: 50%;
+        right: auto;
+        width: calc(var(--desktop-overlay-width) - 24px);
+        transform: translate(-50%, -50%);
+      }
+      .completion-sheet {
+        width: min(100%, calc(var(--desktop-overlay-width) - 40px));
+      }
+      #feedBackdrop {
+        left: 0;
+        width: 100vw;
+        transform: none;
+      }
+      #feedBackdrop .feed-sheet {
+        width: min(calc(var(--desktop-overlay-width) - 40px), 680px);
+      }
+      @keyframes fare-sheet-in {
+        from { opacity: 0; transform: translate(-50%, calc(-50% + 22px)) scale(.98); }
+        to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      }
+      @keyframes fare-sheet-switch {
+        0% { transform: translate(-50%, -50%) scale(1); }
+        48% { transform: translate(-50%, calc(-50% + 5px)) scale(.96); }
+        100% { transform: translate(-50%, -50%) scale(1); }
+      }
+      #leaderboardPanel, #rulesPanel, #settingsPanel {
+        background-image:
+          linear-gradient(rgba(5,8,18,.24), rgba(5,8,18,.24)),
+          url('assets/backgrounds/start-screen-desktop.png');
+        background-position: center;
+        background-repeat: no-repeat;
+        background-blend-mode: multiply, normal;
+      }
     }
     @media (max-width: 540px) {
       /* Mobile and installed-PWA views are full bleed, independent of device aspect ratio. */
@@ -1077,16 +1410,34 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       .leaderboard-panel { width: 100vw; max-width: none; left: 0; right: auto; transform: none; }
       /* Keep every mobile scene at the title screen's brighter treatment. */
       .start-screen { background: #1b2244 url('assets/backgrounds/start-screen.png') center center / cover no-repeat; }
+      .start-logo { top: max(42px, calc(env(safe-area-inset-top) + 28px)); width: clamp(214px, 58vw, 330px); }
+      .start-connect-button {
+        top: max(8px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
+        min-height: 28px;
+        padding: 5px 9px;
+        border-width: 1px;
+        font-size: .58rem;
+        box-shadow: 0 4px #170c07, 0 8px 14px rgba(0,0,0,.28);
+      }
+      .start-connect-button.connected {
+        box-shadow: 0 4px #0f5c33, 0 8px 14px rgba(0,0,0,.28);
+      }
       .game { background: #fc0000; }
-      #leaderboardPanel { background-image: linear-gradient(rgba(255,232,194,.12), rgba(255,232,194,.12)), url('assets/backgrounds/bg2.png'); background-blend-mode: screen, normal; }
-      #rulesPanel, #settingsPanel { background-image: linear-gradient(rgba(255,232,194,.12), rgba(255,232,194,.12)); background-blend-mode: screen, normal; }
+      #leaderboardPanel, #rulesPanel, #settingsPanel {
+        background-image:
+          linear-gradient(rgba(255,232,194,.12), rgba(255,232,194,.12)),
+          url('assets/backgrounds/start-screen.png');
+        background-blend-mode: screen, normal;
+      }
       #leaderboardPanel::before, #rulesPanel::before, #settingsPanel::before { background: rgba(5,8,18,.04); }
       .hudrow { grid-template-columns: minmax(0, 1fr) minmax(116px, 1fr) minmax(0, 1fr); }
       .map-topbar { gap: 8px; }
       .map-back-button { padding-inline: 14px; }
       .top-connect-button { width: auto; min-width: 0; }
-      .trip-card { top: calc(max(70px, env(safe-area-inset-top) + 56px)); }
-      .fare-sheet { bottom: calc(182px + env(safe-area-inset-bottom)); }
+      .fare-sheet, .swap-sheet-backdrop { top: calc(50% + 128px); bottom: auto; }
+      .dashboard { left: 0; width: 100vw; transform: none; }
+      #feedBackdrop { left: 0; width: 100vw; transform: none; }
     }
     @keyframes loss-reveal {
       from { opacity: 0; transform: scale(.72); }
@@ -1115,8 +1466,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     <script type="module">
       // Load game data modules
       import { CONFIG, FUEL_TIERS, FARE_CONDITION_TYPES, PLAYER_STATES, GAME_EVENT_TYPES, TOKENS, STABLE_TOKENS, VOLATILE_TOKENS } from './data/config.js';
-      import { LOCATIONS, getLocationById, getStartingLocation, getRandomLocation } from './data/locations.js';
-      import { NPCs, getNPCById, getRandomNPC } from './data/npcs.js';
+      import { LOCATIONS, ZONE_ANCHORS, getLocationById, getStartingLocation, getRandomLocation } from './data/locations.js?v=20260824world1';
+      import { NPCs, getNPCById, getRandomNPC } from './data/npcs.js?v=20260824world1';
       import { ROUTES, getRoute, validateRoutes } from './data/routes.js';
       import {
         PLAYER_KEY,
@@ -1139,10 +1490,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         getStallDuration,
         getTopPlayers,
         setPlayerStatus
-      } from './data/player.js';
+      } from './data/player.js?v=20260824world1';
 
       // Import game logic modules
-      import { generateInitialFares, refreshFares, getAvailableFares, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulateTripProgress } from './js/game.js?v=20260823w';
+      import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress } from './js/game.js?v=20260824pickup2';
       import { matchesFareCondition, findQualifyingFares, autoMatchFare, canReachFare } from './js/fareMatcher.js?v=20260823h';
       import { calculateFuelEarned, calculateProgress, isTripCompletable } from './js/fuel.js';
       import { simulateFakeSwap, interpretConfirmedSwap as interpretSwap } from './js/interpretSwap.js';
@@ -1161,8 +1512,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         DashboardStats,
         TransactionHistory,
         LeaderboardDisplay,
-        SettingsPanel,
-        HelpPanel,
         Notifications,
         DashboardUI
       } from './js/dashboard.js?v=20260823b';
@@ -1181,6 +1530,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         STABLE_TOKENS,
         VOLATILE_TOKENS,
         LOCATIONS,
+        ZONE_ANCHORS,
         NPCs,
         ROUTES,
         getLocationById,
@@ -1211,6 +1561,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         generateInitialFares,
         refreshFares,
         getAvailableFares,
+        getPickupFuelCost,
         matchesFareCondition,
         findQualifyingFares,
         autoMatchFare,
@@ -1218,6 +1569,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         calculateFuelEarned,
         calculateProgress,
         isTripCompletable,
+        simulatePickupProgress,
         simulateTripProgress,
         simulateFakeSwap,
         gameLoop,
@@ -1260,6 +1612,26 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       // Merge it here after the deferred module creates the game namespace.
       Object.assign(window.CrazyTukGame, window.CrazyTukMapUI || {});
 
+      function setNpcAvatar(element, npc, fallback = '🛺') {
+        if (!element) return;
+        const colors = ['#e8483f', '#f0a528', '#1f9d78', '#168bc5', '#d85882', '#8a63c7', '#d66a2c', '#4d9b43'];
+        const hash = [...(npc?.id || npc?.name || fallback)].reduce((total, character) => total + character.charCodeAt(0), 0);
+        element.style.setProperty('--npc-color', colors[hash % colors.length]);
+        element.style.background = 'var(--npc-color)';
+        element.replaceChildren();
+        if (!npc?.avatar) {
+          element.textContent = npc?.avatarFallback || fallback;
+          return;
+        }
+        const image = document.createElement('img');
+        image.src = npc.avatar;
+        image.alt = npc.name ? `${npc.name} portrait` : 'Passenger portrait';
+        image.addEventListener('error', () => {
+          element.textContent = npc?.avatarFallback || fallback;
+        }, { once: true });
+        element.append(image);
+      }
+
       console.log('Crazy Tuk game data and logic loaded successfully');
 
       // Initialize game on window load
@@ -1283,7 +1655,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           console.log('DFlow integration initialized');
         }
 
-        const player = window.CrazyTukGame.loadOrCreatePlayer(null);
+        let player = window.CrazyTukGame.loadOrCreatePlayer(null);
 
         console.log('Player loaded:', player);
 
@@ -1297,6 +1669,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         let fares = window.CrazyTukGame.getAvailableFares();
         if (!fares.length) {
           fares = window.CrazyTukGame.generateInitialFares(player.wallet);
+        } else if (fares.length < CONFIG.MIN_ACTIVE_FARES) {
+          fares = window.CrazyTukGame.refreshFares(player.wallet);
+        }
+        const availableFareIds = new Set(fares.map((fare) => fare.id));
+        if ((player.selectedFareId && !availableFareIds.has(player.selectedFareId)) ||
+            (player.activeFareId && !availableFareIds.has(player.activeFareId))) {
+          player = savePlayer({
+            ...player,
+            selectedFareId: null,
+            activeFareId: null,
+            activeTrip: null,
+            status: PLAYER_STATES.AVAILABLE
+          });
         }
         console.log('Generated fares:', fares.length);
 
@@ -1304,13 +1689,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (window.CrazyTukGame.initFareMarkers) {
           window.CrazyTukGame.initFareMarkers();
           console.log('Fare markers initialized');
-        }
-
-        // Set up action button listener
-        const actionButton = document.getElementById('actionButton');
-        if (actionButton) {
-          actionButton.addEventListener('click', handleActionClick);
-          console.log('Action button listener attached');
         }
 
         document.getElementById('swapInputToken')?.addEventListener('change', updateSwapPreview);
@@ -1324,40 +1702,37 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           if (fareSheet?.hidden || fareSheet.contains(event.target) || event.target.closest?.('.fare-marker')) return;
           closeFareSheet();
         }, true);
-        const bindSheetPointerAction = (id, handler) => {
-          document.getElementById(id)?.addEventListener('pointerdown', (event) => {
-            event.preventDefault();
+        const bindSheetAction = (id, handler) => {
+          document.getElementById(id)?.addEventListener('click', (event) => {
             event.stopPropagation();
             handler();
           });
         };
-        bindSheetPointerAction('fareSheetClose', closeFareSheet);
-        bindSheetPointerAction('fareSheetAction', handleActionClick);
-        bindSheetPointerAction('swapSheetClose', closeSwapSheet);
-        bindSheetPointerAction('swapSubmit', submitDFlowSwap);
-        bindSheetPointerAction('mockSwapSubmit', runMockFareLoop);
-        bindSheetPointerAction('completionClose', closeCompletionSheet);
+        bindSheetAction('fareSheetClose', closeFareSheet);
+        bindSheetAction('fareSheetAction', handleActionClick);
+        bindSheetAction('swapSheetClose', closeSwapSheet);
+        bindSheetAction('swapSubmit', submitDFlowSwap);
+        bindSheetAction('mockSwapSubmit', runMockFareLoop);
+        bindSheetAction('completionClose', closeCompletionSheet);
 
-        // Set up top wallet button listener
+        // Set up wallet button listeners
+        const startWalletButton = document.getElementById('startWalletButton');
+        if (startWalletButton) {
+          startWalletButton.addEventListener('click', handleWalletClick);
+          console.log('Start wallet button listener attached');
+        }
+
         const topWalletButton = document.getElementById('topWalletButton');
         if (topWalletButton) {
           topWalletButton.addEventListener('click', handleWalletClick);
           console.log('Top wallet button listener attached');
         }
 
-        const mapBackButton = document.getElementById('mapBackButton');
-        if (mapBackButton) {
-          mapBackButton.addEventListener('click', returnToStartScreen);
-        }
-
-        // Set up dashboard toggle listener
-        const dashboardToggle = document.getElementById('dashboardToggle');
-        if (dashboardToggle) {
-          dashboardToggle.addEventListener('click', handleDashboardToggle);
-          console.log('Dashboard toggle listener attached');
-        }
-
+        document.getElementById('mapBackButton')?.addEventListener('click', returnToStartScreen);
+        document.getElementById('dashboardToggle')?.addEventListener('click', handleDashboardToggle);
         document.getElementById('feedOpenButton')?.addEventListener('click', openFeedModal);
+        console.log('Map navigation listeners attached');
+
         document.getElementById('feedClose')?.addEventListener('click', closeFeedModal);
         document.getElementById('feedBackdrop')?.addEventListener('click', (event) => {
           if (event.target === event.currentTarget) closeFeedModal();
@@ -1371,36 +1746,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           });
         }
 
-        const settingsButton = document.getElementById('nav-settings');
-        if (settingsButton) {
-          settingsButton.addEventListener('click', () => {
-            document.getElementById('settings-panel')?.removeAttribute('hidden');
-            document.getElementById('help-panel')?.setAttribute('hidden', '');
-          });
-        }
-
-        const helpButton = document.getElementById('nav-help');
-        if (helpButton) {
-          helpButton.addEventListener('click', () => {
-            document.getElementById('help-panel')?.removeAttribute('hidden');
-            document.getElementById('settings-panel')?.setAttribute('hidden', '');
-            const helpContent = HelpPanel.getHelpContent();
-            const helpContainer = document.getElementById('help-content');
-            if (helpContainer) {
-              helpContainer.innerHTML = `
-                <p>${helpContent.overview.trim()}</p>
-                ${helpContent.howToPlay.map((item) => `<p><strong>${item.title}</strong><br>${item.content}</p>`).join('')}
-              `;
-            }
-          });
-        }
-
-        const closeHelp = document.querySelector('.close-help');
-        if (closeHelp) {
-          closeHelp.addEventListener('click', () => {
-            document.getElementById('help-panel')?.setAttribute('hidden', '');
-          });
-        }
+        document.getElementById('nav-dashboard')?.addEventListener('click', () => showDashboardView('dashboard'));
+        document.getElementById('nav-swaps')?.addEventListener('click', () => showDashboardView('swaps'));
+        document.getElementById('nav-history')?.addEventListener('click', () => showDashboardView('history'));
+        setupFrontSettingsControls();
 
         // Set up fare click listener
         document.addEventListener('fare-click', handleFareClick);
@@ -1458,6 +1807,69 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       let swapExecutionPending = false;
       let quoteDebounceTimer = null;
       let quoteRequestId = 0;
+      const RIDE_FEED_KEY = 'crazytuk_public_feed_v1';
+
+      function loadRideFeed() {
+        try {
+          const entries = JSON.parse(localStorage.getItem(RIDE_FEED_KEY) || '[]');
+          return Array.isArray(entries) ? entries : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function recordRideReview(entry) {
+        const entries = loadRideFeed();
+        entries.unshift(entry);
+        localStorage.setItem(RIDE_FEED_KEY, JSON.stringify(entries.slice(0, 36)));
+      }
+
+      function getStarRating(entry) {
+        const seed = `${entry?.fareId || ''}${entry?.npc || ''}${entry?.review || ''}`;
+        const value = [...seed].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+        return Math.max(1, Math.min(5, (value % 5) + 1));
+      }
+
+      function renderStars(rating) {
+        return '★★★★★'.slice(0, rating).padEnd(5, '☆');
+      }
+
+      function getFeedNpc(entry) {
+        if (entry?.npcId) return window.CrazyTukGame.getNPCById?.(entry.npcId);
+        const matchedNpc = Object.values(window.CrazyTukGame.NPCs || {}).find((npc) => npc.name === entry?.npc || npc.displayName === entry?.npc);
+        if (matchedNpc) return matchedNpc;
+        const fares = window.CrazyTukGame.getAvailableFares?.() || [];
+        const matchedFare = fares.find((fare) => {
+          const npc = window.CrazyTukGame.getNPCById?.(fare.npcId);
+          return npc?.name === entry?.npc;
+        });
+        return matchedFare ? window.CrazyTukGame.getNPCById?.(matchedFare.npcId) : null;
+      }
+
+      function getFeedAvatarMarkup(entry) {
+        const npc = getFeedNpc(entry);
+        const avatarUrl = entry?.avatarUrl || npc?.avatar;
+        if (avatarUrl) return `<img src="${avatarUrl}" alt="${entry.npc || npc?.name || 'Passenger'}">`;
+        const initial = (entry?.npc || 'P').trim().slice(0, 1).toUpperCase();
+        return `<span aria-hidden="true">${initial}</span>`;
+      }
+
+      function renderFeedCard(entry) {
+        const rating = entry.rating || getStarRating(entry);
+        return `
+          <article class="feed-item">
+            <div class="feed-avatar">${getFeedAvatarMarkup(entry)}</div>
+            <div class="feed-copy">
+              <strong>${entry.npc || 'Passenger'}</strong>
+              <span>${entry.review || 'Interesting transportation experience.'}</span>
+              <div class="feed-meta">
+                <span class="feed-stars" aria-label="${rating} out of 5 stars">${renderStars(rating)}</span>
+              </div>
+            </div>
+            <b class="feed-points">+${entry.points || 0}</b>
+          </article>
+        `;
+      }
 
       function closeFareSheet(preserveSelection = false) {
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
@@ -1470,20 +1882,21 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
       }
 
-      function closeSwapSheet() {
+      function closeSwapSheet({ restoreFare = true } = {}) {
         const submit = document.getElementById('swapSubmit');
         if (swapExecutionPending) return;
+        const previousContext = swapContext;
         if (submit) submit.disabled = false;
         document.getElementById('swapSheetBackdrop')?.setAttribute('hidden', '');
+        document.querySelector('.stage')?.classList.remove('swap-open');
         swapContext = null;
         swapQuote = null;
         clearTimeout(quoteDebounceTimer);
         quoteRequestId += 1;
         const player = getPlayer();
-        if (player?.status === PLAYER_STATES.AVAILABLE && player.selectedFareId) {
-          const cleared = savePlayer({ ...player, selectedFareId: null });
-          updateHUD(cleared);
-          window.CrazyTukGame.syncMapState?.(cleared);
+        if (restoreFare && previousContext?.fareId && player?.status === PLAYER_STATES.AVAILABLE) {
+          const fare = getAvailableFares().find((entry) => entry.id === previousContext.fareId);
+          if (fare) window.CrazyTukMapUI?.showFareDetails?.(fare);
         }
       }
 
@@ -1495,14 +1908,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const feedBackdrop = document.getElementById('feedBackdrop');
         const feedModalList = document.getElementById('feedModalList');
         if (feedModalList) {
-          const entries = loadPublicFeed();
+          const entries = loadRideFeed();
           feedModalList.innerHTML = entries.length
-            ? entries.map((entry) => `<article class="feed-item"><strong>${entry.npc}</strong><span>${entry.review}</span><b>${entry.destination}</b></article>`).join('')
+            ? entries.map((entry) => renderFeedCard(entry)).join('')
             : '<div class="empty-feed">No passenger reviews yet. Finish a fare and their comment will land here.</div>';
         }
         if (feedBackdrop) {
           feedBackdrop.hidden = false;
-          showNotification('Feed opened.', 'info');
         }
       }
 
@@ -1512,16 +1924,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
       function returnToStartScreen() {
         closeFareSheet(true);
-        closeSwapSheet();
+        closeSwapSheet({ restoreFare: false });
         closeCompletionSheet();
         closeFeedModal();
         document.getElementById('dashboard')?.setAttribute('hidden', '');
-        document.getElementById('settings-panel')?.setAttribute('hidden', '');
-        document.getElementById('help-panel')?.setAttribute('hidden', '');
-        enabled = false;
-        gameEl.hidden = true;
-        startScreenEl.hidden = false;
-        requestAnimationFrame(() => map?.resize());
+        const gameScene = document.getElementById('game');
+        const startScene = document.getElementById('startScreen');
+        if (gameScene) gameScene.hidden = true;
+        if (startScene) startScene.hidden = false;
       }
 
       function showCompletionSheet(fare) {
@@ -1532,15 +1942,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const reviewIndex = [...fare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % reviews.length;
         const selectedReview = reviews[reviewIndex];
         document.getElementById('tripCard')?.setAttribute('hidden', '');
-        document.getElementById('completionAvatar').textContent = npc?.avatar || '🛺';
-        document.getElementById('completionDestination').textContent = destination ? `ARRIVED AT ${destination.properties.name.toUpperCase()}` : 'RIDE COMPLETE';
+        setNpcAvatar(document.getElementById('completionAvatar'), npc);
         document.getElementById('completionReview').textContent = `“${selectedReview}” — ${npc?.name || 'Passenger'}`;
         document.getElementById('completionPoints').textContent = `+${fare.pointValue || 0} POINTS`;
-        recordPublicReview({
+        recordRideReview({
           npc: npc?.name || 'Passenger',
+          npcId: npc?.id || fare.npcId,
+          avatarUrl: npc?.avatar,
           review: selectedReview,
           destination: destination?.properties?.name || 'Bangkok',
           fareId: fare.id,
+          points: fare.pointValue || 0,
+          rating: getStarRating({ npc: npc?.name, review: selectedReview, fareId: fare.id }),
           createdAt: Date.now()
         });
         document.getElementById('completionBackdrop').hidden = false;
@@ -1567,6 +1980,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         document.getElementById('swapSubmit').textContent = 'FINDING RATE...';
         document.getElementById('swapSubmit').disabled = true;
         document.getElementById('mockSwapSubmit').hidden = !CONFIG.DEV_MODE;
+        document.querySelector('.stage')?.classList.add('swap-open');
         document.getElementById('swapSheetBackdrop').hidden = false;
         updateSwapPreview();
       }
@@ -1726,12 +2140,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             if (claimed) {
               updateHUD(claimed);
               window.CrazyTukGame.syncMapState?.(claimed);
+              startPickupDrive(swapContext.fareId, claimed.wallet);
             }
           }
           setTimeout(() => {
             swapExecutionPending = false;
             submit.disabled = false;
-            closeSwapSheet();
+            closeSwapSheet({ restoreFare: false });
           }, 900);
         } catch (error) {
           status.textContent = `NO DEAL. ${error.message}`;
@@ -1740,52 +2155,96 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
       }
 
+      let pickupDriveTimer = null;
+      let passengerDriveTimer = null;
+
+      async function startPickupDrive(fareId, playerWallet, onTripComplete = null) {
+        if (pickupDriveTimer) clearInterval(pickupDriveTimer);
+        const player = getPlayer();
+        const fare = getAvailableFares().find((entry) => entry.id === fareId);
+        if (!player || !fare) return;
+        await window.CrazyTukMapUI?.prepareRoadRoute?.(
+          player.activeTrip?.fromLocationId || player.locationId,
+          fare.pickupLocationId
+        );
+        if (getPlayer()?.status !== PLAYER_STATES.PICKUP) return;
+        pickupDriveTimer = setInterval(() => {
+          const next = simulatePickupProgress(fareId, playerWallet);
+          if (!next) {
+            clearInterval(pickupDriveTimer);
+            pickupDriveTimer = null;
+            return;
+          }
+          updateHUD(next);
+          window.CrazyTukGame.syncMapState?.(next);
+          if (next.status === PLAYER_STATES.DRIVING) {
+            clearInterval(pickupDriveTimer);
+            pickupDriveTimer = null;
+            startPassengerDrive(fareId, playerWallet, onTripComplete);
+          }
+        }, 60);
+      }
+
+      async function startPassengerDrive(fareId, playerWallet, onTripComplete = null) {
+        if (passengerDriveTimer) clearInterval(passengerDriveTimer);
+        const fare = getAvailableFares().find((entry) => entry.id === fareId);
+        if (!fare) return;
+        await window.CrazyTukMapUI?.prepareRoadRoute?.(fare.pickupLocationId, fare.destinationLocationId);
+        if (getPlayer()?.status !== PLAYER_STATES.DRIVING) return;
+        passengerDriveTimer = setInterval(() => {
+          const next = simulateTripProgress(fareId, playerWallet, false);
+          if (!next) {
+            clearInterval(passengerDriveTimer);
+            passengerDriveTimer = null;
+            return;
+          }
+          updateHUD(next);
+          window.CrazyTukGame.syncMapState?.(next);
+          if (next.status === PLAYER_STATES.AVAILABLE && !next.activeFareId) {
+            clearInterval(passengerDriveTimer);
+            passengerDriveTimer = null;
+            window.CrazyTukGame.initFareMarkers?.();
+            onTripComplete?.();
+          }
+        }, 60);
+      }
+
       function runMockFareLoop() {
         if (!CONFIG.DEV_MODE || !swapContext) return;
         const fareId = swapContext.fareId;
         const amount = Number(document.getElementById('swapInputAmount').value) || CONFIG.MIN_GAME_SWAP_USD;
         const status = document.getElementById('swapStatus');
         const fuelAwarded = calculateFuelEarned(amount);
+        const mockFuelAwarded = Math.max(fuelAwarded, 25);
         const mockFare = getAvailableFares().find((fare) => fare.id === fareId);
 
-        addFuel(fuelAwarded);
-        status.textContent = `DEV SWAP CONFIRMED · +${fuelAwarded} FUEL`;
+        addFuel(mockFuelAwarded);
+        status.textContent = `DEV SWAP CONFIRMED · +${mockFuelAwarded} FUEL`;
         if (!fareId) {
           updateHUD(getPlayer());
-          closeSwapSheet();
+          closeSwapSheet({ restoreFare: false });
           return;
         }
 
-        const claimed = claimFare(fareId, getPlayer()?.wallet);
+        if (!mockFare || mockFare.expiresAt <= Date.now()) {
+          status.textContent = 'DEV SWAP FAILED · FARE IS NO LONGER AVAILABLE.';
+          return;
+        }
+
+        const currentPlayer = getPlayer();
+        const selectedPlayer = currentPlayer?.selectedFareId === fareId
+          ? currentPlayer
+          : selectFare(fareId, currentPlayer?.wallet);
+        const claimed = selectedPlayer && claimFare(fareId, selectedPlayer.wallet);
         if (!claimed) {
-          status.textContent = 'DEV SWAP FAILED TO CLAIM FARE.';
+          status.textContent = 'DEV SWAP FAILED TO CLAIM FARE · CHECK PICKUP FUEL.';
           return;
         }
         updateHUD(claimed);
         window.CrazyTukGame.syncMapState?.(claimed);
-        closeSwapSheet();
+        closeSwapSheet({ restoreFare: false });
 
-        setTimeout(() => {
-          const driving = completePickup(fareId, claimed.wallet);
-          if (!driving) return;
-          updateHUD(driving);
-          window.CrazyTukGame.syncMapState?.(driving);
-
-          const driveTimer = setInterval(() => {
-            const next = simulateTripProgress(fareId, driving.wallet, false);
-            if (!next) {
-              clearInterval(driveTimer);
-              return;
-            }
-            updateHUD(next);
-            window.CrazyTukGame.syncMapState?.(next);
-            if (next.status === PLAYER_STATES.AVAILABLE && !next.activeFareId) {
-              clearInterval(driveTimer);
-              window.CrazyTukGame.initFareMarkers?.();
-              showCompletionSheet(mockFare);
-            }
-          }, 60);
-        }, 650);
+        startPickupDrive(fareId, claimed.wallet, () => showCompletionSheet(mockFare));
       }
 
       async function handleDashboardToggle() {
@@ -1801,19 +2260,66 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
         const stats = await DashboardStats.getStats();
         const history = await TransactionHistory.getHistory();
-        const leaderboardData = await LeaderboardDisplay.getLeaderboard(10);
-
+        showDashboardView('dashboard');
+        updateDashboardHero(stats.player);
         DashboardUI.updateStats({
+          ...stats,
           points: stats.player.points,
           fuel: stats.player.fuel,
-          completed: stats.player.completedFares,
-          today: stats.completedFaresToday,
-          swaps: stats.totalSwaps,
-          fuelEarned: stats.fuelEarned
+          completedFares: stats.player.completedFares
         });
         DashboardUI.updateTransactions(history.swaps);
-        DashboardUI.updateLeaderboard(leaderboardData.leaderboard);
-        showNotification('Core opened.', 'info');
+      }
+
+      function showDashboardView(view) {
+        const views = {
+          dashboard: document.getElementById('dashboardView'),
+          swaps: document.getElementById('swapActivityView'),
+          history: document.getElementById('transactionHistoryView')
+        };
+        const buttons = {
+          dashboard: document.getElementById('nav-dashboard'),
+          swaps: document.getElementById('nav-swaps'),
+          history: document.getElementById('nav-history')
+        };
+        Object.entries(views).forEach(([key, element]) => {
+          if (element) element.hidden = key !== view;
+        });
+        Object.entries(buttons).forEach(([key, button]) => {
+          button?.classList.toggle('primary', key === view);
+        });
+      }
+
+      function updateDashboardHero(player) {
+        const nameEl = document.getElementById('dashboardPlayerName');
+        const walletEl = document.getElementById('dashboardWalletLabel');
+        if (nameEl) nameEl.textContent = player?.name || 'Crazy Tuk Driver';
+        if (!walletEl) return;
+        const walletAddress = WalletModule?.getWalletAddress?.();
+        walletEl.textContent = walletAddress
+          ? `${walletAddress.substring(0, 4)}...${walletAddress.substring(walletAddress.length - 4)}`
+          : 'Wallet not connected';
+      }
+
+      function setupFrontSettingsControls() {
+        const controls = [
+          ['setting-sound', 'crazytuk_sound_enabled', true],
+          ['setting-music', 'crazytuk_music_enabled', false],
+          ['setting-vibration', 'crazytuk_vibration_enabled', true],
+          ['setting-notifications', 'crazytuk_notifications_enabled', true],
+          ['setting-fuel-warnings', 'crazytuk_fuel_warnings', true]
+        ];
+        const syncControl = ([id, key, defaultValue]) => {
+          const input = document.getElementById(id);
+          if (!input) return;
+          input.checked = localStorage.getItem(key) === null
+            ? defaultValue
+            : localStorage.getItem(key) === 'true';
+          input.addEventListener('change', () => {
+            localStorage.setItem(key, String(input.checked));
+          });
+        };
+        controls.forEach(syncControl);
       }
 
       function handleFareClick(event) {
@@ -1861,7 +2367,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           if (preferredWallet) {
             const result = await WalletModule.connectWallet(preferredWallet);
             if (result.state === WalletModule.WALLET_STATES.CONNECTED) {
-              showNotification('Wallet connected successfully!', 'success');
               return;
             }
             const errorMessage = result.error || 'Unknown error';
@@ -2076,20 +2581,26 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
 
         // Update wallet display
+        const startWalletButton = document.getElementById('startWalletButton');
         const topWalletButton = document.getElementById('topWalletButton');
         const walletDisplay = document.getElementById('walletDisplay');
+        const hudActionLabel = document.getElementById('hudActionLabel');
+        const setWalletButtonState = (button, labelSelector, connected) => {
+          if (!button) return;
+          const label = button.querySelector(labelSelector);
+          button.classList.toggle('connected', connected);
+          button.classList.remove('primary');
+          if (label) label.textContent = connected ? 'Connected' : 'Connect Wallet';
+          button.style.borderColor = connected ? 'var(--good)' : '';
+        };
 
         if (WalletModule && WalletModule.isWalletConnected()) {
           const publicKey = WalletModule.getWalletPublicKey();
           const walletAddress = WalletModule.getWalletAddress();
           const walletShortAddress = `${walletAddress.substring(0, 4)}...${walletAddress.substring(walletAddress.length - 4)}`;
 
-          // Update top wallet button
-          if (topWalletButton) {
-            topWalletButton.classList.remove('primary');
-            topWalletButton.querySelector('.top-wallet-label').textContent = 'Connected';
-            topWalletButton.style.borderColor = 'var(--good)';
-          }
+          setWalletButtonState(startWalletButton, '.start-wallet-label', true);
+          setWalletButtonState(topWalletButton, '.top-wallet-label', true);
 
           // Show wallet display
           if (walletDisplay) {
@@ -2102,12 +2613,20 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             walletDisplay.hidden = true;
           }
 
-          // Reset top wallet button
-          if (topWalletButton) {
-            topWalletButton.classList.remove('primary');
-            topWalletButton.querySelector('.top-wallet-label').textContent = 'Connect Wallet';
-            topWalletButton.style.borderColor = '';
-          }
+          setWalletButtonState(startWalletButton, '.start-wallet-label', false);
+          setWalletButtonState(topWalletButton, '.top-wallet-label', false);
+        }
+
+        if (hudActionLabel) {
+          hudActionLabel.textContent = player.status === PLAYER_STATES.DRIVING
+            ? 'ON ROUTE'
+            : player.status === PLAYER_STATES.PICKUP
+              ? 'TO PICKUP'
+              : player.status === PLAYER_STATES.STALLED
+                ? 'REFUEL'
+                : player.selectedFareId
+                  ? 'SWAP & PICK UP'
+                  : 'OPEN FARES';
         }
 
         updatePersistentPanels(player);
@@ -2132,7 +2651,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             const isSelectedOnly = Boolean(selectedFare && !activeFare);
             const destination = window.CrazyTukGame.getLocationById?.(fareToShow.destinationLocationId);
 
-            activeFareDisplay.querySelector('.fare-emoji').textContent = npc?.avatar || '🛺';
+            setNpcAvatar(activeFareDisplay.querySelector('.fare-emoji'), npc);
             activeFareDisplay.querySelector('.fare-npc').textContent = npc?.name || 'Unknown';
             activeFareDisplay.querySelector('.fare-points').textContent = `+${fareToShow.pointValue || 50} points`;
             activeFareDisplay.querySelector('.progress-bar').style.width = `${progress}%`;
@@ -2152,7 +2671,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               const fuelRemaining = Math.max(0, tripFuelCost - tripFuelSpent);
               const isStalled = player.status === PLAYER_STATES.STALLED;
               tripCard.classList.toggle('stalled', isStalled);
-              document.getElementById('tripCardAvatar').textContent = npc?.avatar || '🛺';
+              setNpcAvatar(document.getElementById('tripCardAvatar'), npc);
               document.getElementById('tripCardKicker').textContent = isStalled ? 'OUT OF FUEL · TRIP STALLED' : player.status === PLAYER_STATES.PICKUP ? 'HEADING TO PICKUP' : 'PASSENGER ON BOARD';
               document.getElementById('tripCardTitle').textContent = isStalled ? `Stalled en route to ${destination?.properties?.name || 'destination'}` : player.status === PLAYER_STATES.PICKUP ? `Picking up ${npc?.name || 'passenger'}` : `Driving to ${destination?.properties?.name || 'destination'}`;
               document.getElementById('tripCardMessage').textContent = isStalled ? `You ran out of gas. Swap to add fuel; about ${Math.ceil(fuelRemaining)} fuel remains for this trip.` : player.status === PLAYER_STATES.PICKUP ? `${npc?.name || 'Your passenger'} is waiting at the pickup point.` : `“Take me to ${destination?.properties?.name || 'my destination'}!”`;
@@ -2175,28 +2694,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               document.getElementById('fareSheet')?.setAttribute('hidden', '');
             }
 
-            const actionButton = document.getElementById('actionButton');
-            if (actionButton) {
-              if (player.status === 'DRIVING') {
-                actionButton.textContent = '⏸';
-              } else if (player.status === 'STALLED') {
-                actionButton.textContent = '⛽ Refuel';
-              } else if (isSelectedOnly) {
-                actionButton.textContent = 'SWAP & PICK UP';
-              } else {
-                actionButton.textContent = 'SWAP';
-              }
-            }
           } else {
             if (tripCard) tripCard.hidden = true;
             activeFareDisplay.hidden = true;
             activeFareDisplay.classList.add('hidden');
             document.getElementById('fareSheet')?.setAttribute('hidden', '');
-
-            const actionButton = document.getElementById('actionButton');
-            if (actionButton) {
-              actionButton.textContent = 'SWAP';
-            }
           }
         }
 
@@ -2221,6 +2723,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         background: #fc0000;
       }
       .player-marker {
+        position: absolute;
         display: grid;
         place-items: center;
         width: 36px;
@@ -2230,7 +2733,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         font-size: 18px;
         line-height: 1;
       }
-      .destination-marker { position: relative; z-index: 30; display: grid; width: 46px; height: 62px; place-items: start center; color: white; }
+      .destination-marker { position: absolute; z-index: 30; display: grid; width: 46px; height: 62px; place-items: start center; color: white; }
       .destination-pin { display: grid; width: 34px; height: 34px; place-items: center; border: 2px solid white; border-radius: 50% 50% 50% 8px; background: var(--danger); box-shadow: 0 7px 18px rgba(0,0,0,.4); font-size: 17px; transform: rotate(-45deg); }
       .destination-pin span { transform: rotate(45deg); }
       .destination-label, .place-label {
@@ -2249,9 +2752,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         font-weight: 900;
         line-height: 1.1;
         text-align: center;
-        white-space: nowrap;
+        width: max-content;
+        white-space: normal;
+      }
+      .fare-marker .place-label {
+        display: -webkit-box;
+        width: max-content;
+        max-width: 130px;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
       }
       .fare-marker {
+        position: absolute;
         display: grid;
         place-items: center;
         width: 54px;
@@ -2272,6 +2785,40 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         pointer-events: none;
       }
       .fare-marker { transition: opacity .2s ease; }
+      .npc-thought {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        z-index: 40;
+        width: max-content;
+        max-width: 145px;
+        padding: 7px 9px;
+        transform: translateX(-50%);
+        border: 2px solid #182039;
+        border-radius: 13px;
+        background: #fffdf3;
+        box-shadow: 0 5px 12px rgba(0,0,0,.28);
+        color: #182039;
+        font-size: 10px;
+        font-weight: 900;
+        line-height: 1.2;
+        text-align: center;
+        white-space: normal;
+        pointer-events: none;
+      }
+      .npc-thought::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid #182039;
+        border-bottom: 2px solid #182039;
+        background: #fffdf3;
+        transform: translate(-50%, -5px) rotate(45deg);
+      }
+      .player-marker .npc-thought { bottom: calc(100% + 10px); }
       .marker-content {
         position: relative;
         display: grid;
@@ -2317,7 +2864,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: var(--panel2);
+        background: var(--npc-color, var(--panel2));
         border: 2px solid transparent;
         border-radius: 50%;
         width: 48px;
@@ -2329,6 +2876,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         line-height: 1;
         z-index: 2;
       }
+      .npc-avatar img,
+      .fare-sheet-portrait img,
+      .trip-card-avatar img,
+      .completion-avatar img,
+      .fare-emoji img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: inherit;
+        object-fit: cover;
+      }
+      .npc-avatar { width: 100%; height: 100%; overflow: hidden; border: 3px solid var(--npc-color, #e8483f); border-radius: 50%; background: var(--npc-color, #e8483f); }
+      .fare-emoji { width: 32px; height: 32px; overflow: hidden; border-radius: 9px; }
       .place-label { top: 52px; }
     </style>
   </head>
@@ -2351,6 +2911,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
 <div id="startScreen" class="start-screen">
   <h1>Crazy TukTuk</h1>
+  <button id="startWalletButton" type="button" class="ui-button start-connect-button" aria-label="Connect wallet">
+    <span class="start-wallet-label">Connect Wallet</span>
+  </button>
   <img class="start-logo" src="assets/branding/logo.png" alt="Crazy Tuk" />
   <div class="title-tools">
     <button id="enable" type="button" class="ui-button big">START</button>
@@ -2411,35 +2974,37 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     <div id="swapSheetBackdrop" class="swap-sheet-backdrop" hidden>
       <section id="swapSheet" class="swap-sheet" role="dialog" aria-modal="true" aria-labelledby="swapSheetTitle">
         <button id="swapSheetClose" class="fare-sheet-close" type="button" aria-label="Close swap">×</button>
-        <div class="fare-sheet-kicker">CRAZY TUK × DFLOW</div>
-        <h2 id="swapSheetTitle">SWAP &amp; PICK UP</h2>
-        <p id="swapSheetSubtitle" class="swap-sheet-subtitle">Make a qualifying swap to activate this fare.</p>
-        <div class="swap-row">
-          <select id="swapInputToken" aria-label="Token to pay"></select>
-          <input id="swapInputAmount" type="number" min="1" step="0.01" value="5" inputmode="decimal" aria-label="Amount to pay">
+        <div class="swap-sheet-title-row">
+          <h2 id="swapSheetTitle">SWAP &amp; PICK UP</h2>
+          <div id="swapStatus" class="swap-status" role="status"></div>
         </div>
-        <div class="swap-row">
-          <select id="swapOutputToken" aria-label="Token to receive"></select>
-          <input id="swapOutputEstimate" type="text" value="Quote on submit" aria-label="Estimated output" readonly>
+        <div class="swap-sheet-body">
+          <div class="swap-inputs">
+            <div class="swap-row">
+              <select id="swapInputToken" aria-label="Token to pay"></select>
+              <input id="swapInputAmount" type="number" min="1" step="0.01" value="5" inputmode="decimal" aria-label="Amount to pay">
+            </div>
+            <div class="swap-row">
+              <select id="swapOutputToken" aria-label="Token to receive"></select>
+              <input id="swapOutputEstimate" type="text" value="Quote on submit" aria-label="Estimated output" readonly>
+            </div>
+          </div>
+          <div class="swap-impact">
+            <div><span>ESTIMATED FUEL</span><b id="swapFuelEstimate">+5 fuel</b></div>
+            <div><span>FARE CONDITION</span><b id="swapFareQualification">Checking...</b></div>
+            <div><span>SLIPPAGE</span><b>0.5%</b></div>
+          </div>
         </div>
-        <div class="swap-impact">
-          <div><span>ESTIMATED FUEL</span><b id="swapFuelEstimate">+5 fuel</b></div>
-          <div><span>FARE CONDITION</span><b id="swapFareQualification">Checking...</b></div>
-          <div><span>SLIPPAGE</span><b>0.5%</b></div>
-        </div>
-        <div id="swapStatus" class="swap-status" role="status"></div>
         <button id="swapSubmit" class="ui-button primary fare-sheet-action" type="button">SWAP &amp; PICK UP</button>
         <button id="mockSwapSubmit" class="ui-button dev-swap-button" type="button" hidden>DEV: MOCK CONFIRMED SWAP</button>
-        <p class="swap-attribution">Powered by DFlow · Wallet approval required</p>
       </section>
+      <p class="swap-attribution">Powered by DFlow · Wallet approval required</p>
     </div>
 
     <div id="completionBackdrop" class="completion-backdrop" hidden>
       <section class="completion-sheet" role="dialog" aria-modal="true" aria-labelledby="completionTitle">
         <div id="completionAvatar" class="completion-avatar">🛺</div>
-        <div class="fare-sheet-kicker">DESTINATION REACHED</div>
         <h2 id="completionTitle">FARE COMPLETE</h2>
-        <p id="completionDestination" class="completion-destination"></p>
         <p id="completionReview" class="completion-review"></p>
         <p id="completionPoints" class="completion-points"></p>
         <button id="completionClose" class="ui-button primary fare-sheet-action" type="button">BACK TO MAP</button>
@@ -2448,10 +3013,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
     <div class="map-topbar">
       <button id="mapBackButton" type="button" class="ui-button map-back-button" aria-label="Back to main screen">BACK</button>
-      <div class="top-connect-container">
-        <button id="topWalletButton" type="button" class="ui-button top-connect-button" aria-label="Connect wallet">
-          <span class="top-wallet-label">Connect Wallet</span>
-        </button>
+      <div class="map-topbar-right">
+        <div class="map-topbar-actions">
+          <button id="dashboardToggle" type="button" class="ui-button dashboard-toggle" aria-label="Open core menu">☰</button>
+          <button id="feedOpenButton" type="button" class="ui-button feed-toggle" aria-label="Open public feed">★</button>
+        </div>
+        <div class="top-connect-container">
+          <button id="topWalletButton" type="button" class="ui-button top-connect-button" aria-label="Connect wallet">
+            <span class="top-wallet-label">Connect Wallet</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2460,19 +3031,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         <div class="hudrow">
           <div class="fuel"><span class="hud-stat-label">Gas</span><div class="hud-stat-value"><span class="hud-stat-icon">⛽</span><b id="fuel">20</b></div></div>
           <div class="hud-action">
-            <button id="actionButton" type="button" class="ui-button primary">SWAP</button>
+            <span id="hudActionLabel">OPEN FARES</span>
           </div>
           <div class="points"><span class="hud-stat-label">Points</span><div class="hud-stat-value"><span class="hud-stat-icon">★</span><b id="points">0</b></div></div>
         </div>
-        <div class="hud-controls">
-          <div class="dashboard-btn">
-            <button id="dashboardToggle" type="button" class="ui-button dashboard-toggle" aria-label="Open dashboard">
-              CORE
-            </button>
-          </div>
-          <button id="feedOpenButton" type="button" class="ui-button feed-toggle" aria-label="Open public feed">FEED</button>
-        </div>
-
         <!-- Active Fare Display -->
         <div id="activeFareDisplay" class="active-fare" hidden>
           <div class="fare-card">
@@ -2512,121 +3074,59 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <!-- Dashboard -->
   <div id="dashboard" class="dashboard" hidden>
     <div class="dashboard-header">
-      <h2>Dashboard</h2>
+      <div>
+        <h2>Dashboard</h2>
+      </div>
       <button class="dashboard-close">✕</button>
     </div>
 
     <div class="dashboard-content">
-      <!-- Stats Section -->
-      <section class="dashboard-section">
-        <h3>📊 Stats</h3>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <span class="stat-label">Points</span>
-            <span class="stat-value" id="stat-points">0</span>
+      <div id="dashboardView" class="dashboard-view">
+        <section class="driver-hero">
+          <div class="driver-hero-art" aria-hidden="true">🛺</div>
+          <div class="driver-hero-copy">
+            <span>Driver</span>
+            <b id="dashboardPlayerName">Crazy Tuk Driver</b>
+            <small id="dashboardWalletLabel">Wallet not connected</small>
           </div>
-          <div class="stat-card">
-            <span class="stat-label">Fuel</span>
-            <span class="stat-value" id="stat-fuel">20</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Completed Fares</span>
-            <span class="stat-value" id="stat-completed">0</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Today's Fares</span>
-            <span class="stat-value" id="stat-today">0</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Total Swaps</span>
-            <span class="stat-value" id="stat-swaps">0</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label">Fuel Earned</span>
-            <span class="stat-value" id="stat-fuel-earned">0</span>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Transaction History -->
-      <section class="dashboard-section">
-        <h3>💰 Transaction History</h3>
-        <div class="transaction-list" id="transaction-list">
-          <div class="empty-state">No transactions yet</div>
-        </div>
-      </section>
+        <section class="dashboard-section">
+          <h3>Driver Stats</h3>
+          <div class="stats-grid">
+            <div class="stat-card"><span class="stat-label">Points</span><span class="stat-value" id="stat-points">0</span></div>
+            <div class="stat-card"><span class="stat-label">Fuel</span><span class="stat-value" id="stat-fuel">20</span></div>
+            <div class="stat-card"><span class="stat-label">Completed</span><span class="stat-value" id="stat-completed">0</span></div>
+            <div class="stat-card"><span class="stat-label">Today</span><span class="stat-value" id="stat-today">0</span></div>
+          </div>
+        </section>
+      </div>
 
-      <!-- Leaderboard -->
-      <section class="dashboard-section">
-        <h3>🏆 Leaderboard</h3>
-        <div class="leaderboard-list" id="leaderboard-list">
-          <div class="empty-state">Loading leaderboard...</div>
-        </div>
-      </section>
+      <div id="swapActivityView" class="dashboard-view" hidden>
+        <section class="dashboard-section">
+          <h3>Swap Activity</h3>
+          <div class="dashboard-mini-grid">
+            <div class="mini-card"><span>Total Swaps</span><b id="stat-swaps">0</b></div>
+            <div class="mini-card"><span>Confirmed</span><b id="stat-completed-swaps">0</b></div>
+            <div class="mini-card"><span>Swap Volume</span><b id="stat-volume">$0.00</b></div>
+            <div class="mini-card"><span>Stalls</span><b id="stat-stalls">0</b></div>
+          </div>
+        </section>
+      </div>
 
-      <!-- Navigation -->
+      <div id="transactionHistoryView" class="dashboard-view" hidden>
+        <section class="dashboard-section">
+          <h3>Transaction History</h3>
+          <div class="transaction-list" id="transaction-list"><div class="empty-state">No transactions yet</div></div>
+        </section>
+      </div>
+
       <div class="dashboard-nav">
-        <button class="nav-btn primary" id="nav-dashboard">
-          <span>📊</span> Dashboard
-        </button>
-        <button class="nav-btn" id="nav-settings">
-          <span>⚙</span> Settings
-        </button>
-        <button class="nav-btn" id="nav-help">
-          <span>📖</span> Help
-        </button>
+        <button class="nav-btn primary" id="nav-dashboard"><span>📊</span> Dashboard</button>
+        <button class="nav-btn" id="nav-swaps"><span>↔</span> Swaps</button>
+        <button class="nav-btn" id="nav-history"><span>▤</span> History</button>
       </div>
     </div>
-
-    <!-- Settings Panel -->
-    <section class="dashboard-panel" id="settings-panel" hidden>
-      <h3>⚙️ Settings</h3>
-      <div class="settings-list">
-        <div class="setting-item">
-          <span>Sound Enabled</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-sound" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
-          <span>Music Enabled</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-music">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
-          <span>Vibration</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-vibration" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
-          <span>Notifications</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-notifications" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
-          <span>Fuel Warnings</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="setting-fuel-warnings" checked>
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <button class="reset-settings" id="reset-settings">Reset All Settings</button>
-      </div>
-    </section>
-
-    <!-- Help Panel -->
-    <section class="dashboard-panel" id="help-panel" hidden>
-      <h3>📖 How to Play</h3>
-      <div class="help-content" id="help-content"></div>
-      <button class="close-help">Close</button>
-    </section>
   </div>
 
 </div>
@@ -2643,20 +3143,20 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <h2 id="rulesTitle">HOW TO PLAY</h2>
   <div class="rules-content">
     <section>
-      <h3>🛺 Choose a passenger</h3>
-      <p>Tap a passenger marker to see their swap requirement, reward, and the fuel needed to reach them.</p>
+      <h3>Connect Your Wallet</h3>
+      <p>Use the connect button and choose a supported Solana wallet before making swaps.</p>
     </section>
     <section>
-      <h3>⚡ Swap and pick up</h3>
-      <p>Complete a qualifying DFlow swap to earn fuel and activate the selected fare.</p>
+      <h3>Accept Fares</h3>
+      <p>Tap passengers on the map to review their route, reward, patience timer, and swap requirement.</p>
     </section>
     <section>
-      <h3>🗺️ Drive across Bangkok</h3>
-      <p>Follow the road route to the destination. Your tuk-tuk spends fuel as it moves.</p>
+      <h3>Swap For Fuel</h3>
+      <p>Complete swaps to earn fuel. Higher-value swaps can keep the tuk moving longer.</p>
     </section>
     <section>
-      <h3>⛽ Avoid a stall</h3>
-      <p>If fuel reaches zero, the trip stops at that point. Swap again to refuel, finish the fare, and earn points.</p>
+      <h3>Finish The Ride</h3>
+      <p>Drive from pickup to destination, avoid stalling, and collect points when the passenger arrives.</p>
     </section>
   </div>
   <button id="rulesBack" class="ui-button primary" type="button">Back</button>
@@ -2664,8 +3164,28 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
 <section id="settingsPanel" class="leaderboard-panel settings-panel" hidden aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">⚙ SETTINGS</h2>
-  <label class="settings-row slider-row"><span class="slider-label"><span>Sound Effects <small>Coming soon</small></span><output>80%</output></span><input class="notched-slider" type="range" min="0" max="100" value="80" aria-label="Sound effects volume (coming soon)" disabled /></label>
-  <label class="settings-row slider-row"><span class="slider-label"><span>Music <small>Coming soon</small></span><output>0%</output></span><input class="notched-slider" type="range" min="0" max="100" value="0" aria-label="Music volume (coming soon)" disabled /></label>
+  <div class="settings-list">
+    <div class="setting-item">
+      <span>Sound Enabled</span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-sound" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-item">
+      <span>Music Enabled</span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-music"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-item">
+      <span>Vibration</span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-vibration" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-item">
+      <span>Notifications</span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-notifications" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-item">
+      <span>Fuel Warnings</span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-fuel-warnings" checked><span class="toggle-slider"></span></label>
+    </div>
+  </div>
   <button id="settingsBack" class="ui-button primary" type="button">Back</button>
 </section>
 
@@ -2674,7 +3194,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   const $ = id => document.getElementById(id);
   const fallbackEl = (tag = "div") => document.createElement(tag);
   const startScreenEl = $("startScreen"), gameEl = $("game"), stageEl = gameEl.querySelector(".stage");
-  const fuelEl = $("fuel"), pointsEl = $("points"), walletEl = document.querySelector(".wallet"), actionButtonEl = $("actionButton");
+  const fuelEl = $("fuel"), pointsEl = $("points"), walletEl = document.querySelector(".wallet");
   const enableBtn = $("enable");
   const leaderboardPanelEl = $("leaderboardPanel");
   const rulesPanelEl = $("rulesPanel");
@@ -2693,9 +3213,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   const ACTIVE_ROUTE_SOURCE_ID = 'crazy-tuk-active-route';
   const ACTIVE_ROUTE_CASING_LAYER_ID = 'crazy-tuk-active-route-casing';
   const ACTIVE_ROUTE_LAYER_ID = 'crazy-tuk-active-route-line';
+  const PICKUP_ROUTE_SOURCE_ID = 'crazy-tuk-pickup-route';
+  const PICKUP_ROUTE_CASING_LAYER_ID = 'crazy-tuk-pickup-route-casing';
+  const PICKUP_ROUTE_LAYER_ID = 'crazy-tuk-pickup-route-line';
   const roadRouteCache = new Map();
   const pendingRoadRoutes = new Map();
   let lastFittedRouteSignature = null;
+  let rideThoughtFareId = null;
+  let rideThoughtIndex = 0;
+  let rideThoughtUntil = 0;
+  let nextRideThoughtAt = 0;
   const EMPTY_LINESTRING = {
     type: 'Feature',
     properties: {},
@@ -2802,28 +3329,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
   function ensureZoneLabels() {
     if (!map || !map.isStyleLoaded() || map.getSource('crazy-tuk-zones')) return;
-    const locations = window.CrazyTukGame?.LOCATIONS;
-    if (!locations) return;
-    const zones = new Map();
-    locations.features.forEach((feature) => {
-      const zoneId = feature.properties.zoneId;
-      if (!zoneId) return;
-      const zone = zones.get(zoneId) || { label: feature.properties.zoneLabel, coordinates: [] };
-      zone.coordinates.push(feature.geometry.coordinates);
-      zones.set(zoneId, zone);
-    });
+    const zones = window.CrazyTukGame?.ZONE_ANCHORS;
+    if (!zones?.length) return;
     const zoneCollection = {
       type: 'FeatureCollection',
-      features: [...zones.entries()].map(([zoneId, zone]) => ({
+      features: zones.map(zone => ({
         type: 'Feature',
-        id: zoneId,
+        id: zone.id,
         properties: { zoneLabel: zone.label },
         geometry: {
           type: 'Point',
-          coordinates: [
-            zone.coordinates.reduce((sum, coordinate) => sum + coordinate[0], 0) / zone.coordinates.length,
-            zone.coordinates.reduce((sum, coordinate) => sum + coordinate[1], 0) / zone.coordinates.length
-          ]
+          coordinates: zone.coordinates
         }
       }))
     };
@@ -2851,6 +3367,26 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       map.addSource(ACTIVE_ROUTE_SOURCE_ID, {
         type: 'geojson',
         data: EMPTY_LINESTRING
+      });
+    }
+    if (!map.getSource(PICKUP_ROUTE_SOURCE_ID)) {
+      map.addSource(PICKUP_ROUTE_SOURCE_ID, { type: 'geojson', data: EMPTY_LINESTRING });
+    }
+
+    if (!map.getLayer(PICKUP_ROUTE_LAYER_ID)) {
+      map.addLayer({
+        id: PICKUP_ROUTE_CASING_LAYER_ID,
+        type: 'line',
+        source: PICKUP_ROUTE_SOURCE_ID,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': 'rgba(255,255,255,.95)', 'line-width': 10, 'line-opacity': .92 }
+      });
+      map.addLayer({
+        id: PICKUP_ROUTE_LAYER_ID,
+        type: 'line',
+        source: PICKUP_ROUTE_SOURCE_ID,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#168bc5', 'line-width': 6, 'line-opacity': 1 }
       });
     }
 
@@ -2884,7 +3420,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
     const element = document.createElement('div');
     element.className = 'player-marker';
-    element.innerHTML = '<span class="player-marker-icon">🛺</span>';
+    element.innerHTML = '<span class="npc-thought" hidden></span><span class="player-marker-icon">🛺</span>';
 
     playerMarker = new maplibregl.Marker({
       element,
@@ -2937,6 +3473,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const from = window.CrazyTukGame?.getLocationById?.(fromId);
     const to = window.CrazyTukGame?.getLocationById?.(toId);
     if (!from || !to) return null;
+    if (fromId === toId) {
+      return { id: `stationary-${fromId}`, from: fromId, to: toId, coordinates: [from.geometry.coordinates] };
+    }
+    if (!window.CrazyTukGame?.CONFIG?.ALLOW_ROUTE_FALLBACK) return null;
     return {
       id: `direct-${fromId}-${toId}`,
       coordinates: [from.geometry.coordinates, to.geometry.coordinates]
@@ -2945,10 +3485,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
   function requestRoadRoute(fromId, toId) {
     const key = `${fromId}:${toId}`;
-    if (roadRouteCache.has(key) || pendingRoadRoutes.has(key)) return;
+    if (roadRouteCache.has(key)) return Promise.resolve(roadRouteCache.get(key));
+    if (pendingRoadRoutes.has(key)) return pendingRoadRoutes.get(key);
     const from = window.CrazyTukGame?.getLocationById?.(fromId);
     const to = window.CrazyTukGame?.getLocationById?.(toId);
-    if (!from || !to) return;
+    if (!from || !to) return Promise.resolve(null);
+    if (fromId === toId) {
+      const stationaryRoute = { id: `stationary-${fromId}`, from: fromId, to: toId, coordinates: [from.geometry.coordinates] };
+      roadRouteCache.set(key, stationaryRoute);
+      return Promise.resolve(stationaryRoute);
+    }
 
     const query = new URLSearchParams({
       from: from.geometry.coordinates.join(','),
@@ -2958,11 +3504,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok || !data.coordinates?.length) throw new Error(data.error || 'Road route unavailable');
+        const coordinates = [from.geometry.coordinates, ...data.coordinates, to.geometry.coordinates]
+          .filter((coordinate, index, all) => index === 0 || coordinate[0] !== all[index - 1][0] || coordinate[1] !== all[index - 1][1]);
         const roadRoute = {
           id: `road-${fromId}-${toId}`,
           from: fromId,
           to: toId,
-          coordinates: data.coordinates,
+          coordinates,
           distanceMeters: data.distanceMeters,
           durationSeconds: data.durationSeconds
         };
@@ -2972,38 +3520,39 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           id: `road-${toId}-${fromId}`,
           from: toId,
           to: fromId,
-          coordinates: [...data.coordinates].reverse()
+          coordinates: [...coordinates].reverse()
         });
 
         const player = window.CrazyTukGame?.getPlayer?.();
-        const fareId = player?.activeFareId || player?.selectedFareId;
-        const fare = window.CrazyTukGame?.getAvailableFares?.().find((entry) => entry.id === fareId);
-        if (fare?.pickupLocationId === fromId && fare?.destinationLocationId === toId) {
-          setRouteLine(roadRoute);
-          syncMapState(player);
-        }
+        if (player?.activeFareId || player?.selectedFareId) syncMapState(player);
+        return roadRoute;
       })
-      .catch((error) => console.warn('Using fallback route:', error.message))
+      .catch((error) => {
+        console.warn('Using fallback route:', error.message);
+        return getDisplayRoute(fromId, toId);
+      })
       .finally(() => pendingRoadRoutes.delete(key));
     pendingRoadRoutes.set(key, request);
+    return request;
   }
 
   function clearRouteLine() {
-    if (!map || !map.getSource(ACTIVE_ROUTE_SOURCE_ID)) return;
-    map.getSource(ACTIVE_ROUTE_SOURCE_ID).setData(EMPTY_LINESTRING);
+    if (!map) return;
+    map.getSource(ACTIVE_ROUTE_SOURCE_ID)?.setData(EMPTY_LINESTRING);
+    map.getSource(PICKUP_ROUTE_SOURCE_ID)?.setData(EMPTY_LINESTRING);
   }
 
-  function setRouteLine(route) {
+  function setRouteSource(sourceId, route) {
     if (!map) return;
     ensureRouteLayer();
-    if (!map.getSource(ACTIVE_ROUTE_SOURCE_ID)) return;
+    if (!map.getSource(sourceId)) return;
 
     if (!route?.coordinates?.length) {
-      clearRouteLine();
+      map.getSource(sourceId).setData(EMPTY_LINESTRING);
       return;
     }
 
-    map.getSource(ACTIVE_ROUTE_SOURCE_ID).setData({
+    map.getSource(sourceId).setData({
       type: 'Feature',
       properties: {
         routeId: route.id || null
@@ -3013,6 +3562,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         coordinates: route.coordinates
       }
     });
+  }
+
+  function setRouteLines(pickupRoute, destinationRoute) {
+    setRouteSource(PICKUP_ROUTE_SOURCE_ID, pickupRoute);
+    setRouteSource(ACTIVE_ROUTE_SOURCE_ID, destinationRoute);
   }
 
   function focusFareRoute() {
@@ -3110,11 +3664,33 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     initFareMarkers,
     showFareDetails,
     focusFareRoute,
+    prepareRoadRoute: requestRoadRoute,
     syncMapState
   };
 
   if (window.CrazyTukGame) {
     Object.assign(window.CrazyTukGame, window.CrazyTukMapUI);
+  }
+
+  function setMapNpcAvatar(element, npc, fallback = '🛺') {
+    if (!element) return;
+    const colors = ['#e8483f', '#f0a528', '#1f9d78', '#168bc5', '#d85882', '#8a63c7', '#d66a2c', '#4d9b43'];
+    const hash = [...(npc?.id || npc?.name || fallback)].reduce((total, character) => total + character.charCodeAt(0), 0);
+    const color = colors[hash % colors.length];
+    element.style.setProperty('--npc-color', color);
+    element.parentElement?.style.setProperty('--npc-color', color);
+    element.replaceChildren();
+    if (!npc?.avatar) {
+      element.textContent = npc?.avatarFallback || fallback;
+      return;
+    }
+    const image = document.createElement('img');
+    image.src = npc.avatar;
+    image.alt = npc.name ? `${npc.name} portrait` : 'Passenger portrait';
+    image.addEventListener('error', () => {
+      element.textContent = npc?.avatarFallback || fallback;
+    }, { once: true });
+    element.append(image);
   }
 
   function addFareMarker(fare) {
@@ -3135,14 +3711,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       markerElement.setAttribute('aria-label', `Select fare from ${npc.name}`);
       markerElement.innerHTML = `
         <div class="marker-content">
-          <span class="npc-avatar">${npc.avatar}</span>
+          <span class="npc-avatar"></span>
           <svg class="marker-countdown" viewBox="0 0 56 56" aria-hidden="true">
             <circle class="marker-countdown-track" cx="28" cy="28" r="24"></circle>
             <circle class="marker-countdown-progress" cx="28" cy="28" r="24"></circle>
           </svg>
+          <span class="npc-thought" hidden></span>
         </div>
         <span class="place-label">${pickupLocation.properties.name}</span>
       `;
+      setMapNpcAvatar(markerElement.querySelector('.npc-avatar'), npc);
 
       markerElement.addEventListener('pointerdown', (event) => {
         event.preventDefault();
@@ -3214,13 +3792,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
     const isSwitchingFare = !sheet.hidden && sheet.dataset.fareId && sheet.dataset.fareId !== fare.id;
 
-    document.getElementById('fareSheetPortrait').textContent = npc.avatar || '🛺';
+    setMapNpcAvatar(document.getElementById('fareSheetPortrait'), npc);
     document.getElementById('fareSheetName').textContent = npc.name;
     document.getElementById('fareSheetBio').textContent = npc.bio || npc.personality || '';
     const lineIndex = [...fare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % (npc.pickupLines?.length || 1);
     const pickupLine = npc.pickupLines?.[lineIndex] || 'Hey, can you give me a ride?';
     document.getElementById('fareSheetRequest').textContent = `“${pickupLine} I need to go to ${destination.properties.name}.”`;
-    document.getElementById('fareSheetFuel').textContent = `${window.CrazyTukGame.getPickupFuelCost?.(fare.pickupLocationId) || 1} fuel`;
+    const pickupFuelCost = window.CrazyTukGame.getPickupFuelCost(fare.pickupLocationId);
+    document.getElementById('fareSheetFuel').textContent = Number.isFinite(pickupFuelCost)
+      ? `${pickupFuelCost} fuel`
+      : 'Out of range';
     document.getElementById('fareSheetRequirement').textContent = conditionLabels[fare.condition] || fare.condition;
     document.getElementById('fareSheetReward').textContent = `+${fare.pointValue} pts`;
     document.getElementById('fareSheetTimerBar').style.width = `${progress * 100}%`;
@@ -3239,7 +3820,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   function syncMapState(player) {
     if (!map || !player) return;
 
-    let route = null;
+    let pickupRoute = null;
+    let destinationRoute = null;
+    let animationRoute = null;
     const fares = window.CrazyTukGame?.getAvailableFares?.() || [];
 
     let focusedFareId = null;
@@ -3247,16 +3830,29 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       const activeFare = fares.find((fare) => fare.id === player.activeFareId);
       if (activeFare) {
         focusedFareId = activeFare.id;
-        route = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
-        requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
-        const destination = window.CrazyTukGame?.getLocationById?.(activeFare.destinationLocationId);
-        if (destination) setDestinationMarkerLocation(destination.geometry.coordinates, destination.properties.name);
+        const isPickupLeg = player.status === 'PICKUP' && player.activeTrip?.leg === 'PICKUP';
+        if (isPickupLeg) {
+          const pickupFromId = player.activeTrip.fromLocationId || player.locationId;
+          pickupRoute = getDisplayRoute(pickupFromId, activeFare.pickupLocationId);
+          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          requestRoadRoute(pickupFromId, activeFare.pickupLocationId);
+          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          animationRoute = pickupRoute;
+        } else {
+          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          animationRoute = destinationRoute;
+        }
+        const routeTarget = window.CrazyTukGame?.getLocationById?.(activeFare.destinationLocationId);
+        if (routeTarget) setDestinationMarkerLocation(routeTarget.geometry.coordinates, routeTarget.properties.name);
       }
     } else if (player.selectedFareId) {
       const selectedFare = fares.find((fare) => fare.id === player.selectedFareId);
       if (selectedFare) {
         focusedFareId = selectedFare.id;
-        route = getDisplayRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId);
+        pickupRoute = getDisplayRoute(player.locationId, selectedFare.pickupLocationId);
+        destinationRoute = getDisplayRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId);
+        requestRoadRoute(player.locationId, selectedFare.pickupLocationId);
         requestRoadRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId);
         const destination = window.CrazyTukGame?.getLocationById?.(selectedFare.destinationLocationId);
         if (destination) setDestinationMarkerLocation(destination.geometry.coordinates, destination.properties.name);
@@ -3266,22 +3862,65 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       lastFittedRouteSignature = null;
     }
 
-    map.getContainer().classList.toggle('route-focused', Boolean(route));
+    map.getContainer().classList.toggle('route-focused', Boolean(pickupRoute || destinationRoute));
 
     const currentLocation = window.CrazyTukGame?.getLocationById?.(player.locationId);
     const drivingProgress = Math.max(0, Math.min(1, player.activeTrip?.progress || 0));
-    if (route && player.activeFareId && (player.status === 'DRIVING' || player.status === 'STALLED')) {
-      setPlayerMarkerLocation(getCoordinateAlongRoute(route.coordinates, drivingProgress));
+    if (animationRoute && player.activeFareId && (player.status === 'PICKUP' || player.status === 'DRIVING' || player.status === 'STALLED')) {
+      setPlayerMarkerLocation(getCoordinateAlongRoute(animationRoute.coordinates, drivingProgress));
     } else if (currentLocation) {
-      const restingSpot = (player.selectedFareId || player.activeFareId)
-        ? offsetCoordinate(currentLocation.geometry.coordinates)
-        : currentLocation.geometry.coordinates;
-      setPlayerMarkerLocation(restingSpot);
+      setPlayerMarkerLocation(currentLocation.geometry.coordinates);
     }
 
-    setRouteLine(route);
+    setRouteLines(pickupRoute, destinationRoute);
     initFareMarkers();
-    fitRouteToViewport(route, focusedFareId);
+    updateNpcThoughts(player, fares.find((fare) => fare.id === player.activeFareId));
+    const combinedRoute = pickupRoute && destinationRoute
+      ? { id: `${pickupRoute.id}+${destinationRoute.id}`, coordinates: [...pickupRoute.coordinates, ...destinationRoute.coordinates] }
+      : pickupRoute || destinationRoute;
+    fitRouteToViewport(combinedRoute, focusedFareId);
+  }
+
+  function updateNpcThoughts(player, activeFare) {
+    fareMarkers.forEach(marker => {
+      const thought = marker.getElement()?.querySelector('.npc-thought');
+      if (thought) thought.hidden = true;
+    });
+    const playerThought = playerMarker?.getElement()?.querySelector('.npc-thought');
+    if (playerThought) playerThought.hidden = true;
+    if (!activeFare) return;
+
+    const npc = window.CrazyTukGame?.getNPCById?.(activeFare.npcId);
+    if (!npc) return;
+    const lineSeed = [...activeFare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+
+    if (player.status === 'PICKUP') {
+      const lines = npc.pickupLines?.length ? npc.pickupLines : ['I am waiting!'];
+      const thought = fareMarkers.get(activeFare.id)?.getElement()?.querySelector('.npc-thought');
+      if (thought) {
+        thought.textContent = lines[lineSeed % lines.length];
+        thought.hidden = false;
+      }
+      return;
+    }
+
+    if (player.status !== 'DRIVING') return;
+    const lines = npc.drivingLines?.length ? npc.drivingLines : [];
+    if (!lines.length || !playerThought) return;
+    const now = Date.now();
+    if (rideThoughtFareId !== activeFare.id) {
+      rideThoughtFareId = activeFare.id;
+      rideThoughtIndex = lineSeed % lines.length;
+      rideThoughtUntil = 0;
+      nextRideThoughtAt = now + 1200;
+    }
+    if (now >= nextRideThoughtAt) {
+      playerThought.textContent = lines[rideThoughtIndex % lines.length];
+      rideThoughtIndex += 1;
+      rideThoughtUntil = now + 2800;
+      nextRideThoughtAt = now + 7000 + (lineSeed % 3500);
+    }
+    if (now < rideThoughtUntil) playerThought.hidden = false;
   }
 
   function getCoordinateAlongRoute(coordinates, progress) {

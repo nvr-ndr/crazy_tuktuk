@@ -12,7 +12,8 @@ export const DashboardStats = {
   async getStats() {
     try {
       const player = window.CrazyTukGame?.getPlayer();
-      const walletStats = window.CrazyTukGame?.getSwapStatistics?.(null);
+      const wallet = window.CrazyTukGame?.getWalletPublicKey?.();
+      const walletStats = await window.CrazyTukGame?.getSwapStatistics?.(wallet);
 
       if (!player) {
         throw new Error('No player data available');
@@ -398,121 +399,59 @@ export const DashboardUI = {
     dashboard.className = 'dashboard';
     dashboard.innerHTML = `
       <div class="dashboard-header">
-        <h2>Dashboard</h2>
+        <div>
+          <h2>Dashboard</h2>
+        </div>
         <button class="dashboard-close">✕</button>
       </div>
 
       <div class="dashboard-content">
-        <!-- Stats Section -->
-        <section class="dashboard-section">
-          <h3>📊 Stats</h3>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <span class="stat-label">Points</span>
-              <span class="stat-value" id="stat-points">0</span>
+        <div id="dashboardView" class="dashboard-view">
+          <section class="driver-hero">
+            <div class="driver-hero-art" aria-hidden="true">🛺</div>
+            <div class="driver-hero-copy">
+              <span>Driver</span>
+              <b id="dashboardPlayerName">Crazy Tuk Driver</b>
+              <small id="dashboardWalletLabel">Wallet not connected</small>
             </div>
-            <div class="stat-card">
-              <span class="stat-label">Fuel</span>
-              <span class="stat-value" id="stat-fuel">20</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Completed Fares</span>
-              <span class="stat-value" id="stat-completed">0</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Today\'s Fares</span>
-              <span class="stat-value" id="stat-today">0</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Total Swaps</span>
-              <span class="stat-value" id="stat-swaps">0</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Fuel Earned</span>
-              <span class="stat-value" id="stat-fuel-earned">0</span>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- Transaction History -->
-        <section class="dashboard-section">
-          <h3>💰 Transaction History</h3>
-          <div class="transaction-list" id="transaction-list">
-            <div class="empty-state">No transactions yet</div>
-          </div>
-        </section>
+          <section class="dashboard-section">
+            <h3>Driver Stats</h3>
+            <div class="stats-grid">
+              <div class="stat-card"><span class="stat-label">Points</span><span class="stat-value" id="stat-points">0</span></div>
+              <div class="stat-card"><span class="stat-label">Fuel</span><span class="stat-value" id="stat-fuel">20</span></div>
+              <div class="stat-card"><span class="stat-label">Completed</span><span class="stat-value" id="stat-completed">0</span></div>
+              <div class="stat-card"><span class="stat-label">Today</span><span class="stat-value" id="stat-today">0</span></div>
+            </div>
+          </section>
+        </div>
 
-        <!-- Leaderboard -->
-        <section class="dashboard-section">
-          <h3>🏆 Leaderboard</h3>
-          <div class="leaderboard-list" id="leaderboard-list">
-            <div class="empty-state">Loading leaderboard...</div>
-          </div>
-        </section>
+        <div id="swapActivityView" class="dashboard-view" hidden>
+          <section class="dashboard-section">
+            <h3>Swap Activity</h3>
+            <div class="dashboard-mini-grid">
+              <div class="mini-card"><span>Total Swaps</span><b id="stat-swaps">0</b></div>
+              <div class="mini-card"><span>Confirmed</span><b id="stat-completed-swaps">0</b></div>
+              <div class="mini-card"><span>Swap Volume</span><b id="stat-volume">$0.00</b></div>
+              <div class="mini-card"><span>Stalls</span><b id="stat-stalls">0</b></div>
+            </div>
+          </section>
+        </div>
 
-        <!-- Navigation -->
+        <div id="transactionHistoryView" class="dashboard-view" hidden>
+          <section class="dashboard-section">
+            <h3>Transaction History</h3>
+            <div class="transaction-list" id="transaction-list"><div class="empty-state">No transactions yet</div></div>
+          </section>
+        </div>
+
         <div class="dashboard-nav">
-          <button class="nav-btn primary" id="nav-dashboard">
-            <span>📊</span> Dashboard
-          </button>
-          <button class="nav-btn" id="nav-settings">
-            <span>⚙</span> Settings
-          </button>
-          <button class="nav-btn" id="nav-help">
-            <span>📖</span> Help
-          </button>
+          <button class="nav-btn primary" id="nav-dashboard"><span>📊</span> Dashboard</button>
+          <button class="nav-btn" id="nav-swaps"><span>↔</span> Swaps</button>
+          <button class="nav-btn" id="nav-history"><span>▤</span> History</button>
         </div>
       </div>
-
-      <!-- Settings Panel -->
-      <section class="dashboard-panel" id="settings-panel">
-        <h3>⚙️ Settings</h3>
-        <div class="settings-list">
-          <div class="setting-item">
-            <span>Sound Enabled</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="setting-sound" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <span>Music Enabled</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="setting-music">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <span>Vibration</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="setting-vibration" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <span>Notifications</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="setting-notifications" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <span>Fuel Warnings</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="setting-fuel-warnings" checked>
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <button class="reset-settings" id="reset-settings">Reset All Settings</button>
-        </div>
-      </section>
-
-      <!-- Help Panel -->
-      <section class="dashboard-panel" id="help-panel">
-        <h3>📖 How to Play</h3>
-        <div class="help-content" id="help-content"></div>
-        <button class="close-help">Close</button>
-      </section>
     `;
 
     container.appendChild(dashboard);
@@ -530,14 +469,23 @@ export const DashboardUI = {
       completed: document.getElementById('stat-completed'),
       today: document.getElementById('stat-today'),
       swaps: document.getElementById('stat-swaps'),
-      fuelEarned: document.getElementById('stat-fuel-earned')
+      volume: document.getElementById('stat-volume'),
+      completedSwaps: document.getElementById('stat-completed-swaps'),
+      stalls: document.getElementById('stat-stalls'),
+      playerName: document.getElementById('dashboardPlayerName'),
+      walletLabel: document.getElementById('dashboardWalletLabel')
     };
 
-    Object.entries(elements).forEach(([key, element]) => {
-      if (element) {
-        element.textContent = stats[key] || 0;
-      }
-    });
+    if (elements.points) elements.points.textContent = stats.points ?? 0;
+    if (elements.fuel) elements.fuel.textContent = stats.fuel ?? 0;
+    if (elements.completed) elements.completed.textContent = stats.completedFares ?? stats.completed ?? 0;
+    if (elements.today) elements.today.textContent = stats.completedFaresToday ?? stats.today ?? 0;
+    if (elements.swaps) elements.swaps.textContent = stats.totalSwaps ?? 0;
+    if (elements.volume) elements.volume.textContent = `$${Number(stats.totalUsdValue || 0).toFixed(2)}`;
+    if (elements.completedSwaps) elements.completedSwaps.textContent = stats.swaps?.completedSwaps ?? 0;
+    if (elements.stalls) elements.stalls.textContent = stats.player?.stallCount ?? 0;
+    if (elements.playerName) elements.playerName.textContent = stats.player?.name || 'Crazy Tuk Driver';
+    if (elements.walletLabel) elements.walletLabel.textContent = stats.walletLabel || 'Wallet not connected';
   },
 
   /**
@@ -605,25 +553,31 @@ export const DashboardUI = {
       <div class="leaderboard-item ${entry.isCurrentUser ? 'current-user' : ''}">
         <span class="leaderboard-rank">${index + 1}</span>
         <span class="leaderboard-name">${entry.name}</span>
-        <span class="leaderboard-points">${entry.points}</span>
-      </div>
+      <span class="leaderboard-points">${entry.points}</span>
+    </div>
     `).join('');
+
   },
 
   /**
-   * Toggle dashboard panels
+   * Show one dashboard view and activate the matching nav button.
    */
-  togglePanel(panelId) {
-    const panels = ['settings-panel', 'help-panel'];
-    panels.forEach(panelId => {
-      const panel = document.getElementById(panelId);
-      if (panel) {
-        if (panel.id === panelId) {
-          panel.classList.toggle('hidden');
-        } else {
-          panel.classList.add('hidden');
-        }
-      }
+  showView(view = 'dashboard') {
+    const views = {
+      dashboard: document.getElementById('dashboardView'),
+      swaps: document.getElementById('swapActivityView'),
+      history: document.getElementById('transactionHistoryView')
+    };
+    const buttons = {
+      dashboard: document.getElementById('nav-dashboard'),
+      swaps: document.getElementById('nav-swaps'),
+      history: document.getElementById('nav-history')
+    };
+    Object.entries(views).forEach(([key, element]) => {
+      if (element) element.hidden = key !== view;
+    });
+    Object.entries(buttons).forEach(([key, button]) => {
+      button?.classList.toggle('primary', key === view);
     });
   }
 };

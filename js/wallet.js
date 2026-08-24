@@ -527,9 +527,6 @@ export function createWalletModal() {
           window.CrazyTukGame.walletState = result;
           window.CrazyTukGame.updateHUD(window.CrazyTukGame.getPlayer());
         }
-
-        // Show success toast
-        showNotification('Wallet connected successfully!', 'success');
       } else {
         showNotification(`Failed to connect: ${result.error}`, 'error');
       }

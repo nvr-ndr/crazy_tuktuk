@@ -2,12 +2,13 @@
 // Core game loop and fare management
 
 import { CONFIG } from '../data/config.js';
-import { getRandomNPC, createFare } from '../data/npcs.js?v=20260823w';
+import { getRandomNPC, createFare } from '../data/npcs.js?v=20260824world1';
+import { getLocationById } from '../data/locations.js?v=20260824world1';
 import { ROUTES, getRoute, getRoutesFromLocation } from '../data/routes.js';
 import { PLAYER_STATES } from '../data/config.js';
 import { PLAYER_KEY, getPlayer, loadOrCreatePlayer, updatePlayer, hasEnoughFuel, loadLeaderboard, saveLeaderboard } from '../data/player.js';
 
-const FARES_KEY = "crazytuk_faresV2";
+const FARES_KEY = "crazytuk_faresV4";
 
 export function getAvailableFares() {
   const saved = localStorage.getItem(FARES_KEY);
@@ -43,13 +44,14 @@ export function updateFare(fareId, updates) {
 export function generateInitialFares(playerWallet) {
   const fares = [];
   const usedNPCs = new Set();
+  let attempts = 0;
 
-  while (fares.length < CONFIG.MIN_ACTIVE_FARES) {
+  while (fares.length < CONFIG.MIN_ACTIVE_FARES && attempts < 100) {
+    attempts += 1;
     const randomNPC = getRandomNPC();
     const npcId = randomNPC.id;
 
-    // Don't generate too many from same NPC
-    if (usedNPCs.has(npcId) && usedNPCs.size > 3) break;
+    if (usedNPCs.has(npcId)) continue;
     usedNPCs.add(npcId);
 
     const fare = createFare(playerWallet, npcId);
@@ -66,15 +68,24 @@ export function generateInitialFares(playerWallet) {
 }
 
 export function refreshFares(playerWallet) {
-  // Remove expired fares
-  const remainingFares = getAvailableFares().filter(f => f.expiresAt > Date.now());
+  // Remove expired fares and collapse legacy duplicates before replenishing the map.
+  const usedNPCs = new Set();
+  const remainingFares = getAvailableFares().filter((fare) => {
+    if (fare.expiresAt <= Date.now() || usedNPCs.has(fare.npcId)) return false;
+    usedNPCs.add(fare.npcId);
+    return true;
+  });
 
   // Replace expired/completed fares
-  while (remainingFares.length < CONFIG.MIN_ACTIVE_FARES) {
+  let attempts = 0;
+  while (remainingFares.length < CONFIG.MIN_ACTIVE_FARES && attempts < 100) {
+    attempts += 1;
     const randomNPC = getRandomNPC();
+    if (usedNPCs.has(randomNPC.id)) continue;
     const fare = createFare(playerWallet, randomNPC.id);
     if (fare) {
       remainingFares.push(fare);
+      usedNPCs.add(randomNPC.id);
     }
   }
 
@@ -97,33 +108,28 @@ export function hasRoutesFromLocation(locationId) {
   return getRoutesFromLocation(locationId).length > 0;
 }
 
-// Calculate pickup fuel cost for a location
+function getLocationDistanceKm(fromId, toId) {
+  const from = getLocationById(fromId);
+  const to = getLocationById(toId);
+  if (!from || !to) return Infinity;
+
+  const [fromLng, fromLat] = from.geometry.coordinates;
+  const [toLng, toLat] = to.geometry.coordinates;
+  const toRadians = value => value * Math.PI / 180;
+  const latDelta = toRadians(toLat - fromLat);
+  const lngDelta = toRadians(toLng - fromLng);
+  const a = Math.sin(latDelta / 2) ** 2
+    + Math.cos(toRadians(fromLat)) * Math.cos(toRadians(toLat)) * Math.sin(lngDelta / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// One fuel covers roughly three kilometers across the expanded Bangkok map.
 export function getPickupFuelCost(locationId, fromLocationId = null) {
   const player = getPlayer();
   const startId = fromLocationId || player?.locationId;
   if (!startId || !locationId || startId === locationId) return 0;
-
-  const costs = new Map([[startId, 0]]);
-  const queue = [{ id: startId, cost: 0 }];
-  while (queue.length) {
-    queue.sort((a, b) => a.cost - b.cost);
-    const current = queue.shift();
-    if (current.id === locationId) return current.cost;
-    if (current.cost !== costs.get(current.id)) continue;
-
-    Object.values(ROUTES).forEach((route) => {
-      let nextId = null;
-      if (route.from === current.id) nextId = route.to;
-      if (route.reversible && route.to === current.id) nextId = route.from;
-      if (!nextId) return;
-      const nextCost = current.cost + route.fuelCost;
-      if (nextCost < (costs.get(nextId) ?? Infinity)) {
-        costs.set(nextId, nextCost);
-        queue.push({ id: nextId, cost: nextCost });
-      }
-    });
-  }
-  return Infinity;
+  const distanceKm = getLocationDistanceKm(startId, locationId);
+  return Number.isFinite(distanceKm) ? Math.max(1, Math.ceil(distanceKm / 3)) : Infinity;
 }
 
 // Game event emitter
@@ -203,17 +209,17 @@ export function claimFare(fareId, playerWallet) {
       return null; // Not enough fuel for pickup
     }
 
-    player.fuel -= pickupFuel;
-
     player.selectedFareId = null;
     player.status = PLAYER_STATES.PICKUP;
 
-    // Start pickup animation
+    // The pickup is a real route leg from the tuk-tuk's current location.
     player.activeTrip = {
       startedAt: Date.now(),
-      locationId: fare.pickupLocationId,
+      leg: 'PICKUP',
+      fromLocationId: player.locationId,
+      pickupLocationId: fare.pickupLocationId,
       destinationLocationId: fare.destinationLocationId,
-      fuelSpent: pickupFuel,
+      fuelSpent: 0,
       fuelCost: pickupFuel,
       progress: 0
     };
@@ -238,15 +244,18 @@ export function completePickup(fareId, playerWallet) {
 
     player.status = PLAYER_STATES.DRIVING;
 
-    // Get route
+    const calculatedFuelCost = getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
+
+    // Preserve authored routes where available and price new world locations by distance.
     const route = getRoute(fare.pickupLocationId, fare.destinationLocationId, true) || {
       id: `direct-${fare.pickupLocationId}-${fare.destinationLocationId}`,
-      fuelCost: 5,
-      durationMs: 6000
+      fuelCost: Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : 5,
+      durationMs: Math.max(6000, (Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : 5) * 1800)
     };
 
     player.activeTrip = {
       startedAt: Date.now(),
+      leg: 'RIDE',
       pickupLocationId: fare.pickupLocationId,
       destinationLocationId: fare.destinationLocationId,
       fuelCost: route.fuelCost,
@@ -266,6 +275,28 @@ export function completePickup(fareId, playerWallet) {
 
     return player;
   });
+}
+
+// Advance the tuk-tuk from its current location to the waiting passenger.
+export function simulatePickupProgress(fareId, playerWallet) {
+  const updated = updatePlayer(player => {
+    const trip = player.activeTrip;
+    if (player.status !== PLAYER_STATES.PICKUP || !trip || trip.leg !== 'PICKUP') return null;
+    if (!getPlayerFare(playerWallet, fareId)) return null;
+
+    const progress = trip.progress || 0;
+    const requestedProgress = Math.min(.02, 1 - progress);
+    const requestedFuel = trip.fuelCost * requestedProgress;
+    const fuelConsumed = Math.min(player.fuel, requestedFuel);
+    player.fuel = Math.max(0, player.fuel - fuelConsumed);
+    trip.fuelSpent = (trip.fuelSpent || 0) + fuelConsumed;
+    trip.progress = Math.min(1, progress + (trip.fuelCost > 0 ? fuelConsumed / trip.fuelCost : requestedProgress));
+
+    return player;
+  });
+
+  if (updated?.activeTrip?.progress >= 1) return completePickup(fareId, playerWallet);
+  return updated;
 }
 
 // Complete fare

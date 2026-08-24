@@ -2,7 +2,7 @@
 // Player state management for Crazy Tuk
 
 import { CONFIG, PLAYER_STATES } from './config.js';
-import { getStartingLocation, getRandomLocation } from './locations.js';
+import { getStartingLocation, getRandomLocation } from './locations.js?v=20260824world1';
 import { FUEL_TIERS } from './config.js';
 
 export const PLAYER_KEY = "crazytuk_playerV1";
