@@ -825,6 +825,51 @@
       background: var(--panel2);
     }
     .core-panel-back { width: fit-content; margin-top: 16px; padding: 9px 16px; }
+    .wallet-modal {
+      position: fixed;
+      z-index: 2200;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(4, 8, 18, .68);
+      backdrop-filter: blur(8px);
+    }
+    .wallet-modal-content {
+      width: min(100%, 380px);
+      padding: 22px;
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgb(163 30 76 / 98%), rgb(145 27 27 / 98%));
+      box-shadow: 0 24px 60px rgba(0,0,0,.5);
+      color: white;
+      text-align: center;
+    }
+    .wallet-modal-content h2 { margin: 0; font-size: 24px; }
+    .wallet-modal-subtitle { margin: 8px 0 18px; color: rgba(255,255,255,.7); font-size: 13px; line-height: 1.45; }
+    .wallet-list { display: grid; gap: 9px; }
+    .wallet-button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 11px;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 13px;
+      background: rgba(0,0,0,.2);
+      color: white;
+      font: inherit;
+      font-weight: 900;
+      text-align: left;
+      cursor: pointer;
+    }
+    .wallet-button:hover { border-color: var(--warn); background: rgba(246,212,107,.12); }
+    .wallet-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: var(--panel2); font-size: 18px; }
+    .wallet-empty { margin: 0; padding: 12px; border-radius: 13px; background: rgba(0,0,0,.2); color: rgba(255,255,255,.74); font-size: 12px; line-height: 1.45; }
+    .wallet-install-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+    .wallet-install-links a { padding: 8px 11px; solid rgba(246,212,107,.45); border-radius: 999px; background-color: #333333c9; color: var(--warn); font-size: 11px; font-weight: 900; text-decoration: none; }
+    .wallet-install-links a:hover { background: rgba(246,212,107,.12); }
+    .wallet-close { display: block; width: fit-content; margin: 16px auto 0; padding: 8px 14px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; background: rgba(0,0,0,.18); color: white; font: inherit; font-size: 11px; font-weight: 900; cursor: pointer; }
+    .wallet-close:hover { border-color: rgba(255,255,255,.55); }
     /* Active Fare Display */
     .map-overlay-stack {
       position: absolute;
@@ -1023,6 +1068,13 @@
     .stage.swap-open > .fare-sheet { display: none; }
     .fare-sheet.is-switching { animation: fare-sheet-switch .3s cubic-bezier(.2, 1.5, .4, 1); }
     .fare-sheet-head { display: flex; gap: 12px; align-items: center; padding-right: 34px; }
+    .fare-sheet-head-copy { min-width: 0; flex: 1; }
+    .fare-condition-signals { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+    .fare-condition-signal { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: rgba(0,0,0,.18); color: rgba(255,255,255,.75); font-size: 8px; font-weight: 900; letter-spacing: .08em; line-height: 1; }
+    .fare-condition-signal b { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #8992a7; box-shadow: 0 0 0 2px rgba(0,0,0,.2); }
+    .fare-condition-signal.signal-green b { background: var(--good); box-shadow: 0 0 8px rgba(66,232,137,.65); }
+    .fare-condition-signal.signal-yellow b { background: var(--warn); box-shadow: 0 0 8px rgba(246,212,107,.65); }
+    .fare-condition-signal.signal-red b { background: var(--danger); box-shadow: 0 0 8px rgba(255,82,99,.65); }
     .fare-sheet-portrait {
       display: grid;
       width: 58px;
@@ -1054,7 +1106,7 @@
     }
     .fare-sheet-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin: 14px 0;
     }
@@ -2236,8 +2288,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const outputMint = document.getElementById('swapOutputToken').value;
         const amount = Number(document.getElementById('swapInputAmount').value) || 0;
         const usdValue = STABLE_TOKENS.includes(inputMint) ? amount : amount;
-        const fuel = calculateFuelEarned(usdValue);
-        document.getElementById('swapFuelEstimate').textContent = `+${fuel} fuel`;
 
         const fare = swapContext.fareId
           ? getAvailableFares().find((entry) => entry.id === swapContext.fareId)
@@ -2652,11 +2702,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           // Fallback to wallet modal
           const modal = WalletModule.createWalletModal();
           document.body.appendChild(modal);
-          modal.style.position = 'fixed';
-          modal.style.zIndex = '1000';
-          modal.style.left = '50%';
-          modal.style.top = '50%';
-          modal.style.transform = 'translate(-50%, -50%)';
           console.log('Wallet modal shown');
         }
       }
@@ -3224,17 +3269,20 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <button id="fareSheetClose" class="fare-sheet-close" type="button" aria-label="Close fare details">×</button>
       <div class="fare-sheet-head">
         <div id="fareSheetPortrait" class="fare-sheet-portrait">🛺</div>
-        <div>
+        <div class="fare-sheet-head-copy">
           <div class="fare-sheet-kicker">FARE FOUND</div>
           <h2 id="fareSheetName" class="fare-sheet-name">Passenger</h2>
           <p id="fareSheetBio" class="fare-sheet-bio"></p>
+          <div class="fare-condition-signals" aria-label="Road and market conditions">
+            <span id="fareSheetRoadSignal" class="fare-condition-signal"><b aria-hidden="true"></b>ROAD · LIGHT</span>
+            <span id="fareSheetMarketSignal" class="fare-condition-signal"><b aria-hidden="true"></b>MARKET · FAVORABLE</span>
+          </div>
         </div>
       </div>
       <p id="fareSheetRequest" class="fare-sheet-request"></p>
       <div class="fare-sheet-grid">
         <div class="fare-sheet-stat"><span>SWAP REQUIREMENT</span><b id="fareSheetRequirement">--</b></div>
         <div class="fare-sheet-stat"><span>REWARD</span><b id="fareSheetReward">--</b></div>
-        <div class="fare-sheet-stat"><span>FUEL TO PICKUP</span><b id="fareSheetFuel">--</b></div>
       </div>
       <div class="fare-sheet-timer">
         <div class="fare-sheet-timer-meta"><span>PASSENGER PATIENCE</span><b id="fareSheetTimerLabel">--</b></div>
@@ -3262,13 +3310,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             </div>
           </div>
           <div class="swap-impact">
-            <div><span>ESTIMATED FUEL</span><b id="swapFuelEstimate">+5 fuel</b></div>
             <div><span>FARE CONDITION</span><b id="swapFareQualification">Checking...</b></div>
             <div><span>SLIPPAGE</span><b>0.5%</b></div>
           </div>
         </div>
         <button id="swapSubmit" class="ui-button primary fare-sheet-action" type="button">SWAP &amp; PICK UP</button>
-        <button id="mockSwapSubmit" class="ui-button dev-swap-button" type="button" hidden>DEV: MOCK CONFIRMED SWAP</button>
+        <button id="mockSwapSubmit" class="ui-button dev-swap-button" type="button" hidden>DEV SWAP</button>
       </section>
       <p class="swap-attribution">Powered by DFlow · Wallet approval required</p>
     </div>
@@ -4182,12 +4229,22 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const lineIndex = [...fare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % (npc.pickupLines?.length || 1);
     const pickupLine = npc.pickupLines?.[lineIndex] || 'Hey, can you give me a ride?';
     document.getElementById('fareSheetRequest').textContent = `“${pickupLine} I need to go to ${destination.properties.name}.”`;
-    const pickupFuelCost = window.CrazyTukGame.getPickupFuelCost(fare.pickupLocationId);
-    document.getElementById('fareSheetFuel').textContent = Number.isFinite(pickupFuelCost)
-      ? `${pickupFuelCost} fuel`
-      : 'Out of range';
     document.getElementById('fareSheetRequirement').textContent = conditionLabels[fare.condition] || fare.condition;
     document.getElementById('fareSheetReward').textContent = `+${fare.pointValue} pts`;
+    const signalLevel = (level) => ['GREEN', 'YELLOW', 'RED'].includes(level) ? level : 'GREEN';
+    const roadLevel = signalLevel(fare.roadTrafficLevel);
+    const marketLevel = signalLevel(fare.marketTrafficLevel);
+    const roadLabels = { GREEN: 'LIGHT', YELLOW: 'BUSY', RED: 'HEAVY' };
+    const marketLabels = { GREEN: 'FAVORABLE', YELLOW: 'MODERATE', RED: 'DIFFICULT' };
+    const updateFareSignal = (id, prefix, level, label) => {
+      const element = document.getElementById(id);
+      if (!element) return;
+      element.className = `fare-condition-signal signal-${level.toLowerCase()}`;
+      element.title = `${prefix}: ${level} — ${label.toLowerCase()} conditions`;
+      element.innerHTML = `<b aria-hidden="true"></b>${prefix} · ${label}`;
+    };
+    updateFareSignal('fareSheetRoadSignal', 'ROAD', roadLevel, roadLabels[roadLevel]);
+    updateFareSignal('fareSheetMarketSignal', 'MARKET', marketLevel, marketLabels[marketLevel]);
     document.getElementById('fareSheetTimerBar').style.width = `${progress * 100}%`;
     document.getElementById('fareSheetTimerLabel').textContent = `${Math.ceil(remaining / 60000)}m left`;
     sheet.dataset.fareId = fare.id;
@@ -4442,7 +4499,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     setText('stat-stalls', 0);
     const swapList = $('agentSwapList');
     if (swapList) swapList.innerHTML = swaps.length
-      ? swaps.slice(0, 8).map((swap) => `<article class="agent-record"><div class="agent-record-copy"><strong>USDC → FUEL</strong><span>${swap.passenger} · +${swap.fuel} fuel · $${Number(swap.volume).toFixed(2)}</span></div><small>${swap.market}<br>${new Date(swap.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</small></article>`).join('')
+      ? swaps.slice(0, 8).map((swap) => {
+        const pair = swap.realQuote ? `${swap.inputSymbol} → ${swap.outputSymbol}` : 'MOCK SWAP';
+        const detail = swap.realQuote
+          ? `${swap.passenger} · ${swap.outputDisplay} · ${swap.feeDisplay}`
+          : `${swap.passenger} · simulated $${Number(swap.volume).toFixed(2)} swap`;
+        return `<article class="agent-record"><div class="agent-record-copy"><strong>${pair}</strong><span>${detail}</span></div><small>${swap.market}<br>${new Date(swap.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</small></article>`;
+      }).join('')
       : '<div class="empty-state">Autonomous swaps will appear during the Shift.</div>';
     const bestRank = shifts.length ? Math.min(...shifts.map((shift) => Number(shift.rank) || 999)) : null;
     setText('agentCareerShifts', shifts.length);
@@ -4637,8 +4700,106 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       duration: Number(config.TOURNAMENT_SHIFT_DURATION_SECONDS) || 600,
       bankroll: Number(config.TOURNAMENT_STARTING_BANKROLL) || 20,
       pitCalls: Number(config.TOURNAMENT_PIT_CALLS) || 3,
-      mockSwapUsd: Number(config.TOURNAMENT_MOCK_SWAP_USD) || 3
+      mockSwapUsd: Number(config.TOURNAMENT_MOCK_SWAP_USD) || 3,
+      quoteInputLamports: String(config.TOURNAMENT_DFLOW_QUOTE_INPUT_AMOUNT_LAMPORTS || 30000000),
+      runnerUrl: String(config.AGENT_RUNNER_URL || '').replace(/\/$/, '')
     };
+  }
+  function getAgentRunnerClientId() {
+    if (agentRun?.runnerClientId) return agentRun.runnerClientId;
+    const clientId = globalThis.crypto?.randomUUID?.().replaceAll('-', '') || `agent${Date.now()}${Math.random().toString(16).slice(2)}`;
+    if (agentRun) {
+      agentRun.runnerClientId = clientId;
+      saveAgentRun();
+    }
+    return clientId;
+  }
+  async function ensureAgentRunnerRun() {
+    const config = getTournamentConfig();
+    if (!config.runnerUrl || !agentRun) return null;
+    const session = await authenticateAgentRunner(config.runnerUrl);
+    if (!session) return null;
+    if (agentRun.runnerId && agentRun.runnerWallet === session.wallet) return { id: agentRun.runnerId, token: session.token };
+    const mockState = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    const details = MOCK_DRIVER_DETAILS[mockState?.driver] || MOCK_DRIVER_DETAILS['degen-dao'];
+    const response = await fetch(`${config.runnerUrl}/v1/dev/agent-runs`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
+      body: JSON.stringify({ clientId: getAgentRunnerClientId(), name: details.name, persona: details.style })
+    });
+    if (!response.ok) throw new Error('Agent Runner registration failed');
+    const payload = await response.json();
+    agentRun.runnerId = payload.agentRunId;
+    agentRun.runnerWallet = session.wallet;
+    saveAgentRun();
+    return { id: agentRun.runnerId, token: session.token };
+  }
+  async function authenticateAgentRunner(runnerUrl) {
+    const wallet = WalletModule.getWalletPublicKey?.();
+    if (!wallet) return null;
+    const storageKey = `crazytuk_agent_session_${wallet}`;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
+      if (cached?.token && cached?.expiresAt && new Date(cached.expiresAt).getTime() > Date.now() + 10_000) return { ...cached, wallet };
+      const challenge = await fetch(`${runnerUrl}/v1/auth/challenge`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ wallet })
+      });
+      if (!challenge.ok) throw new Error('Agent Runner challenge failed');
+      const payload = await challenge.json();
+      const signatureBytes = await WalletModule.signMessage(payload.message);
+      const signature = btoa(String.fromCharCode(...signatureBytes));
+      const verification = await fetch(`${runnerUrl}/v1/auth/verify`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ challengeId: payload.challengeId, signature })
+      });
+      if (!verification.ok) throw new Error('Agent wallet signature was not accepted');
+      const session = await verification.json();
+      sessionStorage.setItem(storageKey, JSON.stringify(session));
+      return { ...session, wallet };
+    } catch (error) {
+      recordAgentActivity('Quote authentication unavailable', error.message, 'AUTH');
+      return null;
+    }
+  }
+  async function requestAgentFareQuote(fare) {
+    const config = getTournamentConfig();
+    const runner = await ensureAgentRunnerRun();
+    if (!runner || !config.runnerUrl) return null;
+    const plan = getAgentQuotePlan(fare);
+    const response = await fetch(`${config.runnerUrl}/v1/agent-runs/${runner.id}/quotes`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${runner.token}` },
+      body: JSON.stringify({
+        fareId: fare.id,
+        ...plan,
+        fareId: fare.id,
+        notionalUsd: config.mockSwapUsd,
+        slippageBps: '100'
+      })
+    });
+    if (!response.ok) throw new Error(response.status === 429 ? 'Quote is rate limited; retrying fare simulation.' : 'Quote unavailable; continuing fare simulation.');
+    return { ...(await response.json()), plan };
+  }
+  function getAgentQuotePlan(fare) {
+    const config = getTournamentConfig();
+    const SOL = 'So11111111111111111111111111111111111111112';
+    const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+    const USDT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
+    const stableAmount = String(Math.ceil(Math.max(config.mockSwapUsd, Number(fare.minimumUsd) || 0) * 1_000_000));
+    const plans = {
+      ANY_SWAP: { inputMint: SOL, outputMint: USDC, amount: config.quoteInputLamports, platformFeeMode: 'outputMint', inputSymbol: 'SOL', outputSymbol: 'USDC', feeSymbol: 'USDC' },
+      SOL_PAIR: { inputMint: SOL, outputMint: USDC, amount: config.quoteInputLamports, platformFeeMode: 'outputMint', inputSymbol: 'SOL', outputSymbol: 'USDC', feeSymbol: 'USDC' },
+      STABLE_TO_STABLE: { inputMint: USDT, outputMint: USDC, amount: stableAmount, platformFeeMode: 'outputMint', inputSymbol: 'USDT', outputSymbol: 'USDC', feeSymbol: 'USDC' },
+      STABLE_TO_VOLATILE: { inputMint: USDC, outputMint: SOL, amount: stableAmount, platformFeeMode: 'inputMint', inputSymbol: 'USDC', outputSymbol: 'SOL', feeSymbol: 'USDC' },
+      VOLATILE_TO_STABLE: { inputMint: SOL, outputMint: USDC, amount: config.quoteInputLamports, platformFeeMode: 'outputMint', inputSymbol: 'SOL', outputSymbol: 'USDC', feeSymbol: 'USDC' },
+      MIN_USD: { inputMint: USDC, outputMint: SOL, amount: stableAmount, platformFeeMode: 'inputMint', inputSymbol: 'USDC', outputSymbol: 'SOL', feeSymbol: 'USDC' }
+    };
+    return plans[fare.condition] || plans.ANY_SWAP;
+  }
+  function formatAgentQuoteAmount(amount, symbol) {
+    const decimals = symbol === 'SOL' ? 9 : 6;
+    const value = Number(amount || 0) / (10 ** decimals);
+    return `${value.toLocaleString(undefined, { maximumFractionDigits: symbol === 'SOL' ? 5 : 2 })} ${symbol}`;
   }
   function getAgentShiftDuration() {
     const configured = getTournamentConfig().duration;
@@ -4716,17 +4877,38 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     if (sheetAction) { sheetAction.textContent = 'AGENT CONFIRMING SWAP'; sheetAction.disabled = true; }
     setTimeout(async () => {
       if (!agentShiftRunning) return;
+      let quote = null;
+      try {
+        if (sheetAction) sheetAction.textContent = 'AGENT REQUESTING QUOTE';
+        quote = await requestAgentFareQuote(fare);
+        if (quote) {
+          agentRun.lastQuote = quote;
+          saveAgentRun();
+          const outputDisplay = formatAgentQuoteAmount(quote.outputAmount, quote.plan.outputSymbol);
+          const feeDisplay = `${formatAgentQuoteAmount(quote.platformFee?.amount, quote.plan.feeSymbol)} platform fee`;
+          recordAgentActivity('DFlow dev quote · no funds moved', `${quote.plan.inputSymbol} → ${outputDisplay} · ${feeDisplay}.`, 'QUOTE');
+          saveAgentRecord(AGENT_SWAP_KEY, {
+            passenger: npc?.name || 'Passenger', fuel: 25,
+            volume: getTournamentConfig().mockSwapUsd,
+            market: `${fare.marketTrafficLevel || 'NORMAL'} · ${quote.platformFee?.bps || 50} BPS`,
+            timestamp: Date.now(), realQuote: true, quoteId: quote.id,
+            inputSymbol: quote.plan.inputSymbol, outputSymbol: quote.plan.outputSymbol,
+            outputDisplay, feeDisplay
+          });
+          renderAgentManagement();
+        }
+      } catch (error) {
+        recordAgentActivity('Quote deferred', error.message, 'QUOTE');
+      }
       game.addFuel?.(25);
       const claimed = game.claimFare?.(fare.id, selected?.wallet);
       if (!claimed) { agentNextFareTimer = setTimeout(runAutonomousFareCycle, 800); return; }
-      saveAgentRecord(AGENT_SWAP_KEY, {
-        passenger: npc?.name || 'Passenger',
-        fuel: 25,
+      if (!quote) saveAgentRecord(AGENT_SWAP_KEY, {
+        passenger: npc?.name || 'Passenger', fuel: 25,
         volume: getTournamentConfig().mockSwapUsd,
-        market: fare.marketTrafficLevel || 'NORMAL',
-        timestamp: Date.now()
+        market: fare.marketTrafficLevel || 'NORMAL', timestamp: Date.now()
       });
-      recordAgentActivity('Swap confirmed', `Fuel credited for ${npc?.name || 'passenger'} pickup.`, 'SWAP');
+      recordAgentActivity('Mock swap confirmed', `Fuel credited for ${npc?.name || 'passenger'} pickup.`, 'SWAP');
       renderAgentManagement();
       game.updateHUD?.(claimed);
       game.syncMapState?.(claimed);

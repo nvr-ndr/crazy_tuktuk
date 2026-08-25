@@ -489,21 +489,33 @@ export function getPreferredWallet() {
  * @returns {HTMLElement} Modal element
  */
 export function createWalletModal() {
+  const availableWallets = getAvailableWallets();
   const modal = document.createElement('div');
   modal.className = 'wallet-modal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'walletModalTitle');
   modal.innerHTML = `
     <div class="wallet-modal-content">
-      <h2>Connect Wallet</h2>
-      <p class="wallet-modal-subtitle">Choose a wallet to connect to Crazy Tuk</p>
+      <h2 id="walletModalTitle">Connect Wallet</h2>
+      <p class="wallet-modal-subtitle">${availableWallets.length ? 'Choose a wallet to connect to Crazy Tuk.' : 'No supported Solana wallet was detected in this browser.'}</p>
 
       <div class="wallet-list">
-        ${getAvailableWallets().map(wallet => `
+        ${availableWallets.map(wallet => `
           <button class="wallet-button" data-wallet="${wallet.id}">
             <span class="wallet-icon">${getWalletIcon(wallet.id)}</span>
             <span class="wallet-name">${wallet.name}</span>
           </button>
         `).join('')}
       </div>
+
+      ${availableWallets.length ? '' : `
+        <p class="wallet-empty">Install Phantom or Solflare, then refresh this page and select Connect Wallet again.</p>
+        <div class="wallet-install-links">
+          <a href="https://phantom.app/download" target="_blank" rel="noopener noreferrer">GET PHANTOM</a>
+          <a href="https://solflare.com/download" target="_blank" rel="noopener noreferrer">GET SOLFLARE</a>
+        </div>
+      `}
 
       <button class="wallet-close">Cancel</button>
     </div>

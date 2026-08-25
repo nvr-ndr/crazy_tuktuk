@@ -42,9 +42,20 @@ CREATE TABLE IF NOT EXISTS agent_swaps (
   output_mint TEXT NOT NULL,
   input_amount NUMERIC(30,0),
   output_amount NUMERIC(30,0),
+  notional_usd NUMERIC(18,6),
+  platform_fee_bps SMALLINT CHECK (platform_fee_bps BETWEEN 0 AND 10000),
+  platform_fee_mode TEXT CHECK (platform_fee_mode IN ('inputMint', 'outputMint')),
+  platform_fee_amount NUMERIC(30,0),
+  platform_fee_account TEXT,
   signature TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_bps SMALLINT CHECK (platform_fee_bps BETWEEN 0 AND 10000);
+ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_mode TEXT CHECK (platform_fee_mode IN ('inputMint', 'outputMint'));
+ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_amount NUMERIC(30,0);
+ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_account TEXT;
+ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS notional_usd NUMERIC(18,6);
 
 CREATE TABLE IF NOT EXISTS pit_calls (
   id UUID PRIMARY KEY,
@@ -62,3 +73,23 @@ CREATE TABLE IF NOT EXISTS agent_events (
   payload JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS auth_challenges (
+  id UUID PRIMARY KEY,
+  wallet_address TEXT NOT NULL,
+  message TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  consumed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS agent_sessions (
+  id UUID PRIMARY KEY,
+  agent_id UUID NOT NULL REFERENCES agents(id),
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS agent_sessions_active_token_idx ON agent_sessions (token_hash, expires_at) WHERE revoked_at IS NULL;

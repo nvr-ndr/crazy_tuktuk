@@ -5,7 +5,13 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "dev": "node --watch server.mjs"
+    "dev": "node --watch server.mjs",
+    "migrate": "node migrate.mjs"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "bs58": "^6.0.0",
+    "pg": "^8.13.1",
+    "tweetnacl": "^1.0.3"
+  }
 }
