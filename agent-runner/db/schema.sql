@@ -74,6 +74,19 @@ CREATE TABLE IF NOT EXISTS agent_events (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public_activity (
+  id UUID PRIMARY KEY,
+  actor_id TEXT NOT NULL,
+  actor_name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS public_activity_created_idx ON public_activity (created_at DESC);
+
 CREATE TABLE IF NOT EXISTS auth_challenges (
   id UUID PRIMARY KEY,
   wallet_address TEXT NOT NULL,

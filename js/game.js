@@ -2,10 +2,11 @@
 // Core game loop and fare management
 
 import { CONFIG } from '../data/config.js';
-import { getRandomNPC, createFare } from '../data/npcs.js?v=20260824world1';
+import { getRandomNPC, getNPCById, createFare } from '../data/npcs.js?v=20260824world1';
 import { getLocationById } from '../data/locations.js?v=20260824world1';
 import { ROUTES, getRoute, getRoutesFromLocation } from '../data/routes.js';
 import { PLAYER_STATES } from '../data/config.js';
+import { scheduleEventsForRide, getStartingPassengerMood, getPassengerMoodLabel } from './events.js';
 import { PLAYER_KEY, getPlayer, loadOrCreatePlayer, updatePlayer, hasEnoughFuel, loadLeaderboard, saveLeaderboard } from '../data/player.js?v=20260824world2';
 
 const FARES_KEY = "crazytuk_faresV4";
@@ -45,19 +46,22 @@ export function updateFare(fareId, updates) {
 export function generateInitialFares(playerWallet) {
   const fares = [];
   const usedNPCs = new Set();
+  const usedZones = new Set();
   let attempts = 0;
 
   while (fares.length < CONFIG.MIN_ACTIVE_FARES && attempts < 100) {
     attempts += 1;
     const randomNPC = getRandomNPC();
     const npcId = randomNPC.id;
-
     if (usedNPCs.has(npcId)) continue;
     usedNPCs.add(npcId);
 
     const fare = createFare(playerWallet, npcId);
     if (fare) {
+      const pickupZone = getFarePickupZone(fare);
+      if (usedZones.has(pickupZone)) continue;
       fares.push(fare);
+      usedZones.add(pickupZone);
     }
   }
 
@@ -65,17 +69,17 @@ export function generateInitialFares(playerWallet) {
     fares[0] = { ...fares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
   }
 
-  return saveFares(fares);
+  return saveFares(keepOneFarePerPickupZone(fares));
 }
 
 export function refreshFares(playerWallet) {
   // Remove expired fares and collapse legacy duplicates before replenishing the map.
   const usedNPCs = new Set();
-  const remainingFares = getAvailableFares().filter((fare) => {
+  const remainingFares = keepOneFarePerPickupZone(getAvailableFares().filter((fare) => {
     if (fare.expiresAt <= Date.now() || usedNPCs.has(fare.npcId)) return false;
     usedNPCs.add(fare.npcId);
     return true;
-  });
+  }));
 
   // Replace expired/completed fares
   let attempts = 0;
@@ -85,6 +89,7 @@ export function refreshFares(playerWallet) {
     if (usedNPCs.has(randomNPC.id)) continue;
     const fare = createFare(playerWallet, randomNPC.id);
     if (fare) {
+      if (remainingFares.some((entry) => getFarePickupZone(entry) === getFarePickupZone(fare))) continue;
       remainingFares.push(fare);
       usedNPCs.add(randomNPC.id);
     }
@@ -94,7 +99,7 @@ export function refreshFares(playerWallet) {
     remainingFares[0] = { ...remainingFares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
   }
 
-  return saveFares(remainingFares);
+  return saveFares(keepOneFarePerPickupZone(remainingFares));
 }
 
 export function getPlayerFare(playerWallet, fareId) {
@@ -122,6 +127,21 @@ function getLocationDistanceKm(fromId, toId) {
   const a = Math.sin(latDelta / 2) ** 2
     + Math.cos(toRadians(fromLat)) * Math.cos(toRadians(toLat)) * Math.sin(lngDelta / 2) ** 2;
   return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function getFarePickupZone(fare) {
+  const location = getLocationById(fare?.pickupLocationId);
+  return location?.zoneId || `location:${fare?.pickupLocationId || 'unknown'}`;
+}
+
+function keepOneFarePerPickupZone(fares) {
+  const usedZones = new Set();
+  return fares.filter((fare) => {
+    const zone = getFarePickupZone(fare);
+    if (usedZones.has(zone)) return false;
+    usedZones.add(zone);
+    return true;
+  });
 }
 
 // One fuel covers roughly three kilometers across the expanded Bangkok map.
@@ -300,6 +320,10 @@ export function claimFare(fareId, playerWallet) {
       totalFuelSpent: 0,
       progress: 0
     };
+    const passenger = getPlayerFare(playerWallet, fareId);
+    player.activeTrip.passengerMood = getStartingPassengerMood(getNPCById(passenger?.npcId));
+    player.activeTrip.passengerMoodLabel = getPassengerMoodLabel(player.activeTrip.passengerMood);
+    player.activeTrip = scheduleEventsForRide(player.activeTrip);
 
     player.activeFareId = fareId;
 
@@ -320,6 +344,7 @@ export function completePickup(fareId, playerWallet) {
     if (!fare) return null;
 
     player.status = PLAYER_STATES.DRIVING;
+    const previousTrip = player.activeTrip;
 
     const calculatedFuelCost = getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
 
@@ -344,6 +369,12 @@ export function completePickup(fareId, playerWallet) {
       progress: 0,
       routeId: route.id
     };
+    player.activeTrip.eventHistory = previousTrip?.eventHistory || [];
+    player.activeTrip.eventResolved = Boolean(previousTrip?.eventResolved);
+    player.activeTrip.passengerEventEmoji = previousTrip?.passengerEventEmoji || null;
+    player.activeTrip.passengerMood = previousTrip?.passengerMood ?? 50;
+    player.activeTrip.passengerMoodLabel = previousTrip?.passengerMoodLabel || getPassengerMoodLabel(player.activeTrip.passengerMood);
+    if (!player.activeTrip.eventResolved && player.activeTrip.eventSchedule?.leg !== 'RIDE') player.activeTrip.eventSchedule = { leg: 'RIDE', nextProgress: .2 + Math.random() * .5 };
 
     player.activeFareId = fareId;
     player.locationId = fare.pickupLocationId;
@@ -405,6 +436,9 @@ export function completeFare(fareId, playerWallet) {
 
     const trip = player.activeTrip;
     if (!trip) return null;
+    updateFare(fareId, { eventHistory: trip.eventHistory || [], passengerMood: trip.passengerMood, passengerMoodLabel: trip.passengerMoodLabel });
+    localStorage.setItem('crazytuk_last_event_history', JSON.stringify(trip.eventHistory || []));
+    localStorage.setItem('crazytuk_last_passenger_mood', JSON.stringify({ value: trip.passengerMood, label: trip.passengerMoodLabel }));
 
     // Add points
     player.points += fare.pointValue;
@@ -462,6 +496,7 @@ export function simulateTripProgress(fareId, playerWallet, isStalled = false) {
   const updated = updatePlayer(player => {
     const trip = player.activeTrip;
     if (!trip || trip.stalledAt) return null;
+    if (trip.eventStallUntil && Date.now() < trip.eventStallUntil) return player;
 
     const playerFare = getPlayerFare(playerWallet, fareId);
     if (!playerFare) return null;

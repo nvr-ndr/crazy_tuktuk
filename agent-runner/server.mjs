@@ -13,7 +13,7 @@ const sessionLifetimeMinutes = 30;
 
 function allowedOrigin(request) {
   const requested = request.headers.origin;
-  const allowed = (process.env.RUNNER_ALLOWED_ORIGINS || 'https://crazy-tuktuk.vercel.app,http://localhost:3000,http://127.0.0.1:3000')
+  const allowed = (process.env.RUNNER_ALLOWED_ORIGINS || 'https://crazy-tuktuk.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://localhost:8080,http://127.0.0.1:8080')
     .split(',').map((origin) => origin.trim()).filter(Boolean);
   return requested && allowed.includes(requested) ? requested : null;
 }
@@ -172,6 +172,41 @@ const server = http.createServer(async (request, response) => {
     } catch (error) {
       if (error.message === 'invalid_json' || error.message === 'request_too_large') return json(response, 400, { error: error.message }, request);
       return json(response, 503, { error: 'development_run_unavailable' }, request);
+    }
+  }
+  if (request.method === 'GET' && url.pathname === '/v1/activity') {
+    try {
+      const limit = Math.min(40, Math.max(1, Number(url.searchParams.get('limit') || 20)));
+      const result = await queryDatabase(
+        'SELECT id, actor_id, actor_name, type, title, detail, metadata, created_at FROM public_activity ORDER BY created_at DESC LIMIT $1',
+        [limit]
+      );
+      return json(response, 200, { activity: result.rows }, request);
+    } catch {
+      return json(response, 503, { error: 'activity_unavailable' }, request);
+    }
+  }
+  if (request.method === 'POST' && url.pathname === '/v1/activity') {
+    try {
+      const body = await readJson(request);
+      const actorId = String(body.actorId || '').trim();
+      const actorName = String(body.actorName || '').trim();
+      const type = String(body.type || 'RIDE_UPDATE').trim();
+      const title = String(body.title || '').trim();
+      const detail = String(body.detail || '').trim();
+      if (!/^[a-zA-Z0-9:_-]{3,100}$/.test(actorId) || !actorName || actorName.length > 60 || !title || title.length > 100 || !detail || detail.length > 240) {
+        return json(response, 400, { error: 'invalid_activity' }, request);
+      }
+      const result = await queryDatabase(
+        `INSERT INTO public_activity (id, actor_id, actor_name, type, title, detail, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
+         RETURNING id, actor_id, actor_name, type, title, detail, metadata, created_at`,
+        [randomUUID(), actorId, actorName, type.slice(0, 40), title, detail, JSON.stringify(body.metadata || {})]
+      );
+      return json(response, 201, { activity: result.rows[0] }, request);
+    } catch (error) {
+      if (error.message === 'invalid_json' || error.message === 'request_too_large') return json(response, 400, { error: error.message }, request);
+      return json(response, 503, { error: 'activity_unavailable' }, request);
     }
   }
   const quoteMatch = url.pathname.match(/^\/v1\/agent-runs\/([0-9a-f-]{36})\/quotes$/i);

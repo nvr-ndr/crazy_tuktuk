@@ -11,6 +11,8 @@ export const LEADERBOARD_KEY = "crazytuk_leaderboardV1";
 export function getEmptyPlayer() {
   return {
     wallet: null,
+    name: '',
+    anonymousId: `anon-${Math.random().toString(36).slice(2, 8)}`,
     locationId: null,
     fuel: CONFIG.STARTING_FUEL,
     points: 0,
@@ -320,6 +322,8 @@ export function validatePlayer(player) {
 
 export function getPlayerDisplayName() {
   const player = getPlayer();
-  // Could check if player has custom name, but for MVP use wallet
-  return player ? `${player.wallet.slice(0, 4)}...${player.wallet.slice(-4)}` : 'Guest';
+  if (!player) return 'Anon';
+  if (player.name?.trim()) return player.name.trim();
+  if (player.wallet) return `Anon ${player.wallet.slice(0, 4)}${player.wallet.slice(-4)}`;
+  return player.anonymousId || 'Anon';
 }

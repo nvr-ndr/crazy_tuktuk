@@ -1012,9 +1012,11 @@
       font-weight: 900;
     }
     .feed-stars {
-      color: #f6d46b;
-      letter-spacing: 1px;
-      font-size: 12px;
+      color: #ffd84d;
+      letter-spacing: 2px;
+      font-size: 14px;
+      font-weight: 900;
+      text-shadow: 0 1px 4px rgba(255,183,0,.45);
       white-space: nowrap;
     }
     .feed-points {
@@ -1230,6 +1232,12 @@
     .trip-card-metric b { display: block; margin-top: 2px; color: white; font-size: 12px; }
     .trip-card.stalled { border-color: var(--danger); background: linear-gradient(135deg, rgba(76,18,24,.97), rgba(35,25,24,.97)); }
     .trip-card.stalled .trip-card-kicker, .trip-card.stalled .trip-card-percent { color: #ff7783; }
+    .city-ticker { position: absolute; z-index: 940; top: max(72px, env(safe-area-inset-top) + 58px); left: 50%; display: flex; align-items: center; gap: 8px; width: min(calc(100% - 28px), 430px); min-height: 30px; padding: 6px 10px; transform: translateX(-50%); border: 1px solid rgba(246,212,107,.35); border-radius: 999px; background: rgba(10,18,35,.86); box-shadow: 0 7px 18px rgba(0,0,0,.28); color: #fff5cf; pointer-events: none; opacity: 0; transition: opacity .25s ease, transform .25s ease; }
+    .stage:not(.agent-mode) .city-ticker { top: max(10px, env(safe-area-inset-top) + 4px); }
+    .city-ticker.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .city-ticker-icon { flex: 0 0 auto; font-size: 15px; }
+    .city-ticker-text { min-width: 0; overflow: hidden; flex: 1; font-size: 10px; font-weight: 800; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+    .city-ticker-text b { color: var(--warn); }
     .completion-backdrop { position: absolute; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,8,18,.66); backdrop-filter: blur(5px); }
     .completion-backdrop[hidden] { display: none; }
     #feedBackdrop {
@@ -1249,6 +1257,10 @@
     .completion-sheet h2 { margin: 2px 0 4px; font-size: 26px; }
     .completion-destination { display: none; }
     .completion-review { margin: 16px 0; padding: 13px; border-radius: 14px; background: rgba(0,0,0,.22); font-size: 13px; line-height: 1.4; }
+    .completion-rating { margin: -7px 0 13px; color: #ffd84d; font-size: 22px; font-weight: 900; letter-spacing: 3px; text-shadow: 0 1px 5px rgba(255,183,0,.5); }
+    .completion-events { display: grid; gap: 6px; margin: 12px 0 16px; padding: 10px; border-radius: 13px; background: rgba(0,0,0,.2); text-align: left; font-size: 10px; }
+    .completion-events div { display: flex; justify-content: space-between; gap: 10px; color: rgba(255,255,255,.78); }
+    .completion-events b { color: var(--warn); white-space: nowrap; }
     .completion-points { margin: 0 0 16px; color: #42e889; font-size: 22px; font-weight: 900; }
     .score-overlay {
       position: absolute;
@@ -1325,6 +1337,34 @@
     .modal-card { width: min(84vw, 420px); padding: 22px; border: 2px solid rgba(255,255,255,.18); border-radius: 28px; background: rgba(42,24,14,.92); box-shadow: 0 30px 80px rgba(0,0,0,.45); }
     .modal-card h2 { margin: 0; color: #fff5cf; font-size: clamp(1.5rem, 6vw, 2.1rem); line-height: 1.05; }
     .modal-card input { width: 100%; margin: 14px 0; padding: 13px 16px; border: 2px solid #f6d46b; border-radius: 16px; background: #fff8df; color: #2a180e; font: inherit; font-size: 1.1rem; }
+    .crazy-event-backdrop { position: fixed; z-index: 1400; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(5,8,18,.78); backdrop-filter: blur(9px); }
+    .crazy-event-backdrop[hidden] { display: none; }
+    .crazy-event-backdrop:not([hidden]) { animation: crazy-event-dim-in .28s ease-out both; }
+    @keyframes crazy-event-dim-in { from { opacity: 0; backdrop-filter: blur(0); } to { opacity: 1; backdrop-filter: blur(9px); } }
+    .crazy-event-card { width: min(100%, 460px); max-height: calc(100dvh - 36px); overflow: auto; scrollbar-width: none; color: white; animation: modal-sheet-in .25s ease-out both; }
+    .crazy-event-card::-webkit-scrollbar { display: none; }
+    .crazy-event-art { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 18px 18px 0 0; box-shadow: 0 20px 55px rgba(0,0,0,.58); animation: crazy-event-art-in .42s .04s cubic-bezier(.2,1.15,.4,1) both; }
+    .crazy-event-copy { margin-top: 10px; padding: 15px 18px 16px; border-radius: 18px; background: linear-gradient(155deg,#231918,#0f3460); box-shadow: 0 18px 50px rgba(0,0,0,.5); text-align: center; animation: crazy-event-copy-in .34s .16s cubic-bezier(.2,1.1,.4,1) both; }
+    @keyframes crazy-event-art-in { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+    @keyframes crazy-event-copy-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    .crazy-event-kicker { display: none; }
+    .crazy-event-title { margin: 4px 0 5px; font-size: clamp(1.45rem,6vw,2rem); line-height: 1; }
+    .crazy-event-subtitle { margin: 0 0 15px; color: rgba(255,255,255,.76); font-size: 12px; line-height: 1.4; }
+    .crazy-event-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+    .crazy-event-actions[hidden] { display: none; }
+    .crazy-event-actions button { width: auto; min-height: 44px; padding: 10px 17px; font-size: 12px; }
+    .crazy-event-result { margin: 0; padding: 8px 2px 4px; font-size: 18px; line-height: 1.2; }
+    .crazy-event-result.is-entering { animation: crazy-event-result-in .3s ease-out both; }
+    @keyframes crazy-event-result-in { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+    .crazy-event-result b { display: block; color: #fff5cf; font-size: clamp(1.25rem, 5vw, 1.7rem); line-height: 1.12; }
+    .crazy-event-effects { display: flex; justify-content: center; flex-wrap: wrap; gap: 7px; margin-top: 15px; }
+    .crazy-event-effect { display: inline-flex; align-items: baseline; gap: 4px; padding: 8px 10px; border: 1px solid rgba(246,212,107,.35); border-radius: 10px; background: rgba(0,0,0,.24); color: #fff5cf; font-size: 13px; font-weight: 900; letter-spacing: .02em; }
+    .crazy-event-effect { animation: crazy-stat-pop .35s ease-out both; }
+    .crazy-event-effect:nth-child(2) { animation-delay: .07s; } .crazy-event-effect:nth-child(3) { animation-delay: .14s; } .crazy-event-effect:nth-child(4) { animation-delay: .21s; }
+    @keyframes crazy-stat-pop { from { opacity: 0; transform: translateY(7px) scale(.9); } to { opacity: 1; transform: none; } }
+    .crazy-event-effect.positive { border-color: rgba(66,232,137,.55); color: #7dffae; }
+    .crazy-event-effect.negative { border-color: rgba(255,82,99,.55); color: #ff9aa4; }
+    .crazy-event-result.stall { border: 1px solid rgba(255,82,99,.55); border-radius: 12px; background: rgba(76,18,24,.5); }
     .name-actions { display: flex; justify-content: space-between; gap: 12px; }
     .settings-panel { overflow-y: auto; }
     .settings-panel h2 { flex: 0 0 auto; }
@@ -1506,7 +1546,7 @@
         width: calc(var(--desktop-overlay-width) - 24px);
         transform: translateX(-50%);
       }
-      .stage.agent-mode .trip-card {
+      .trip-card {
         left: 50%;
         right: auto;
         width: calc(var(--desktop-overlay-width) - 24px);
@@ -1600,6 +1640,43 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       .fare-sheet, .swap-sheet-backdrop { top: calc(50% + 128px); bottom: auto; }
       .dashboard { left: 0; width: 100vw; transform: none; }
       #feedBackdrop { left: 0; width: 100vw; transform: none; }
+      .title-tools { width: min(94vw, 300px); gap: 5px; bottom: max(42px, env(safe-area-inset-bottom) + 30px); }
+      .title-tools .big,
+      .title-tools .leaderboard-button,
+      .title-tools .rules-button,
+      .title-tools .settings-button,
+      .title-tools .tournament-button { min-height: 30px; height: 30px; padding: 4px 7px; font-size: .48rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+      .title-tools .leaderboard-button,
+      .title-tools .rules-button,
+      .title-tools .settings-button { flex: 0 0 30px; padding-inline: 0; }
+      .title-tools .tournament-button { font-size: .48rem; }
+      #titleTournament::after { content: 'AGENT'; }
+      #titleTournament { font-size: 0; }
+      #titleTournament::after { font-size: .48rem; }
+      #leaderboardBack, #rulesBack, #settingsBack { min-height: 30px; padding: 4px 12px; font-size: .62rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+      .city-ticker { top: max(58px, env(safe-area-inset-top) + 50px) !important; width: calc(100% - 92px); min-height: 25px; padding: 4px 7px; }
+      .city-ticker-text { font-size: 8px; }
+      .fare-sheet { padding: 11px; }
+      .fare-sheet-head { gap: 8px; }
+      .fare-sheet-portrait { width: 44px; height: 44px; flex-basis: 44px; border-radius: 13px; font-size: 22px; }
+      .fare-sheet-kicker { display: inline; margin-right: 5px; font-size: 8px; }
+      .fare-sheet-name { display: inline; font-size: 17px; }
+      .fare-sheet-bio { margin-top: 4px; font-size: 9px; }
+      .fare-condition-signals, .fare-sheet-timer { display: none; }
+      .fare-sheet-request { margin-top: 8px; padding: 8px 9px; font-size: 10px; }
+      .fare-sheet-grid { gap: 6px; margin: 9px 0; }
+      .fare-sheet-stat { padding: 7px 8px; }
+      .fare-sheet-stat span { font-size: 7px; }
+      .fare-sheet-stat b { font-size: 10px; }
+      .fare-sheet-action { min-height: 34px; padding-inline: 15px; font-size: 11px; }
+      .swap-sheet { padding: 11px; border-radius: 18px; }
+      .swap-sheet h2 { font-size: 17px; }
+      .swap-sheet-subtitle, .swap-inputs, .swap-impact { font-size: 9px; }
+      .swap-row select, .swap-row input { height: 35px; padding: 0 8px; font-size: 10px; border-radius: 9px; }
+      .swap-impact { gap: 5px; padding: 7px; }
+      .swap-impact span { font-size: 7px; }
+      .swap-sheet .ui-button { min-height: 32px; padding: 6px 12px; font-size: 10px; }
+      .swap-attribution { font-size: 7px; }
     }
     @keyframes loss-reveal {
       from { opacity: 0; transform: scale(.72); }
@@ -1703,13 +1780,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         isStalled,
         getStallDuration,
         getTopPlayers,
-        setPlayerStatus
+        setPlayerStatus,
+        getPlayerDisplayName
       } from './data/player.js?v=20260824world2';
 
       // Import game logic modules
         import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, getFareFuelBudget, getRemainingTripFuel, resumeStalledTrip, abandonStalledFare, claimRescueFare, getGameEvents, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress } from './js/game.js?v=20260824pickup4';
       import { matchesFareCondition, findQualifyingFares, autoMatchFare, canReachFare } from './js/fareMatcher.js?v=20260823h';
       import { calculateFuelEarned, calculateProgress, isTripCompletable } from './js/fuel.js';
+      import { CRAZY_EVENTS } from './data/events.js';
+      import { getEligibleEvents, shouldTriggerEvent, weightedPick, resolveEvent, chooseAgentChoice, getPassengerReaction, getAgentPersonality, getPassengerRating } from './js/events.js';
       import { simulateFakeSwap, interpretConfirmedSwap as interpretSwap } from './js/interpretSwap.js';
       import WalletModule, {
         connectWallet,
@@ -2065,6 +2145,39 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       let quoteDebounceTimer = null;
       let quoteRequestId = 0;
       const RIDE_FEED_KEY = 'crazytuk_public_feed_v1';
+      const CITY_TICKER_KEY = 'crazytuk_city_ticker_v1';
+      const ACTIVITY_API = window.CRAZY_TUK_ACTIVITY_API || localStorage.getItem('crazytuk_activity_api') || `${CONFIG.AGENT_RUNNER_URL}/v1/activity`;
+      function getActivityIdentity() {
+        const player = getPlayer() || {};
+        return { actorId: player.wallet || player.anonymousId || 'anon-local', actorName: getPlayerDisplayName() };
+      }
+      async function publishSharedActivity(activity) {
+        try {
+          const response = await fetch(ACTIVITY_API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...getActivityIdentity(), ...activity }) });
+          return response.ok;
+        } catch { return false; }
+      }
+      async function loadSharedActivity() {
+        try {
+          const response = await fetch(`${ACTIVITY_API}?limit=30`, { cache: 'no-store' });
+          if (!response.ok) return [];
+          const data = await response.json();
+          return Array.isArray(data.activity) ? data.activity.map((entry) => ({ icon: entry.type === 'REVIEW' ? '⭐' : '🛺', text: `${entry.actor_name} · ${entry.detail}`, createdAt: entry.created_at })) : [];
+        } catch { return []; }
+      }
+      window.__loadSharedActivity = loadSharedActivity;
+      window.CrazyTukActivityPublish = publishSharedActivity;
+
+      function getCityTickerEntries() {
+        try { const entries = JSON.parse(localStorage.getItem(CITY_TICKER_KEY) || '[]'); return Array.isArray(entries) ? entries : []; } catch { return []; }
+      }
+      function addCityTickerEntry(entry) {
+        const entries = getCityTickerEntries();
+        entries.unshift({ ...entry, createdAt: Date.now() });
+        localStorage.setItem(CITY_TICKER_KEY, JSON.stringify(entries.slice(0, 15)));
+        window.dispatchEvent(new CustomEvent('city-ticker-update'));
+      }
+      window.CrazyTukTicker = { add: addCityTickerEntry };
 
       function loadRideFeed() {
         try {
@@ -2079,6 +2192,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const entries = loadRideFeed();
         entries.unshift(entry);
         localStorage.setItem(RIDE_FEED_KEY, JSON.stringify(entries.slice(0, 36)));
+        addCityTickerEntry({ icon: '⭐', text: `${entry.driverName || 'Anon'} · ${entry.npc || 'Passenger'} gave ${entry.rating || 1}★` });
+        void publishSharedActivity({ type: 'REVIEW', title: 'Passenger review', detail: `${entry.npc || 'Passenger'} gave ${entry.rating || 1}★`, metadata: { fareId: entry.fareId || null, rating: entry.rating || 1 } });
       }
 
       function getStarRating(entry) {
@@ -2088,7 +2203,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
 
       function renderStars(rating) {
-        return '★★★★★'.slice(0, rating).padEnd(5, '☆');
+        return '★'.repeat(Math.max(1, Math.min(5, Number(rating) || 1)));
       }
 
       function getFeedNpc(entry) {
@@ -2216,13 +2331,23 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (!fare) return;
         const npc = window.CrazyTukGame.getNPCById?.(fare.npcId);
         const destination = window.CrazyTukGame.getLocationById?.(fare.destinationLocationId);
-        const reviews = npc?.completionReviews || ['Thanks for the ride!'];
+        const savedMood = fare.passengerMoodLabel ? fare : JSON.parse(localStorage.getItem('crazytuk_last_passenger_mood') || '{}');
+        const reviews = savedMood.label === 'UPSET' && npc?.badTripReviews?.length ? npc.badTripReviews : savedMood.label === 'DELIGHTED' && npc?.cleanTripReviews?.length ? npc.cleanTripReviews : npc?.completionReviews || ['Thanks for the ride!'];
         const reviewIndex = [...fare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % reviews.length;
         const selectedReview = reviews[reviewIndex];
         document.getElementById('tripCard')?.setAttribute('hidden', '');
         setNpcAvatar(document.getElementById('completionAvatar'), npc);
         document.getElementById('completionReview').textContent = `“${selectedReview}” — ${npc?.name || 'Passenger'}`;
+        const finalMood = fare.passengerMood ?? JSON.parse(localStorage.getItem('crazytuk_last_passenger_mood') || '{"value":50}').value;
+        document.getElementById('completionRating').textContent = renderStars(getPassengerRating(finalMood));
         document.getElementById('completionPoints').textContent = `+${fare.pointValue || 0} POINTS`;
+        const recap = document.getElementById('completionEvents');
+        const history = fare.eventHistory || JSON.parse(localStorage.getItem('crazytuk_last_event_history') || '[]');
+        recap.innerHTML = history.length ? history.map((entry) => {
+          const event = CRAZY_EVENTS.find((item) => item.id === entry.eventId);
+          const effects = Object.entries(entry.effects || {}).filter(([, value]) => Number(value) !== 0).map(([key, value]) => `${Number(value) > 0 ? '+' : ''}${value} ${key.replace('timeSeconds', 'SEC').toUpperCase()}`).join(' · ');
+          return `<div><span>${event?.title || entry.eventId}</span><b>${effects || entry.outcomeId}</b></div>`;
+        }).join('') : '<span>No crazy events this ride.</span>';
         recordRideReview({
           npc: npc?.name || 'Passenger',
           npcId: npc?.id || fare.npcId,
@@ -2231,7 +2356,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           destination: destination?.properties?.name || 'Bangkok',
           fareId: fare.id,
           points: fare.pointValue || 0,
-          rating: getStarRating({ npc: npc?.name, review: selectedReview, fareId: fare.id }),
+          rating: getPassengerRating(finalMood),
           createdAt: Date.now()
         });
         document.getElementById('completionBackdrop').hidden = false;
@@ -2462,6 +2587,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             pickupDriveTimer = null;
             return;
           }
+          if (next.activeTrip?.eventSchedule?.leg === 'PICKUP' && shouldTriggerEvent(next.activeTrip)) {
+            const event = weightedPick(getEligibleEvents(next.activeTrip, CRAZY_EVENTS));
+            if (event) { clearInterval(pickupDriveTimer); pickupDriveTimer = null; openCrazyEvent(event).then(({ choiceId }) => { const player = getPlayer(); const outcome = resolveEvent(player, event, choiceId); if (outcome) savePlayer(player); showPassengerEventReaction(fareId, outcome); updateCrazyEventResult(event, outcome, fareId, playerWallet, onTripComplete); updateHUD(getPlayer()); }); return; }
+          }
           updateHUD(next);
           window.CrazyTukGame.syncMapState?.(next);
           if (next.status === PLAYER_STATES.DRIVING) {
@@ -2485,6 +2614,22 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             passengerDriveTimer = null;
             return;
           }
+          if (next.activeTrip && shouldTriggerEvent(next.activeTrip)) {
+            const event = weightedPick(getEligibleEvents(next.activeTrip, CRAZY_EVENTS));
+            if (event) {
+              clearInterval(passengerDriveTimer);
+              passengerDriveTimer = null;
+              openCrazyEvent(event).then(({ choiceId }) => {
+                const eventPlayer = getPlayer();
+                const outcome = resolveEvent(eventPlayer, event, choiceId);
+                if (outcome) savePlayer(eventPlayer);
+                showPassengerEventReaction(fareId, outcome);
+                updateCrazyEventResult(event, outcome, fareId, playerWallet, onTripComplete);
+                updateHUD(getPlayer());
+              });
+              return;
+            }
+          }
           updateHUD(next);
           window.CrazyTukGame.syncMapState?.(next);
           if (next.status === PLAYER_STATES.AVAILABLE && !next.activeFareId) {
@@ -2494,6 +2639,87 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             onTripComplete?.();
           }
         }, 60);
+      }
+
+      function openCrazyEvent(event) {
+        const backdrop = document.getElementById('crazyEventBackdrop');
+        const actions = document.getElementById('crazyEventActions');
+        document.getElementById('crazyEventKicker').textContent = `${event.type} · ${event.rarity}`;
+        document.getElementById('crazyEventTitle').textContent = event.title;
+        document.getElementById('crazyEventSubtitle').textContent = event.subtitle;
+        const art = document.getElementById('crazyEventArt');
+        art.src = event.art.asset;
+        art.alt = event.art.alt || event.title;
+        actions.innerHTML = '';
+        actions.hidden = false;
+        document.getElementById('crazyEventKicker').hidden = false;
+        document.getElementById('crazyEventTitle').hidden = false;
+        document.getElementById('crazyEventSubtitle').hidden = false;
+        document.getElementById('crazyEventResult').hidden = true;
+        backdrop.hidden = false;
+        return new Promise((resolve) => {
+          const choices = event.choices || [];
+          const addButton = (label, choiceId) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'ui-button';
+            button.textContent = label;
+            button.onclick = () => resolve({ choiceId });
+            actions.appendChild(button);
+          };
+          if (choices.length) choices.forEach((choice) => addButton(choice.label, choice.id));
+          else addButton('CONTINUE RIDE', undefined);
+          if (document.querySelector('.stage.agent-mode')) {
+            const agentState = JSON.parse(localStorage.getItem('crazytuk_mock_agent_v1') || 'null');
+            const selected = choices.length ? chooseAgentChoice(event, getAgentPersonality(agentState?.driver, agentState?.strategy)) : null;
+            const button = selected
+              ? [...actions.children].find((item) => item.textContent === selected.label)
+              : actions.children[0];
+            if (button) {
+              button.style.borderColor = 'var(--warn)';
+              button.textContent += ' ✓';
+              button.setAttribute('aria-label', 'Agent selected this option');
+              setTimeout(() => button.click(), 5000);
+            }
+          }
+        });
+      }
+
+      function updateCrazyEventResult(event, outcome, fareId, playerWallet, onTripComplete) {
+        const actions = document.getElementById('crazyEventActions');
+        const result = document.getElementById('crazyEventResult');
+        actions.hidden = true;
+        document.getElementById('crazyEventKicker').hidden = true;
+        document.getElementById('crazyEventTitle').hidden = true;
+        document.getElementById('crazyEventSubtitle').hidden = true;
+        result.hidden = false;
+        const effects = outcome?.effects || {};
+        const labels = [['timeSeconds','TIME'],['fuel','FUEL'],['crazy','CRAZY'],['tip','TIP']]
+          .filter(([key]) => Number(effects[key] || 0) !== 0)
+          .map(([key, label]) => `${effects[key] > 0 ? '+' : ''}${effects[key]} ${label}`);
+        result.classList.toggle('stall', Number(effects.stallSeconds || 0) > 0);
+        result.innerHTML = `<b>${outcome?.resultText || 'The event is resolved.'}</b><div class="crazy-event-effects">${labels.length ? labels.map((label) => `<span class="crazy-event-effect ${label.startsWith('+') ? 'positive' : 'negative'}">${label}</span>`).join('') : '<span class="crazy-event-effect">NO STAT CHANGE</span>'}</div>`;
+        result.classList.remove('is-entering');
+        void result.offsetWidth;
+        result.classList.add('is-entering');
+        window.setTimeout(() => {
+          document.getElementById('crazyEventBackdrop').hidden = true;
+          const player = getPlayer();
+          if (player?.status === PLAYER_STATES.PICKUP) startPickupDrive(fareId, playerWallet, onTripComplete);
+          else startPassengerDrive(fareId, playerWallet, onTripComplete);
+        }, 1500);
+      }
+
+      function showPassengerEventReaction(fareId, outcome) {
+        const fare = getAvailableFares().find((entry) => entry.id === fareId);
+        const npc = fare ? window.CrazyTukGame.getNPCById?.(fare.npcId) : null;
+        const thought = document.querySelector('.player-marker .npc-thought');
+        if (!thought || !npc) return;
+        const seed = [...fareId].reduce((sum, character) => sum + character.charCodeAt(0), 0);
+        thought.textContent = getPassengerReaction(npc, outcome?.reactionTag || 'WEIRD', seed, getPlayer()?.activeTrip?.passengerMood ?? 50);
+        thought.hidden = false;
+        const player = getPlayer();
+        window.CrazyTukTicker?.add({ icon: '🛺', text: `${player?.name || 'Anon'} · ${outcome?.resultText || 'Crazy moment on the road'}` });
       }
 
       function runMockFareLoop() {
@@ -2605,7 +2831,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function updateDashboardHero(player) {
         const nameEl = document.getElementById('dashboardPlayerName');
         const walletEl = document.getElementById('dashboardWalletLabel');
-        if (nameEl) nameEl.textContent = player?.name || 'Crazy Tuk Driver';
+        if (nameEl) nameEl.textContent = window.CrazyTukGame.getPlayerDisplayName?.() || player?.name || 'Anon';
         if (!walletEl) return;
         const walletAddress = WalletModule?.getWalletAddress?.();
         walletEl.textContent = walletAddress
@@ -2614,6 +2840,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
 
       function setupFrontSettingsControls() {
+        const nameInput = document.getElementById('setting-player-name');
+        const currentPlayer = getPlayer();
+        if (nameInput) {
+          nameInput.value = currentPlayer?.name || '';
+          nameInput.addEventListener('change', () => updatePlayer((player) => ({ ...player, name: nameInput.value.trim().slice(0, 32) })));
+        }
         const controls = [
           ['setting-sound', 'crazytuk_sound_enabled', true],
           ['setting-music', 'crazytuk_music_enabled', false],
@@ -3041,6 +3273,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
       .player-marker {
         position: absolute;
+        z-index: 1000;
         display: grid;
         place-items: center;
         width: 36px;
@@ -3050,6 +3283,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         font-size: 18px;
         line-height: 1;
       }
+      .mood-emitter { position: absolute; bottom: calc(100% + 4px); left: 50%; z-index: 4; width: 62px; height: 58px; transform: translateX(-50%); pointer-events: none; }
+      .mood-emitter[hidden] { display: none; }
+      .mood-particle { position: absolute; bottom: 0; left: 50%; display: block; font-size: 14px; line-height: 1; text-shadow: 0 2px 5px rgba(0,0,0,.5); animation: mood-particle-rise 1.35s ease-out infinite; }
+      .mood-particle:nth-child(1) { --drift: -13px; animation-delay: 0s; }
+      .mood-particle:nth-child(2) { --drift: 2px; animation-delay: .45s; }
+      .mood-particle:nth-child(3) { --drift: 15px; animation-delay: .9s; }
+      @keyframes mood-particle-rise { 0% { opacity: 0; transform: translate(-50%, 5px) scale(.2) rotate(-8deg); } 16% { opacity: 1; } 62% { opacity: .9; } 100% { opacity: 0; transform: translate(calc(-50% + var(--drift)), -48px) scale(1.08) rotate(10deg); } }
       .destination-marker { position: absolute; z-index: 30; display: grid; width: 46px; height: 62px; place-items: start center; color: white; }
       .destination-pin { display: grid; width: 34px; height: 34px; place-items: center; border: 2px solid white; border-radius: 50% 50% 50% 8px; background: var(--danger); box-shadow: 0 7px 18px rgba(0,0,0,.4); font-size: 17px; transform: rotate(-45deg); }
       .destination-pin span { transform: rotate(45deg); }
@@ -3249,6 +3489,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <div class="stage">
     <div id="map" class="map-container"></div>
     <div id="map-effects" class="map-effects" aria-hidden="true"></div>
+    <div id="cityTicker" class="city-ticker" aria-live="polite"><span class="city-ticker-icon">📡</span><span id="cityTickerText" class="city-ticker-text"></span></div>
 
     <section id="tripCard" class="trip-card" aria-live="polite" hidden>
       <div class="trip-card-head">
@@ -3264,6 +3505,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         <button id="tripAbandon" class="secondary-button" type="button">CALL FOR RESCUE</button>
       </div>
     </section>
+
+    <div id="crazyEventBackdrop" class="crazy-event-backdrop" role="dialog" aria-modal="true" aria-labelledby="crazyEventTitle" hidden>
+      <article class="crazy-event-card">
+        <img id="crazyEventArt" class="crazy-event-art" alt="">
+        <div class="crazy-event-copy">
+          <div id="crazyEventKicker" class="crazy-event-kicker">CRAZY EVENT</div>
+          <h2 id="crazyEventTitle" class="crazy-event-title"></h2>
+          <p id="crazyEventSubtitle" class="crazy-event-subtitle"></p>
+          <div id="crazyEventActions" class="crazy-event-actions"></div>
+          <div id="crazyEventResult" class="crazy-event-result" hidden></div>
+        </div>
+      </article>
+    </div>
 
     <section id="fareSheet" class="fare-sheet" aria-labelledby="fareSheetName" hidden>
       <button id="fareSheetClose" class="fare-sheet-close" type="button" aria-label="Close fare details">×</button>
@@ -3325,6 +3579,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         <div id="completionAvatar" class="completion-avatar">🛺</div>
         <h2 id="completionTitle">FARE COMPLETE</h2>
         <p id="completionReview" class="completion-review"></p>
+        <div id="completionRating" class="completion-rating" aria-label="Passenger rating"></div>
+        <div id="completionEvents" class="completion-events"></div>
         <p id="completionPoints" class="completion-points"></p>
         <button id="completionClose" class="ui-button primary fare-sheet-action" type="button">BACK TO MAP</button>
       </section>
@@ -3584,6 +3840,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 <section id="settingsPanel" class="leaderboard-panel settings-panel" hidden aria-labelledby="settingsTitle">
   <h2 id="settingsTitle">⚙ SETTINGS</h2>
   <div class="settings-list">
+    <div class="settings-row"><label for="setting-player-name">Player name</label><input id="setting-player-name" maxlength="32" placeholder="Anon driver" style="max-width:160px"></div>
     <div class="setting-item">
       <span>Sound Enabled</span>
       <label class="toggle-switch"><input type="checkbox" id="setting-sound" checked><span class="toggle-slider"></span></label>
@@ -3622,6 +3879,33 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 <script>
 (() => {
   const $ = id => document.getElementById(id);
+  const ambientTickerEntries = [
+    { icon: '🏁', text: 'Anon 7F2A · took the risky shortcut' },
+    { icon: '🌧️', text: 'Bobby · survived a Bangkok downpour' },
+    { icon: '⭐', text: 'Sam · Beam gave 4★' },
+    { icon: '🛺', text: 'Anon C91D · found a perfect gap' }
+  ];
+  function renderCityTicker() {
+    const ticker = $('cityTicker');
+    const text = $('cityTickerText');
+    if (!ticker || !text) return;
+    let entries = [];
+    try { entries = JSON.parse(localStorage.getItem('crazytuk_city_ticker_v1') || '[]'); } catch {}
+    const shared = (() => { try { return JSON.parse(localStorage.getItem('crazytuk_city_ticker_shared_v1') || '[]'); } catch { return []; } })();
+    const pool = entries.length ? entries : (shared.length ? shared : ambientTickerEntries);
+    const item = pool[Math.floor(Date.now() / 5000) % pool.length];
+    ticker.querySelector('.city-ticker-icon').textContent = item.icon || '📡';
+    text.textContent = item.text || '';
+    ticker.classList.add('visible');
+  }
+  renderCityTicker();
+  setInterval(renderCityTicker, 5000);
+  setInterval(async () => {
+    const shared = await window.__loadSharedActivity?.();
+    if (shared?.length) localStorage.setItem('crazytuk_city_ticker_shared_v1', JSON.stringify(shared));
+    renderCityTicker();
+  }, 15000);
+  window.addEventListener('city-ticker-update', renderCityTicker);
   const fallbackEl = (tag = "div") => document.createElement(tag);
   const startScreenEl = $("startScreen"), gameEl = $("game"), stageEl = gameEl.querySelector(".stage");
   const tournamentPanelEl = $("tournamentPanel"), titleTournamentEl = $("titleTournament"), garagePanelEl = $("garagePanel");
@@ -3699,6 +3983,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   }
 
   // MapLibre initialization
+  function getBangkokPlayableBounds() {
+    const coordinates = (window.CrazyTukGame?.LOCATIONS?.features || [])
+      .map((feature) => feature.geometry?.coordinates)
+      .filter((coordinate) => Array.isArray(coordinate) && coordinate.length >= 2);
+    if (!coordinates.length) return [[100.45, 13.68], [100.66, 13.84]];
+    const lngs = coordinates.map(([lng]) => lng);
+    const lats = coordinates.map(([, lat]) => lat);
+    const padding = 0.018;
+    return [[Math.min(...lngs) - padding, Math.min(...lats) - padding], [Math.max(...lngs) + padding, Math.max(...lats) + padding]];
+  }
+
   function initMap() {
     if (typeof maplibregl === 'undefined') {
       console.error('MapLibre GL JS not loaded');
@@ -3715,7 +4010,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           'crazy-tuk-tiles': {
             type: 'raster',
             tiles: [
-              'https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png'
+              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
             ],
             tileSize: 256,
             attribution: '© OpenStreetMap contributors © CARTO'
@@ -3733,6 +4028,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       },
       center: [100.5018, 13.7563], // Bangkok center
       zoom: 11.8,
+      minZoom: 10.8,
+      maxBounds: getBangkokPlayableBounds(),
       pitch: 0,
       bearing: 0,
       attributionControl: false,
@@ -3851,7 +4148,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
     const element = document.createElement('div');
     element.className = 'player-marker';
-    element.innerHTML = '<span class="npc-thought" hidden></span><span class="player-marker-icon">🛺</span>';
+    element.innerHTML = '<span class="mood-emitter" hidden aria-hidden="true"></span><span class="npc-thought" hidden></span><span class="player-marker-icon">🛺</span>';
 
     playerMarker = new maplibregl.Marker({
       element,
@@ -3867,6 +4164,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     if (!playerMarker._map) {
       playerMarker.addTo(map);
     }
+    playerMarker.getElement().style.zIndex = '1000';
   }
 
   function offsetCoordinate(coordinates, offsetLng = 0.0021, offsetLat = -0.0011) {
@@ -4147,7 +4445,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             <circle class="marker-countdown-track" cx="28" cy="28" r="24"></circle>
             <circle class="marker-countdown-progress" cx="28" cy="28" r="24"></circle>
           </svg>
-          <span class="npc-thought" hidden></span>
+          <span class="mood-emitter" hidden aria-hidden="true"></span><span class="npc-thought" hidden></span>
         </div>
         <span class="place-label">${pickupLocation.properties.name}</span>
       `;
@@ -4171,6 +4469,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     if (!marker._map) {
       marker.addTo(map);
     }
+    marker.getElement().style.zIndex = '100';
 
     const player = window.CrazyTukGame?.getPlayer?.();
     marker.getElement().classList.toggle('selected', player?.selectedFareId === fare.id || player?.activeFareId === fare.id);
@@ -4203,9 +4502,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const conditionLabels = {
       ANY_SWAP: 'Any $1+ swap',
       SOL_PAIR: 'Swap with SOL',
-      STABLE_TO_STABLE: 'Stablecoin to stablecoin',
-      STABLE_TO_VOLATILE: 'Stablecoin to volatile token',
-      VOLATILE_TO_STABLE: 'Volatile token to stablecoin',
+      STABLE_TO_STABLE: 'Stable to stable',
+      STABLE_TO_VOLATILE: 'Stable to volatile token',
+      VOLATILE_TO_STABLE: 'Volatile token to stable',
       MIN_USD: `$${fare.minimumUsd || 1}+ swap`
     };
     const remaining = Math.max(0, fare.expiresAt - Date.now());
@@ -4329,10 +4628,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     });
     const playerThought = playerMarker?.getElement()?.querySelector('.npc-thought');
     if (playerThought) playerThought.hidden = true;
-    if (!activeFare) return;
+    if (!activeFare) {
+      document.querySelectorAll('.mood-emitter').forEach((emitter) => { emitter.hidden = true; emitter.replaceChildren(); });
+      return;
+    }
 
     const npc = window.CrazyTukGame?.getNPCById?.(activeFare.npcId);
     if (!npc) return;
+    updateMoodEmitter(player, activeFare);
     const lineSeed = [...activeFare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0);
 
     if (player.status === 'PICKUP') {
@@ -4340,7 +4643,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       const thought = fareMarkers.get(activeFare.id)?.getElement()?.querySelector('.npc-thought');
       if (thought) {
         thought.textContent = lines[lineSeed % lines.length];
-        thought.hidden = false;
+        const showLine = Math.floor(Date.now() / 3500) % 2 === 0;
+        thought.hidden = !showLine;
+        thought.parentElement?.querySelector('.mood-emitter')?.toggleAttribute('hidden', showLine);
       }
       return;
     }
@@ -4362,6 +4667,30 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       nextRideThoughtAt = now + 7000 + (lineSeed % 3500);
     }
     if (now < rideThoughtUntil) playerThought.hidden = false;
+    if (now < rideThoughtUntil) playerThought.parentElement?.querySelector('.mood-emitter')?.setAttribute('hidden', '');
+  }
+
+  function updateMoodEmitter(player, activeFare) {
+    const mood = Math.max(0, Math.min(100, Number(player.activeTrip?.passengerMood ?? 50)));
+    const moodEmojis = mood >= 75 ? ['❤️', '😊', '✨'] : mood >= 50 ? ['🙂', '👍', '☀️'] : mood >= 25 ? ['😐', '💭', '😬'] : ['👎', '😤', '💢'];
+    const emojis = player.activeTrip?.passengerEventEmoji ? [player.activeTrip.passengerEventEmoji, ...moodEmojis] : moodEmojis;
+    const fareElement = fareMarkers.get(activeFare.id)?.getElement();
+    const fareEmitter = fareElement?.querySelector('.mood-emitter');
+    if (player.status !== 'PICKUP' && fareEmitter) { fareEmitter.hidden = true; fareEmitter.replaceChildren(); }
+    const target = player.status === 'PICKUP'
+      ? fareMarkers.get(activeFare.id)?.getElement()
+      : playerMarker?.getElement();
+    if (!target) return;
+    const emitter = target.querySelector('.mood-emitter');
+    if (!emitter) return;
+    const wordBubble = target.querySelector('.npc-thought');
+    if (!wordBubble?.hidden) { emitter.hidden = true; return; }
+    const cycle = Math.floor(Date.now() / 1800);
+    if (emitter.dataset.cycle !== String(cycle)) {
+      emitter.dataset.cycle = String(cycle);
+      emitter.innerHTML = [0, 1, 2].map((offset) => `<span class="mood-particle">${emojis[(cycle + offset) % emojis.length]}</span>`).join('');
+    }
+    emitter.hidden = false;
   }
 
   function getCoordinateAlongRoute(coordinates, progress) {
@@ -4479,6 +4808,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     entries.unshift({ title, detail, meta, timestamp: Date.now() });
     localStorage.setItem(AGENT_ACTIVITY_KEY, JSON.stringify(entries.slice(0, 30)));
     renderAgentActivity();
+    void window.CrazyTukTicker?.add({ icon: '🤖', text: `${window.CrazyTukGame?.getPlayerDisplayName?.() || 'Anon'} · ${detail}` });
+    void window.CrazyTukActivityPublish?.({ type: meta, title, detail });
   }
   function renderAgentActivity() {
     const list = $('agentActivityList');
