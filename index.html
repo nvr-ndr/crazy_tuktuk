@@ -5001,7 +5001,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       gameEl.classList.add('agent-mode');
       stageEl.classList.add('agent-mode');
       $("agentTopStrip").hidden = false;
-      $("agentStartShift").hidden = false;
       $("agentPitCallButton").hidden = false;
       $("agentDashboardShift").hidden = false;
       $("agentDashboardStrategy").hidden = false;
@@ -5033,8 +5032,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       window.CrazyTukGame?.syncMapState?.(player);
       syncAgentHud();
       // Transitional development harness only: production shifts will activate server-side.
-      if (shouldStartDevelopmentShift && agentState?.shiftStatus !== 'RUNNING') setTimeout(startAutonomousDriveShift, 250);
+      if (shouldStartDevelopmentShift && !agentShiftRunning) startAgentShiftWhenReady();
     });
+  }
+
+  function startAgentShiftWhenReady(attempt = 0) {
+    if (agentShiftRunning || attempt > 10) return;
+    if (window.CrazyTukGame?.getPlayer?.()) {
+      void startAutonomousDriveShift();
+      return;
+    }
+    setTimeout(() => startAgentShiftWhenReady(attempt + 1), 250);
   }
 
   let agentDriveClock = null;
