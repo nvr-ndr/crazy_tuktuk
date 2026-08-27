@@ -5542,7 +5542,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       $("agentPitCallButton").title = 'No Pit Calls remaining';
       window.CrazyTukGame?.showNotification?.('Pit Calls depleted · tuning is locked for this Shift.', 'warning');
     }
-  });
+  }
   $("agentResultsNext").addEventListener("click", () => {
     $("agentResultsBackdrop").hidden = true;
     clearInterval(agentHudGuard);
