@@ -5,7 +5,7 @@
   "engines": {
     "node": ">=20"
   },
-  "scripts": { "test:e2e": "playwright test", "e2e:save-agent-state": "node tests/e2e/save-agent-state.cjs" },
+  "scripts": { "test:e2e": "playwright test", "e2e:save-agent-state": "node tests/e2e/save-agent-state.cjs", "e2e:agent-cdp": "node tests/e2e/agent-cdp.cjs" },
   "dependencies": {
     "pg": "^8.13.1"
   },
