@@ -262,14 +262,14 @@
     .dashboard-toggle {
       display: grid;
       place-items: center;
-      width: 34px;
-      height: 34px;
+      width: 30px;
+      height: 30px;
       padding: 0;
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
@@ -319,9 +319,9 @@
     .map-topbar-actions { display: flex; align-items: center; gap: 6px; }
     .map-back-button {
       min-width: 0;
-      padding: 7px 10px;
+      padding: 5px 8px;
       border-radius: 999px;
-      font-size: 10px;
+      font-size: 9px;
       white-space: nowrap;
     }
     .top-connect-button {
@@ -1233,7 +1233,26 @@
     .trip-card-metric b { display: block; margin-top: 2px; color: white; font-size: 12px; }
     .trip-card.stalled { border-color: var(--danger); background: linear-gradient(135deg, rgba(76,18,24,.97), rgba(35,25,24,.97)); }
     .trip-card.stalled .trip-card-kicker, .trip-card.stalled .trip-card-percent { color: #ff7783; }
-    .city-ticker { position: absolute; z-index: 940; top: max(72px, env(safe-area-inset-top) + 58px); left: 50%; display: flex; align-items: center; gap: 4px; width: min(calc(100% - 70px), 340px); min-height: 30px; padding: 6px 8px; transform: translateX(-50%); border: 1px solid rgba(246,212,107,.35); border-radius: 999px; background: rgba(10,18,35,.86); box-shadow: 0 7px 18px rgba(0,0,0,.28); color: #fff5cf; pointer-events: none; opacity: 0; transition: opacity .25s ease, transform .25s ease; }
+    .city-ticker {
+      position: absolute;
+      z-index: 940;
+      top: max(72px, env(safe-area-inset-top) + 58px);
+      left: 50%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 30px;
+      padding: 6px 15px;
+      transform: translateX(-50%);
+      border: 1px solid rgba(246,212,107,.35);
+      border-radius: 999px;
+      background: rgba(10,18,35,.86);
+      box-shadow: 0 7px 18px rgba(0,0,0,.28);
+      color: #fff5cf;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .25s ease, transform .25s ease;
+    }
     .stage:not(.agent-mode) .city-ticker { top: max(8px, env(safe-area-inset-top) + 2px); }
     .city-ticker.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
     .city-ticker-icon { flex: 0 0 auto; font-size: 15px; }
@@ -5310,15 +5329,27 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     if (!agentShiftRunning) return;
     const game = window.CrazyTukGame;
     const player = game?.getPlayer?.();
-    let fare = game?.getAvailableFares?.().find((entry) => entry.expiresAt > Date.now());
+    const available = () => (game?.getAvailableFares?.() || []).filter((entry) => entry.expiresAt > Date.now());
+    if (Number(agentRun?.fuel || 0) <= 0) {
+      agentShiftRunning = false;
+      agentRun.status = 'PARKED';
+      saveAgentRun();
+      syncAgentHud();
+      recordAgentActivity('Agent parked', 'Daily gas is exhausted; score is frozen until the next shift.', 'PARKED');
+      return;
+    }
+    let fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= agentRun.fuel);
     if (!game || !player) return;
     if (!fare) {
       game.refreshFares?.(player.wallet);
-      fare = game.getAvailableFares?.().find((entry) => entry.expiresAt > Date.now());
+      fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= agentRun.fuel);
     }
     if (!fare) {
-      recordAgentActivity('Looking for a fare', 'No valid opportunities right now; checking again shortly.', 'IDLE');
-      agentNextFareTimer = setTimeout(runAutonomousFareCycle, 1500);
+      agentShiftRunning = false;
+      agentRun.status = 'PARKED';
+      saveAgentRun();
+      syncAgentHud();
+      recordAgentActivity('Agent parked', 'No available fare can be completed with remaining gas.', 'PARKED');
       return;
     }
     $("hudActionLabel").textContent = 'CHOOSING FARE';
@@ -5360,7 +5391,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       } catch (error) {
         recordAgentActivity('Quote deferred', error.message, 'QUOTE');
       }
-      game.addFuel?.(25);
+      // Daily Agent gas is finite: normal fares do not replenish fuel.
+      recordAgentActivity('Swap simulation complete', 'No gas replenishment; route costs are charged on both legs.', 'SWAP');
       const claimed = game.claimFare?.(fare.id, selected?.wallet);
       if (!claimed) { agentNextFareTimer = setTimeout(runAutonomousFareCycle, 800); return; }
       if (!quote) saveAgentRecord(AGENT_SWAP_KEY, {
@@ -5381,11 +5413,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         agentFareCount += 1;
         agentRun.fares += 1;
         agentRun.score += Number(fare.pointValue || 0);
-        agentRun.fuel = Math.max(0, agentRun.fuel - 2);
-        void recordDailyFareCompletion(fare, Number(fare.pointValue || 0), -2);
+        const routeFuel = Math.max(1, Math.ceil(Number(fare.routeMetrics?.totalFuel || fare.totalFuel || 2)));
+        agentRun.fuel = Math.max(0, agentRun.fuel - routeFuel);
+        void recordDailyFareCompletion(fare, Number(fare.pointValue || 0), -routeFuel);
         saveAgentRun();
         syncAgentHud();
-        recordAgentActivity('Fare complete', `${npc?.name || 'Passenger'} delivered · ${fare.pointValue || 0} points.`, 'DRIVING');
+        recordAgentActivity('Fare complete', `${npc?.name || 'Passenger'} delivered · ${fare.pointValue || 0} points · -${routeFuel} gas.`, 'DRIVING');
         agentNextFareTimer = setTimeout(runAutonomousFareCycle, 900);
       });
     }, 1100);
