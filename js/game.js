@@ -172,6 +172,12 @@ function keepOneFarePerPickupZone(fares) {
 }
 
 function applyCachedRouteTestFares(fares) {
+  // Keep deterministic route fixtures available to Node regression tests and
+  // explicit browser runs (?routeTestFares=1), but never force them into the
+  // normal Agent-mode experience.
+  const browserRouteTest = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('routeTestFares') === '1';
+  if (typeof window !== 'undefined' && !browserRouteTest) return fares;
   const byNpc = [...fares];
   const testFares = CACHED_ROUTE_TEST_PAIRS.map((testPair, index) => {
     const baseFare = byNpc[index] || byNpc[0];
