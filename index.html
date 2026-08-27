@@ -5018,7 +5018,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       const player = window.CrazyTukGame?.getPlayer?.();
       if (!drivePlayerSnapshot && player) drivePlayerSnapshot = JSON.parse(JSON.stringify(player));
       agentRun = loadAgentRun() || { fuel: 100, score: 0, bankroll: 20, fares: 0 };
-      const shouldStartDevelopmentShift = window.CrazyTukGame?.CONFIG?.DEV_MODE && agentState?.funded && agentState?.shiftStatus !== 'FINISHED';
+      // The legacy mock-driver funding flag must not gate a real wallet Agent
+      // session. Authentication and server registration are enforced when the
+      // first Agent API call is made.
+      const shouldStartDevelopmentShift = window.CrazyTukGame?.CONFIG?.DEV_MODE && agentState?.shiftStatus !== 'FINISHED';
       $("agentTopStatus").textContent = agentState?.shiftStatus === 'FINISHED' ? 'READY NEXT SHIFT' : (agentState?.shiftStatus === 'RUNNING' ? 'ACTIVE' : 'QUEUED');
       clearInterval(agentHudGuard);
       agentHudGuard = setInterval(syncAgentHud, 250);
