@@ -20,13 +20,19 @@ test('Agent Mode starts and exposes observable state', async ({ page }) => {
   await page.goto('/?routeTestFares=1', { waitUntil: 'networkidle' });
   await expect(page.locator('#agentTopStrip')).toBeAttached();
 
-  await page.locator('#titleTournament').click();
-  await page.locator('#tournamentGarage').click();
-  await page.locator('.garage-driver-card').first().click();
-  const readyButton = page.locator('#garageCreateDriver');
-  await readyButton.click();
-  await readyButton.click();
-  await readyButton.click();
+  const agentStrip = page.locator('#agentTopStrip');
+  if (!(await agentStrip.isVisible())) {
+    await page.locator('#titleTournament').click();
+    await expect(page.locator('#tournamentGarage')).toBeVisible();
+    await page.locator('#tournamentGarage').click();
+    await expect(page.locator('#garagePanel')).toBeVisible();
+    await page.locator('.garage-driver-card').first().click();
+    const readyButton = page.locator('#garageCreateDriver');
+    await expect(readyButton).toBeVisible();
+    await readyButton.click();
+    await readyButton.click();
+    await readyButton.click();
+  }
   await page.waitForTimeout(1_500);
 
   const status = page.locator('#agentTopStatus');
