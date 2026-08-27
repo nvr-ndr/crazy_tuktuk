@@ -1233,11 +1233,12 @@
     .trip-card-metric b { display: block; margin-top: 2px; color: white; font-size: 12px; }
     .trip-card.stalled { border-color: var(--danger); background: linear-gradient(135deg, rgba(76,18,24,.97), rgba(35,25,24,.97)); }
     .trip-card.stalled .trip-card-kicker, .trip-card.stalled .trip-card-percent { color: #ff7783; }
-    .city-ticker { position: absolute; z-index: 940; top: max(72px, env(safe-area-inset-top) + 58px); left: 50%; display: flex; align-items: center; gap: 8px; width: min(calc(100% - 28px), 430px); min-height: 30px; padding: 6px 10px; transform: translateX(-50%); border: 1px solid rgba(246,212,107,.35); border-radius: 999px; background: rgba(10,18,35,.86); box-shadow: 0 7px 18px rgba(0,0,0,.28); color: #fff5cf; pointer-events: none; opacity: 0; transition: opacity .25s ease, transform .25s ease; }
-    .stage:not(.agent-mode) .city-ticker { top: max(10px, env(safe-area-inset-top) + 4px); }
+    .city-ticker { position: absolute; z-index: 940; top: max(72px, env(safe-area-inset-top) + 58px); left: 50%; display: flex; align-items: center; gap: 4px; width: min(calc(100% - 70px), 340px); min-height: 30px; padding: 6px 8px; transform: translateX(-50%); border: 1px solid rgba(246,212,107,.35); border-radius: 999px; background: rgba(10,18,35,.86); box-shadow: 0 7px 18px rgba(0,0,0,.28); color: #fff5cf; pointer-events: none; opacity: 0; transition: opacity .25s ease, transform .25s ease; }
+    .stage:not(.agent-mode) .city-ticker { top: max(8px, env(safe-area-inset-top) + 2px); }
     .city-ticker.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
     .city-ticker-icon { flex: 0 0 auto; font-size: 15px; }
     .city-ticker-text { min-width: 0; overflow: hidden; flex: 1; font-size: 10px; font-weight: 800; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+    .city-ticker.demand { background: rgba(10,18,35,.86); }
     .city-ticker-text b { color: var(--warn); }
     .completion-backdrop { position: absolute; z-index: 1200; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,8,18,.66); backdrop-filter: blur(5px); }
     .completion-backdrop[hidden] { display: none; }
@@ -3910,6 +3911,23 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     { icon: '⭐', text: 'Sam · Beam gave 4★' },
     { icon: '🛺', text: 'Anon C91D · found a perfect gap' }
   ];
+  function getFareDemandTickerEntry() {
+    const game = window.CrazyTukGame;
+    const fares = game?.getAvailableFares?.() || [];
+    if (!fares.length) return null;
+    const groups = new Map();
+    fares.forEach((fare) => {
+      const location = game.getLocationById?.(fare.pickupLocationId);
+      const key = location?.zoneId || fare.pickupLocationId || 'city';
+      const group = groups.get(key) || { count: 0, surge: 1, label: location?.zoneLabel || location?.name || 'CITYWIDE' };
+      group.count += 1;
+      group.surge = Math.max(group.surge, Number(fare.surgeMultiplier) || 1);
+      groups.set(key, group);
+    });
+    const busiest = [...groups.values()].sort((a, b) => b.count - a.count || b.surge - a.surge)[0];
+    const surge = busiest.surge > 1;
+    return { icon: surge ? '⚡' : busiest.count >= 2 ? '🔥' : '📣', text: `${surge ? 'SURGE' : 'FARE DEMAND'} · ${busiest.label} · ${busiest.count} ${busiest.count === 1 ? 'fare' : 'fares'}${surge ? ` · +${Math.round((busiest.surge - 1) * 100)}%` : ''}` };
+  }
   function renderCityTicker() {
     const ticker = $('cityTicker');
     const text = $('cityTickerText');
@@ -3917,10 +3935,15 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     let entries = [];
     try { entries = JSON.parse(localStorage.getItem('crazytuk_city_ticker_v1') || '[]'); } catch {}
     const shared = (() => { try { return JSON.parse(localStorage.getItem('crazytuk_city_ticker_shared_v1') || '[]'); } catch { return []; } })();
-    const pool = entries.length ? entries : (shared.length ? shared : ambientTickerEntries);
+    const demand = getFareDemandTickerEntry();
+    const updates = entries.length ? entries : (shared.length ? shared : ambientTickerEntries);
+    const pool = demand ? [demand, ...updates] : updates;
     const item = pool[Math.floor(Date.now() / 5000) % pool.length];
     ticker.querySelector('.city-ticker-icon').textContent = item.icon || '📡';
     text.textContent = item.text || '';
+    const isDemand = Boolean(demand && item === demand);
+    ticker.classList.toggle('demand', isDemand);
+    ticker.classList.toggle('busy', isDemand && demand.icon === '🔥');
     ticker.classList.add('visible');
   }
   renderCityTicker();
