@@ -2166,18 +2166,22 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       let quoteRequestId = 0;
       const RIDE_FEED_KEY = 'crazytuk_public_feed_v1';
       const CITY_TICKER_KEY = 'crazytuk_city_ticker_v1';
-      const ACTIVITY_API = window.CRAZY_TUK_ACTIVITY_API || localStorage.getItem('crazytuk_activity_api') || `${CONFIG.AGENT_RUNNER_URL}/v1/activity`;
+      // Shared activity is opt-in. The normal Agent path must not silently
+      // depend on the legacy Railway activity endpoint.
+      const ACTIVITY_API = window.CRAZY_TUK_ACTIVITY_API || localStorage.getItem('crazytuk_activity_api') || '';
       function getActivityIdentity() {
         const player = getPlayer() || {};
         return { actorId: player.wallet || player.anonymousId || 'anon-local', actorName: getPlayerDisplayName() };
       }
       async function publishSharedActivity(activity) {
+        if (!ACTIVITY_API) return null;
         try {
           const response = await fetch(ACTIVITY_API, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...getActivityIdentity(), ...activity }) });
           return response.ok;
         } catch { return false; }
       }
       async function loadSharedActivity() {
+        if (!ACTIVITY_API) return [];
         try {
           const response = await fetch(`${ACTIVITY_API}?limit=30`, { cache: 'no-store' });
           if (!response.ok) return [];
