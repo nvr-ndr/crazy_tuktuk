@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
 
 test('Agent Mode starts and exposes observable state', async ({ page }) => {
   const consoleErrors = [];
@@ -10,6 +11,12 @@ test('Agent Mode starts and exposes observable state', async ({ page }) => {
     if (request.url().includes('railway.app')) railwayRequests.push(request.url());
   });
 
+  if (process.env.PLAYWRIGHT_STORAGE_STATE) {
+    const saved = JSON.parse(fs.readFileSync(process.env.PLAYWRIGHT_STORAGE_STATE, 'utf8'));
+    await page.addInitScript(entries => {
+      for (const [key, value] of Object.entries(entries || {})) sessionStorage.setItem(key, value);
+    }, saved.sessionStorage || {});
+  }
   await page.goto('/?routeTestFares=1', { waitUntil: 'networkidle' });
   await expect(page.locator('#agentTopStrip')).toBeAttached();
 
