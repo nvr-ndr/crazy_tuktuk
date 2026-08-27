@@ -5034,6 +5034,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       window.CrazyTukGame?.initFareMarkers?.();
       window.CrazyTukGame?.syncMapState?.(player);
       syncAgentHud();
+      void syncDailyAgentShift();
       // Transitional development harness only: production shifts will activate server-side.
       if (shouldStartDevelopmentShift && !agentShiftRunning) startAgentShiftWhenReady();
     });
@@ -5111,6 +5112,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         $("agentTopStatus").textContent = serverState.status.replaceAll('_', ' ');
         if (serverState.bankroll != null) $("agentTopBankroll").textContent = `${Number(serverState.bankroll).toFixed(2)} USDC`;
         if (serverState.crazy_score != null) $("points").textContent = String(serverState.crazy_score);
+        const strategy = serverState.current_strategy || null;
+        const pitCallsRemaining = serverState.pit_calls_remaining ?? Math.max(0, 3 - Number(serverState.pit_calls_used || 0));
+        console.info('[agent-sync] authoritative shift state', { status: serverState.status, gasRemaining: serverState.gas_remaining, score: serverState.crazy_score, pitCallsUsed: serverState.pit_calls_used, pitCallsRemaining, strategy });
+        if (strategy) {
+          if (strategy.priority) $("agentStrategyPriority").textContent = strategy.priority;
+          if (Number.isInteger(Number(strategy.risk))) $("pitRisk").value = Number(strategy.risk);
+          if (Number.isInteger(Number(strategy.activity))) $("pitActivity").value = Number(strategy.activity);
+          $("agentStrategyPitCalls").textContent = `PIT CALLS ${'●'.repeat(pitCallsRemaining)}${'○'.repeat(3 - pitCallsRemaining)}`;
+          $("agentStrategyRisk").textContent = `${'█'.repeat(Number(strategy.risk || 1))}${'░'.repeat(10 - Number(strategy.risk || 1))}`;
+          $("agentStrategyActivity").textContent = `${'█'.repeat(Number(strategy.activity || 1))}${'░'.repeat(10 - Number(strategy.activity || 1))}`;
+        }
       } else if (payload.shift?.status) {
         $("agentTopStatus").textContent = payload.shift.status === 'ACTIVE' ? 'QUEUED' : 'READY NEXT SHIFT';
       }
@@ -5545,7 +5557,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
       body: JSON.stringify({ commandType: 'SET_STRATEGY', target: 'NEXT_DECISION', payload: { priority: agentPriority, risk: Number($("pitRisk").value), activity: Number($("pitActivity").value) }, idempotencyKey: `pit:${session.wallet}:${Date.now()}` })
     });
-    if (!response.ok) return;
+    if (!response.ok) {
+      console.warn('[agent-pit-call] rejected', { status: response.status, priority: agentPriority, risk: $("pitRisk").value, activity: $("pitActivity").value });
+      return;
+    }
+    const result = await response.json();
+    console.info('[agent-pit-call] accepted', result);
     agentPitCallsRemaining -= 1;
     $("pitCallBackdrop").hidden = true;
     window.CrazyTukGame?.showNotification?.(`Strategy updated · ${agentPitCallsRemaining} Pit Call${agentPitCallsRemaining === 1 ? '' : 's'} remaining · ${agentPriority}`, 'success');

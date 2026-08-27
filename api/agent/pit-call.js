@@ -30,6 +30,12 @@ module.exports = async function handler(request, response) {
       await client.query(`UPDATE agent_shift_states SET pit_calls_used=pit_calls_used+1,state_version=state_version+1,updated_at=now() WHERE id=$1`, [agent.id]);
       return { duplicate: false, command: inserted.rows[0], pitCallsRemaining: 2 - Number(agent.pit_calls_used) };
     });
+    console.info('agent pit call accepted', {
+      agentId: session.agent_id,
+      duplicate: result.duplicate,
+      pitCallsRemaining: result.pitCallsRemaining ?? null,
+      strategy: result.command?.payload ?? null
+    });
     return respond(response, 200, result);
   } catch (e) {
     if (e.code === 'DATABASE_URL_MISSING') return respond(response, 503, { error: 'database_unconfigured' });
