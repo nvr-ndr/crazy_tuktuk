@@ -10,6 +10,47 @@ const requiredForDatabase = ['DATABASE_URL'];
 const developmentTournamentId = '00000000-0000-4000-8000-000000000042';
 let nextDevelopmentRunAt = 0;
 const sessionLifetimeMinutes = 30;
+const dailyGasAllocation = Number(process.env.DAILY_AGENT_GAS_ALLOCATION || 100);
+
+function dailyShiftWindow(now = new Date()) {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { key: start.toISOString().slice(0, 10), start, end };
+}
+
+async function ensureDailyShift(now = new Date()) {
+  const window = dailyShiftWindow(now);
+  const result = await queryDatabase(
+    `INSERT INTO daily_shifts (id, shift_key, status, starts_at, ends_at)
+     VALUES ($1, $2, CASE WHEN now() >= $3 THEN 'ACTIVE' ELSE 'QUEUED' END, $3, $4)
+     ON CONFLICT (shift_key) DO UPDATE SET status = CASE
+       WHEN daily_shifts.status IN ('FINALIZING','COMPLETE') THEN daily_shifts.status
+       WHEN now() >= daily_shifts.ends_at THEN 'FINALIZING'
+       WHEN now() >= daily_shifts.starts_at THEN 'ACTIVE'
+       ELSE daily_shifts.status END
+     RETURNING id, shift_key, status, starts_at, ends_at`,
+    [randomUUID(), window.key, window.start.toISOString(), window.end.toISOString()]
+  );
+  const shift = result.rows[0];
+  if (shift.status === 'FINALIZING') {
+    await queryDatabase(
+      `INSERT INTO daily_shift_results (id, shift_id, agent_id, final_rank, crazy_score, fares_completed, gas_remaining, bankroll, final_status)
+       SELECT md5(shift_id::text || agent_id::text)::uuid, shift_id, agent_id,
+              RANK() OVER (ORDER BY crazy_score DESC, fares_completed DESC)::int,
+              crazy_score, fares_completed, gas_remaining, bankroll, status
+       FROM agent_shift_states WHERE shift_id = $1
+       ON CONFLICT (shift_id, agent_id) DO NOTHING`,
+      [shift.id]
+    );
+    const completed = await queryDatabase(
+      `UPDATE daily_shifts SET status = 'COMPLETE', finalized_at = COALESCE(finalized_at, now())
+       WHERE id = $1 AND status = 'FINALIZING' RETURNING id, shift_key, status, starts_at, ends_at, finalized_at`,
+      [shift.id]
+    );
+    return completed.rows[0] || shift;
+  }
+  return shift;
+}
 
 function allowedOrigin(request) {
   const requested = request.headers.origin;
@@ -147,6 +188,7 @@ const server = http.createServer(async (request, response) => {
       if (typeof body.persona !== 'string' || !body.persona.trim() || body.persona.length > 40) return json(response, 400, { error: 'invalid_agent_persona' });
       if (Date.now() < nextDevelopmentRunAt) return json(response, 429, { error: 'development_run_rate_limited' });
       nextDevelopmentRunAt = Date.now() + 1_000;
+      const dailyShift = await ensureDailyShift();
 
       await queryDatabase(
         `INSERT INTO tournaments (id, status, starts_at, ends_at, starting_bankroll, rules_version)
@@ -168,10 +210,187 @@ const server = http.createServer(async (request, response) => {
          RETURNING id`,
         [randomUUID(), developmentTournamentId, agent.rows[0].id, JSON.stringify({ mode: 'development-quote-only' })]
       );
-      return json(response, 201, { agentRunId: run.rows[0].id, mode: 'development-quote-only' }, request);
+      await queryDatabase(
+        `INSERT INTO agent_shift_states (id, shift_id, agent_id, status, bankroll)
+         VALUES ($1, $2, $3, CASE WHEN $4 = 'ACTIVE' THEN 'ACTIVE' ELSE 'READY_NEXT_SHIFT' END, 20)
+         ON CONFLICT (shift_id, agent_id) DO UPDATE SET updated_at = now()`,
+        [randomUUID(), dailyShift.id, agent.rows[0].id, dailyShift.status]
+      );
+      return json(response, 201, { agentRunId: run.rows[0].id, dailyShift, mode: 'development-quote-only' }, request);
     } catch (error) {
       if (error.message === 'invalid_json' || error.message === 'request_too_large') return json(response, 400, { error: error.message }, request);
       return json(response, 503, { error: 'development_run_unavailable' }, request);
+    }
+  }
+  if (request.method === 'GET' && url.pathname === '/v1/daily-shift') {
+    try {
+      const session = await requireSession(request);
+      if (!session) return json(response, 401, { error: 'agent_session_required' }, request);
+      const shift = await ensureDailyShift();
+      await queryDatabase(
+        `UPDATE agent_shift_states
+         SET status = 'ACTIVE', gas_allocated = $1, gas_remaining = CASE WHEN gas_allocated = 0 THEN $1 ELSE gas_remaining END, updated_at = now()
+         WHERE shift_id = $2 AND agent_id = $3 AND status = 'READY_NEXT_SHIFT' AND $4 = 'ACTIVE'`,
+        [dailyGasAllocation, shift.id, session.agent_id, shift.status]
+      );
+      const state = await queryDatabase(
+        `SELECT status, gas_remaining, gas_allocated, crazy_score, fares_completed, bankroll, pit_calls_used, updated_at
+         FROM agent_shift_states WHERE shift_id = $1 AND agent_id = $2`,
+        [shift.id, session.agent_id]
+      );
+      return json(response, 200, { shift, state: state.rows[0] || null }, request);
+    } catch {
+      return json(response, 503, { error: 'daily_shift_unavailable' }, request);
+    }
+  }
+  if (request.method === 'POST' && url.pathname === '/v1/daily-shift/events') {
+    try {
+      const session = await requireSession(request);
+      if (!session) return json(response, 401, { error: 'agent_session_required' }, request);
+      const body = await readJson(request);
+      const type = String(body.type || '').trim();
+      const key = String(body.idempotencyKey || '').trim();
+      const fareId = String(body.fareId || '').trim();
+      const scoreDelta = Math.max(-1000, Math.min(1000, Number(body.scoreDelta || 0)));
+      const gasDelta = Math.max(-100, Math.min(0, Number(body.gasDelta || 0)));
+      if (!['FARE_COMPLETED', 'FARE_STALLED', 'AGENT_PARKED', 'FARE_REJECTED', 'IDLE_OBSERVED'].includes(type) || !/^[A-Za-z0-9:_-]{8,120}$/.test(key)) {
+        return json(response, 400, { error: 'invalid_daily_shift_event' }, request);
+      }
+      const shift = await ensureDailyShift();
+      const state = await queryDatabase('SELECT status FROM agent_shift_states WHERE shift_id = $1 AND agent_id = $2', [shift.id, session.agent_id]);
+      if (!state.rowCount) return json(response, 404, { error: 'daily_shift_state_not_found' }, request);
+      if (state.rows[0].status !== 'ACTIVE') return json(response, 409, { error: 'daily_shift_not_active' }, request);
+      const event = await queryDatabase(
+        `INSERT INTO daily_shift_events (id, shift_id, agent_id, idempotency_key, type, fare_id, score_delta, gas_delta, payload)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+         ON CONFLICT (idempotency_key) DO NOTHING RETURNING id`,
+        [randomUUID(), shift.id, session.agent_id, key, type, fareId || null, scoreDelta, gasDelta, JSON.stringify(body.payload || {})]
+      );
+      if (!event.rowCount) return json(response, 200, { accepted: true, duplicate: true }, request);
+      await queryDatabase(
+        `UPDATE agent_shift_states
+         SET crazy_score = crazy_score + $1,
+             fares_completed = fares_completed + CASE WHEN $2 = 'FARE_COMPLETED' THEN 1 ELSE 0 END,
+             gas_remaining = GREATEST(0, gas_remaining + $3),
+             status = CASE WHEN $2 = 'FARE_STALLED' THEN 'STALLED' WHEN $2 = 'AGENT_PARKED' THEN 'PARKED' ELSE status END,
+             last_observed_at = CASE WHEN $2 IN ('FARE_REJECTED', 'IDLE_OBSERVED') THEN now() ELSE last_observed_at END,
+             next_decision_at = CASE WHEN $2 IN ('FARE_REJECTED', 'IDLE_OBSERVED') THEN now() + interval '15 seconds' ELSE next_decision_at END,
+             updated_at = now()
+         WHERE shift_id = $4 AND agent_id = $5`,
+        [scoreDelta, type, gasDelta, shift.id, session.agent_id]
+      );
+      return json(response, 201, { accepted: true, duplicate: false, shiftId: shift.id }, request);
+    } catch (error) {
+      if (error.message === 'invalid_json' || error.message === 'request_too_large') return json(response, 400, { error: error.message }, request);
+      return json(response, 503, { error: 'daily_shift_event_unavailable' }, request);
+    }
+  }
+  if (request.method === 'POST' && url.pathname === '/v1/daily-shift/route-decision') {
+    try {
+      const session = await requireSession(request);
+      if (!session) return json(response, 401, { error: 'agent_session_required' }, request);
+      const body = await readJson(request);
+      const primary = body.primary || {};
+      const alternative = body.alternative || null;
+      if (!Number.isFinite(Number(primary.distanceMeters)) || !Number.isFinite(Number(primary.durationSeconds))) {
+        return json(response, 400, { error: 'primary_route_metrics_required' }, request);
+      }
+      const score = (route) => Number(route.distanceMeters) + Number(route.durationSeconds) * 2;
+      const primaryScore = score(primary);
+      const alternativeScore = alternative && Number.isFinite(Number(alternative.distanceMeters)) && Number.isFinite(Number(alternative.durationSeconds)) ? score(alternative) : Infinity;
+      const selected = alternativeScore < primaryScore * 0.97 ? 'alternative' : 'primary';
+      return json(response, 200, {
+        selectedVariant: selected,
+        reason: selected === 'alternative' ? 'alternative_is_at_least_3_percent_lower_cost' : 'primary_is_preferred_or_only_cached_route',
+        metrics: { primaryScore, alternativeScore }
+      }, request);
+    } catch (error) {
+      return json(response, error.message === 'invalid_json' ? 400 : 503, { error: error.message === 'invalid_json' ? 'invalid_json' : 'route_decision_unavailable' }, request);
+    }
+  }
+  if (request.method === 'POST' && url.pathname === '/v1/daily-shift/zones/tick') {
+    try {
+      const session = await requireSession(request);
+      if (!session) return json(response, 401, { error: 'agent_session_required' }, request);
+      const body = await readJson(request);
+      const zoneId = String(body.zoneId || '').trim();
+      const agentCount = Math.max(0, Math.min(10000, Number(body.agentCount || 0)));
+      const demandScore = Math.max(0, Math.min(100, Number(body.demandScore ?? 50)));
+      if (!/^[a-zA-Z0-9_-]{2,60}$/.test(zoneId) || !Number.isFinite(agentCount) || !Number.isFinite(demandScore)) return json(response, 400, { error: 'invalid_zone_observation' }, request);
+      const shift = await ensureDailyShift();
+      const supplyScore = Math.min(100, agentCount * 12);
+      const state = supplyScore >= demandScore + 20 ? 'OVERSUPPLIED' : demandScore >= supplyScore + 25 ? 'SURGE' : 'NORMAL';
+      const result = await queryDatabase(
+        `INSERT INTO zone_states (id, shift_id, zone_id, agent_count, demand_score, supply_score, state)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (shift_id, zone_id) DO UPDATE SET agent_count = EXCLUDED.agent_count,
+           demand_score = EXCLUDED.demand_score, supply_score = EXCLUDED.supply_score, state = EXCLUDED.state, updated_at = now()
+         RETURNING zone_id, agent_count, demand_score, supply_score, state, updated_at`,
+        [randomUUID(), shift.id, zoneId, agentCount, demandScore, supplyScore, state]
+      );
+      return json(response, 200, { shiftId: shift.id, zone: result.rows[0] }, request);
+    } catch (error) {
+      return json(response, error.message === 'invalid_json' ? 400 : 503, { error: error.message === 'invalid_json' ? 'invalid_json' : 'zone_tick_unavailable' }, request);
+    }
+  }
+  if (request.method === 'GET' && url.pathname === '/v1/daily-shift/zones') {
+    try {
+      const shift = await ensureDailyShift();
+      const zones = await queryDatabase('SELECT zone_id, agent_count, demand_score, supply_score, state, updated_at FROM zone_states WHERE shift_id = $1 ORDER BY zone_id', [shift.id]);
+      return json(response, 200, { shift, zones: zones.rows }, request);
+    } catch {
+      return json(response, 503, { error: 'zones_unavailable' }, request);
+    }
+  }
+  if (request.method === 'GET' && url.pathname === '/v1/daily-shift/leaderboard') {
+    try {
+      const shift = await ensureDailyShift();
+      const standings = await queryDatabase(
+        `SELECT ROW_NUMBER() OVER (ORDER BY states.crazy_score DESC, states.fares_completed DESC, agents.created_at ASC)::int AS rank,
+                agents.id AS agent_id, agents.name, agents.persona, states.status,
+                states.crazy_score, states.fares_completed, states.gas_remaining
+         FROM agent_shift_states states JOIN agents ON agents.id = states.agent_id
+         WHERE states.shift_id = $1 ORDER BY rank LIMIT 100`,
+        [shift.id]
+      );
+      return json(response, 200, { shift, standings: standings.rows }, request);
+    } catch {
+      return json(response, 503, { error: 'leaderboard_unavailable' }, request);
+    }
+  }
+  if (request.method === 'GET' && url.pathname === '/v1/daily-shift/ghosts') {
+    try {
+      const shift = await ensureDailyShift();
+      const ghosts = await queryDatabase(
+        `SELECT agents.id AS agent_id, agents.name, states.crazy_score, states.current_route, states.route_started_at
+         FROM agent_shift_states states JOIN agents ON agents.id = states.agent_id
+         WHERE states.shift_id = $1 AND states.status = 'ACTIVE' AND states.current_route IS NOT NULL
+           AND states.route_started_at > now() - interval '10 minutes'
+         ORDER BY states.crazy_score DESC LIMIT 3`,
+        [shift.id]
+      );
+      return json(response, 200, { shift, ghosts: ghosts.rows }, request);
+    } catch {
+      return json(response, 503, { error: 'ghosts_unavailable' }, request);
+    }
+  }
+  const profileMatch = url.pathname.match(/^\/v1\/agents\/([0-9a-f-]{36})\/profile$/i);
+  if (request.method === 'GET' && profileMatch) {
+    try {
+      const profile = await queryDatabase(
+        `SELECT agents.id, agents.name, agents.persona, agents.created_at,
+                COUNT(results.id)::int AS shifts_completed,
+                COALESCE(SUM(results.fares_completed), 0)::int AS fares_completed,
+                COALESCE(MAX(results.crazy_score), 0)::int AS best_score,
+                COALESCE(MIN(results.final_rank), 0)::int AS best_rank
+         FROM agents LEFT JOIN daily_shift_results results ON results.agent_id = agents.id
+         WHERE agents.id = $1 GROUP BY agents.id`,
+        [profileMatch[1]]
+      );
+      if (!profile.rowCount) return json(response, 404, { error: 'agent_not_found' }, request);
+      return json(response, 200, { profile: profile.rows[0] }, request);
+    } catch {
+      return json(response, 503, { error: 'profile_unavailable' }, request);
     }
   }
   if (request.method === 'GET' && url.pathname === '/v1/activity') {
@@ -332,11 +551,12 @@ const server = http.createServer(async (request, response) => {
   }
   if (url.pathname === '/v1/status') {
     try {
-      const [tournaments, runs] = await Promise.all([
+      const [dailyShift, tournaments, runs] = await Promise.all([
+        ensureDailyShift(),
         queryDatabase("SELECT id, status, starts_at, ends_at FROM tournaments ORDER BY starts_at DESC LIMIT 1"),
         queryDatabase("SELECT status, count(*)::int AS count FROM agent_runs GROUP BY status")
       ]);
-      return json(response, 200, { tournament: tournaments.rows[0] || null, runs: runs.rows });
+      return json(response, 200, { dailyShift, tournament: tournaments.rows[0] || null, runs: runs.rows });
     } catch {
       return json(response, 503, { error: 'database_unavailable' });
     }

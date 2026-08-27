@@ -26,8 +26,10 @@ export const CONFIG = {
 
   // Game Mechanics
   SELECTED_FARE_STRICT: true,
-  ALLOW_ROUTE_FALLBACK: false,
+  ALLOW_ROUTE_FALLBACK: true,
   DEV_MODE: true,
+  // Tournament wrapper is archived; Daily Agent Mode remains the active agent surface.
+  TOURNAMENT_MODE_ENABLED: false,
 
   // Airport Chance
   AIRPORT_DESTINATION_CHANCE: 0.07,
@@ -43,6 +45,7 @@ export const CONFIG = {
   TOURNAMENT_PIT_CALLS: 3,
   TOURNAMENT_MOCK_SWAP_USD: 3,
   TOURNAMENT_DFLOW_QUOTE_INPUT_AMOUNT_LAMPORTS: 30000000,
+  DAILY_AGENT_GAS_ALLOCATION: 100,
   AGENT_RUNNER_URL: 'https://agent-runner-production-5089.up.railway.app'
 
 };

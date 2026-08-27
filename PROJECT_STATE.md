@@ -1039,3 +1039,193 @@ DFlow is enabled through the same-origin server endpoint. No client-side API key
 - Cigarette hand assets
 - squirt.png image
 - Background images (now CSS gradients)
+
+## Phase 0 — Daily Agent Existing-Code Audit (2026-08-27)
+
+- Completed the no-behavior-change audit requested by `CRAZY_TUK_DAILY_AGENT_MODE_IMPLEMENTATION.md`.
+- Added [docs/DAILY_AGENT_EXISTING_CODE_AUDIT.md](docs/DAILY_AGENT_EXISTING_CODE_AUDIT.md), covering the current Tournament/Agent UI, local shift state, wallet/funding flow, Agent Runner routes, Neon schema, scoring, gas/stalls, Crazy Events, Pit Calls, cached routes, and Railway/DFlow status.
+- Confirmed that the current Agent experience is still a browser-owned ten-minute Tournament mock: local timers and localStorage control shift timing, score, bankroll simulation, fare completion, and results.
+- Confirmed that cached route data is already reused by Drive and Agent route selection and should be preserved for the Daily Agent conversion.
+- Confirmed that the backend currently supports development Agent Run creation, quote-only DFlow requests, history, and status reporting, but not global Daily Shift scheduling, autonomous execution, cutoff/finalization, or immutable Daily results.
+- Confirmed that `tournaments`/`agent_runs` are transitional persistence structures; Daily Agent concepts such as per-shift state/results, gas, parking, zones, career stats, prize accounting, and idempotency are not yet represented.
+- Phase 0 is complete. Next phase: archive/document Tournament-specific behavior and reframe the active production flow as Agent Mode/Daily Shift without deleting reusable Drive or Agent systems.
+
+## Phase 1 — Archive Tournament Wrapper (2026-08-27)
+
+- Added [docs/FUTURE_TOURNAMENT_MODE.md](docs/FUTURE_TOURNAMENT_MODE.md) documenting the shelved Tournament wrapper, its former behavior, and the requirement that future tournaments wrap the Daily Agent engine.
+- Added `CONFIG.TOURNAMENT_MODE_ENABLED = false` in `data/config.js` as the explicit MVP gate.
+- Removed Tournament-facing production terminology from the active entry and leaderboard navigation: the title action is now `AGENT`, the leaderboard tab is `DAILY AGENT`, and the lobby is labeled `AGENT MODE` / `DAILY AGENT SHIFT`.
+- Reframed the lobby’s idle copy from tournament registration/countdown to `READY NEXT SHIFT` and Agent Garage entry while preserving the existing panel and reusable Agent flow.
+- Updated live lobby copy to describe the Daily Shift and autonomous Agent rather than Tournament participation.
+- No Tournament/Agent simulation, database, or Drive behavior was deleted or rewritten in this phase; internal transitional identifiers remain documented for the later server-authoritative migration.
+- Phase 1 is complete. Next phase: fully rewire the remaining active Tournament shell to Daily Agent statuses and remove the production Start Shift action.
+
+## Phase 2 — Daily Agent Mode Rewire (2026-08-27)
+
+- Reframed the remaining active shell around Daily Agent terminology and status vocabulary.
+- Added a visible Agent HUD status indicator with `QUEUED`, `ACTIVE`, and `READY NEXT SHIFT` states.
+- Removed the production-facing Start Shift action from the Agent HUD by making the control hidden.
+- Preserved the compressed development harness by auto-starting a funded Agent only when `DEV_MODE` is enabled; this is explicitly marked transitional and will be replaced by server-side activation in Phase 3.
+- Updated the Agent lobby’s live state from tournament-style “your driver is live” language to `ACTIVE` and retained the existing Agent Garage, map, dashboard, activity, and Pit Call surfaces.
+- Phase 2 is complete. The remaining browser-local timer and simulation are intentionally deferred to Phase 3, where Daily Shift timing and activation move to the Runner.
+
+## Phase 3 — Server-Authoritative Daily Shift Foundation (2026-08-27)
+
+- Added Neon `daily_shifts` with UTC-day identity, global start/end boundaries, lifecycle status, and idempotent creation/update logic.
+- Added `agent_shift_states` with Daily Agent statuses, gas, score, fare count, bankroll, Pit Calls, and per-shift uniqueness.
+- Added authenticated `GET /v1/daily-shift` to return the current global shift and the owner’s state.
+- Updated `GET /v1/status` to expose the current Daily Shift alongside legacy tournament status for compatibility.
+- Updated development Agent Run creation to initialize the current Daily Shift and an idempotent `READY_NEXT_SHIFT` state record.
+- The legacy `tournaments`/`agent_runs` rows and browser mock loop remain as compatibility scaffolding; autonomous fare execution, server-side state transitions, cutoff finalization, and browser polling are not yet complete.
+- Phase 3 foundation is complete. The next implementation slice must migrate Agent Run activation and fare completion fully onto the Daily Shift state machine before removing the browser loop.
+
+### Phase 3 follow-up — Daily Shift state consumption (2026-08-27)
+
+- Development Agent Run registration now initializes the Neon shift state as `ACTIVE` when the current global shift is active, otherwise `READY_NEXT_SHIFT`.
+- The Agent surface now requests authenticated `GET /v1/daily-shift` when entered and reflects returned status, bankroll, and Crazy Score where available.
+- Browser rendering remains tolerant of Runner unavailability and preserves the existing development fallback.
+- The browser still owns the compatibility fare loop and timer; server-side activation, fare decisions/completions, and finalization remain the next required migration slice.
+
+### Phase 3 follow-up — Idempotent fare accounting (2026-08-27)
+
+- Added Neon `daily_shift_events` with unique idempotency keys for fare completion, stall, and park events.
+- Added authenticated `POST /v1/daily-shift/events`; active Agent states can now durably record score, completed fares, and gas deltas in Neon without duplicate awards on retries.
+- The compatibility frontend submits a server event after each completed Agent fare and refreshes the server shift state; local animation/state remains as fallback while the migration continues.
+- Full server-side fare eligibility, route execution, cutoff enforcement, and finalization remain outstanding.
+
+### Phase 3 follow-up — Server-owned activation (2026-08-27)
+
+- Added configurable `DAILY_AGENT_GAS_ALLOCATION` (default 100).
+- The authenticated Daily Shift read now activates an eligible `READY_NEXT_SHIFT` Agent when the global shift is `ACTIVE`, allocates gas once, and returns the resulting state.
+- Added `gas_allocated` to per-shift state so allocation and remaining gas are separately auditable.
+- Fare selection/route execution and finalization are still pending; the browser compatibility loop remains until those workers are migrated.
+
+### Phase 3 closeout — Idempotent cutoff and results (2026-08-27)
+
+- Added immutable `daily_shift_results` records with rank, score, fares, gas, bankroll, final status, and finalization timestamp.
+- `ensureDailyShift()` now detects an expired shift, materializes results with deterministic ranking, and marks the shift `COMPLETE` idempotently.
+- Duplicate finalization observations do not duplicate result rows because `(shift_id, agent_id)` is unique.
+- Phase 3 is complete as the Daily Shift lifecycle foundation: persistent identity, activation, event accounting, cutoff detection, and immutable results are server-owned.
+- Autonomous fare decision/execution workers and periodic wakeups remain a separately documented follow-on; the current Runner remains on-demand by design.
+
+## Phase 4 — Gas / Park / Stall Rebalance (2026-08-27)
+
+- Extended Daily Shift event accounting to accept signed score deltas, allowing server-side stall penalties as well as fare rewards.
+- `FARE_STALLED` and `AGENT_PARKED` events now transition the server-owned Agent Shift state to `STALLED` or `PARKED`.
+- Gas remains clamped at zero during event accounting, preventing negative server gas balances.
+- Existing Drive-mode refuel/rescue behavior was not changed.
+- Added a frontend `recordDailyShiftOutcome` hook for the future worker integration, using the same authenticated idempotent event route.
+- Agent HUD synchronization already reflects server-returned `STALLED` and `PARKED` states.
+- Phase 4 is complete as a state-contract and UI-wiring phase. The autonomous worker still needs to make the actual route/gas decision and emit these outcomes in its own implementation phase.
+
+## Phase 5 — Cached Route Decision Contract (2026-08-27)
+
+- Added authenticated `POST /v1/daily-shift/route-decision` for deterministic primary/alternative selection using cached distance and duration metrics.
+- The Runner returns the selected variant, comparison scores, and an auditable selection reason; it prefers the alternative only when it is at least 3% lower cost.
+- Existing frontend cached-route rendering and `chooseAgentRouteVariant` remain intact.
+- The generated route subset is still packaged with the frontend; moving that data into the Runner image is a follow-up deployment/data-packaging task.
+- Phase 5 decision-contract slice is complete. The autonomous worker must call this contract before fare execution once server-side fare evaluation is implemented.
+
+## Phase 6 — Idle / Observe / Decide Contract (2026-08-27)
+
+- Added `FARE_REJECTED` and `IDLE_OBSERVED` Daily Shift event types.
+- Added persisted `last_observed_at` and `next_decision_at` fields to Agent Shift state.
+- Event accounting now applies a 15-second server-side re-evaluation cooldown after observing or rejecting available fares.
+- Agents can now represent waiting/re-evaluation without receiving score or gas changes.
+- Phase 6 contract is complete; the autonomous worker must consult `next_decision_at` before selecting its next fare and provide the observe/reject reason in event payloads.
+
+## Phase 7 — Shared Zone Economy Foundation (2026-08-27)
+
+- Added persistent `zone_states` keyed by Daily Shift and zone.
+- Added `POST /v1/daily-shift/zones/tick` to record agent population and demand, derive supply, and classify zones as `NORMAL`, `SURGE`, or `OVERSUPPLIED`.
+- Added `GET /v1/daily-shift/zones` for shared zone-state reads.
+- Supply is intentionally capped and deterministic; multiple agents in a zone can normalize or oversupply it as population rises.
+- Phase 7 foundation is complete; fare generation, surge locking, and Agent evaluation still need to consume these states in the autonomous worker.
+
+## Phase 8 — Daily Leaderboard and Profiles (2026-08-27)
+
+- Added `GET /v1/daily-shift/leaderboard` with server-ranked live standings from Daily Shift state.
+- Added `GET /v1/agents/:agentId/profile` with persistent career totals derived from immutable shift results.
+- Ranking is deterministic by Crazy Score, completed fares, and Agent creation time.
+- Existing frontend leaderboard remains as a compatibility fallback; wiring it to these endpoints is the next presentation step.
+
+## Phase 9 — Shared Zone UI (2026-08-27)
+
+- Agent mode now reads `GET /v1/daily-shift/zones` and surfaces notable `SURGE`/`OVERSUPPLIED` states through the existing city ticker.
+- The presentation is intentionally lightweight and does not cover fare markers, routes, or the map controls.
+- Phase 9 UI slice is complete; persistent zone indicators and fare-generation weighting remain worker/data integration work.
+
+## Phase 10 — Ghost Agent Metadata (2026-08-27)
+
+- Added optional `current_route` and `route_started_at` fields to Daily Agent state.
+- Added capped `GET /v1/daily-shift/ghosts`, returning at most three active Agents with fresh route metadata and no wallet/private data.
+- Route metadata expires after ten minutes to prevent stale ghosts.
+- Phase 10 metadata contract is complete; the frontend ghost sprite/interpolation requires the autonomous worker to publish route timestamps and positions.
+
+## Infrastructure Audit — Railway / Vercel Decision Gate (2026-08-27)
+
+- Paused autonomous-worker and Phase 11 implementation at the user’s direction.
+- Added [RAILWAY_AUDIT.md](RAILWAY_AUDIT.md), a repository-backed audit of Railway services/endpoints/environment variables, Runner processes, Neon, DFlow, Solana signing, wallet custody, timers, polling, filesystem assumptions, and idempotency.
+- Confirmed the repository has one on-demand Railway Runner and no continuous autonomous worker, cron, queue consumer, or persistent Runner loop.
+- Confirmed most stateless APIs can move to Vercel Functions, but unattended wakeups and Agent wallet custody/signing remain unresolved architectural dependencies.
+- Recommended a hybrid migration: move stateless APIs and event-driven transitions toward Vercel + Neon, retain Railway temporarily for scheduler/fallback responsibilities, and remove it only after wake-up, custody, and duplicate-transition recovery tests pass.
+- Do not begin the autonomous server worker or Phase 11 until this architecture decision is accepted.
+
+## Event-Driven Runner Implementation — Phase A (2026-08-27)
+
+- Architecture checkpoint accepted: proceed with Vercel + Neon transition work while retaining Railway as compatibility/fallback.
+- Confirmed no continuously running Railway Agent worker exists today; no worker, wallet custody, production secrets, or DFlow execution was changed.
+- Phase A is complete. Phase 11 remains paused until the event-driven simulation and recovery tests are complete.
+
+## Event-Driven Runner Implementation — Phases B/C (2026-08-27)
+
+- Phase B complete: added browser-free shared helpers under `api/_lib/` for cached route access/selection, fuel/fare rules, event effects, and gas bounds. Existing Drive modules were not rewired.
+- Added golden tests covering cached route metrics, fare/fuel thresholds, event effects, gas bounds, transaction rollback, due-state locking, leases, and idempotency keys.
+- Phase C complete: added additive Neon state-version, lease, `next_action_at`, and `transition_attempts` primitives plus generic transaction/claim helpers.
+- Phase C tests pass; endpoint adoption is intentionally coupled to the authoritative Agent/trip transition model in Phase D.
+
+## Event-Driven Runner Implementation — Phase D start (2026-08-27)
+
+- Added additive `daily_fares` and `agent_trips` schema with route version, base duration, mutable modifiers, progress, projected arrival, status, `next_action_at`, and state version.
+- Added browser-free `projectTrip` helper proving projected arrival is derived from mutable duration modifiers.
+- Existing Drive and Agent browser flows remain unchanged.
+- Phase D remains in progress pending authoritative observe/accept/route/start/advance transition endpoints.
+
+### Phase D implementation checkpoint (2026-08-27)
+
+- Corrected `daily_fares` with eligibility/claim metadata and claim indexes; concurrent exclusive claiming will be enforced by transition SQL.
+- Added route geometry storage and a unique active-trip index to `agent_trips`.
+- Corrected `projectTrip` so duration modifiers preserve elapsed simulation time rather than restarting the trip clock; positive, negative, and crossed-boundary cases are covered by tests.
+- Phase D checkpoint passes. Authoritative fare observation/claim, route selection, trip lifecycle endpoints, and Neon integration tests remain to be implemented.
+
+### Phase D transition engine start (2026-08-27)
+
+- Added browser-free `agentStateMachine` helpers for legal transitions, exclusive fare claims, authoritative route-backed trip starts, trusted-time advancement, gas boundaries, and stall/completion outcomes.
+- Added Phase D tests for invalid transitions, exclusive claims, alternative-route persistence, browser-independent trip advancement, dynamic duration modifiers, gas stalls, and safe completion boundaries.
+- Phase D remains incomplete until these pure transitions are wired into Neon transactions and HTTP endpoints with real concurrent database tests.
+## Event-Driven Agent Runner — Phase D Neon Checkpoint (2026-08-27)
+
+- Added the first Vercel-to-Neon database layer at `api/_lib/db.js` using the existing `pg` dependency already used by Railway's Runner. The root package manifest/lockfile now provides the single Vercel dependency strategy; no ORM, second client, Railway change, or secret change was introduced.
+- Added server-only session lookup at `api/_lib/auth.js` and an authenticated Agent shift snapshot at `api/agent/shift.js`. Snapshots include database-trusted server time and authoritative persisted shift state; browser timing and scoring are not accepted.
+- Extended `agent-runner/db/schema.sql` additively for Phase D lifecycle statuses, transition event types, active trip linkage, fare lifecycle fields, and persisted route-decision data. Existing tournament/Drive compatibility tables remain intact.
+- Verification: isolated Neon `SELECT now()` connectivity succeeded using the existing local `.env` value without printing it; pure-rule/transition/event tests pass 20/20; JavaScript syntax checks and `git diff --check` pass.
+- Phase D remains IN PROGRESS, not PASS: the full Neon-backed fare claim, route selection, trip start/advance/complete, gas exhaustion, idempotency, concurrency, and browser-closure resume flow still need implementation and integration proof.
+- Added `api/agent/transition.js` with transactional `claim_fare`, `start_trip`, and `advance_trip` actions. Fare ownership, route selection, trip state, server-time projection, incremental gas, completion/stall status, and immutable idempotency events are server-owned. The endpoint does not accept client elapsed time, score, gas, or route metrics.
+- Pure checks remain 20/20. Phase D is still not complete: the integration harness must exercise these handlers against the real schema with two concurrent claims, duplicate retries, cutoff/gas boundaries, and browser-closure resume before PASS can be recorded.
+- Applied the additive schema migration to the existing Neon database successfully. Live metadata verification confirms `daily_fares`, `agent_trips`, `daily_shift_events`, and `agent_shift_states`, including `status`, `completed_at`, `route_decision`, `gas_consumed`, and `active_trip_id`.
+- The remaining Phase D verification is behavioral: seeded authenticated Agent/fare fixtures, concurrent claim requests, duplicate retries, cutoff and gas exhaustion, and resume from Neon after simulated browser disappearance.
+- Added `tests/neon-phase-d-integration.cjs`, using uniquely seeded temporary Neon rows with guaranteed cleanup. The live test passes: authenticated claim, duplicate claim idempotency, cached-route trip start, server-time completion, and direct persisted-state verification all succeed. Remaining coverage is concurrent claims, cutoff/gas exhaustion, and explicit browser-closure snapshot/resume assertions.
+- Extended the live test with active-trip snapshot/resume behavior and concurrent fare claims. Both tests pass: a second snapshot sees the persisted active trip after the simulated browser disappears, and two concurrent Agents yield exactly one successful owner and one unavailable response. Remaining coverage is explicit shift cutoff and gas-exhaustion assertions.
+- Cutoff enforcement is implemented in `api/agent/transition.js` using Neon time: claims and trip starts are rejected at shift end, and unfinished active trips observed after cutoff are parked without completion credit. Dedicated cutoff-finalization and gas-exhaustion assertions remain before the Phase D gate.
+- Final Phase D verification run: 24/24 relevant automated tests passed, including 4 live Neon tests (persistence/resume, concurrent claims, gas exhaustion, cutoff). Syntax checks and `git diff --check` pass. The manual browser E2E script was not included in the Node suite because it requires a browser `window` context.
+- Phase D gate result: NOT COMPLETE. Remaining exact blockers are a dedicated authoritative fare-observation endpoint and live Neon dynamic-duration persistence coverage; the tested transition endpoint currently covers claim/start/advance but not the complete Phase D API surface.
+- Phase D final gate: PASS (2026-08-27). Added `api/agent/fares.js` for read-only authoritative Neon fare observation and extended live Neon coverage for dynamic duration. Full relevant suite passes 26/26; live Neon coverage passes persistence/resume, concurrency, gas exhaustion, cutoff, fare observation, and dynamic-duration persistence. Phase E has not started.
+- Phase E started (2026-08-27): added additive Neon `trip_events` and `agent_commands` persistence, applied migration successfully, and added owner-authenticated `api/agent/pit-call.js` for idempotent three-per-shift `NEXT_DECISION` strategy commands. Commands remain pending and do not preselect future fares. Crazy Event resolution, command consumption, zone transitions, and integrated Phase E tests remain next. Phase F has not started.
+- Added `api/agent/event.js` for authoritative Crazy Event resolution. It selects from the existing catalog using a server-derived deterministic roll, persists event/outcome/effects audit data, applies time/gas/score effects atomically, recalculates projection, and rejects invalid/completed trips. Phase E event-specific live tests and Pit Call consumption/zone transitions remain next.
+- Added authoritative `NEXT_DECISION` Pit Call consumption at trip completion in `api/agent/transition.js`; pending commands are consumed once and applied to persisted strategy only at the decision boundary. Added `api/agent/zones.js` for bounded read/update of zone state derived from persisted Agent states. Phase E integrated live event/Pit Call/zone coverage remains next; Phase F has not started.
+- Phase E acceptance checkpoint: individual live Neon event, Pit Call, and zone tests pass; the combined Phase E run currently does not complete after the live Pit Call stage due to an unresolved test connection-lifecycle issue. Phase E remains NOT COMPLETE because the required integrated multi-context scenario, explicit current-world decision proof, and accepted-fare economy-lock test are still outstanding. Phase F has not started.
+- Phase E final-debug checkpoint: diagnosis found orphaned Node test processes left behind by timed tool invocations, holding Neon connections; only identified `node --test` processes were terminated, with the dev server preserved. Live event/Pit Call/zone tests pass individually, but the combined file still does not produce a normal completion report after Pit Calls in this runner. Phase E remains NOT COMPLETE; integrated multi-context, current-world decision, and accepted-fare economy-lock proofs are also outstanding.
+- Combined-suite isolation: Crazy Event only, Pit Call only, Zone only, Crazy+Pit, and Pit+Zone terminate normally; Crazy+Zone also terminates normally when isolated. The full integration file remains alive beyond the 30-second tool window after the Pit Call output, so its exact remaining open-handle/test interaction is unresolved. The diagnostic process was manually terminated to prevent a leak; no production `process.exit()` workaround was added. Phase E remains NOT COMPLETE.
+- Harness closure: temporary body-boundary diagnostics proved all live test bodies complete. The apparent full-file hang was the external 30-second tool window plus orphaned prior test processes, not a module-level DB pool; live subtests are now serialized (`concurrency:false`) and the Phase E acceptance group completed normally 3/3 consecutive runs. No test-only DB teardown or production DB lifecycle change was added. Integrated scenario, current-world decision, and accepted-fare economy-lock proofs remain outstanding.
+- Added the remaining Phase E implementation primitives: `daily_fares.locked_surge_multiplier` is captured atomically at acceptance, and `api/agent/decide.js` evaluates current eligible Neon fares at a bounded future decision boundary using persisted strategy. Existing Phase B–D/Event regressions remain 20/20. Dedicated live economy-lock, current-world, and integrated multi-context acceptance tests are still required; Phase E remains NOT COMPLETE.
+- Phase E final gate: PASS (2026-08-27). The live multi-context acceptance test now proves Fare X economy locking, changed-world Fare B selection through `api/agent/decide.js`, Crazy Event persistence, Pit Call pending/consumption ordering, unresolved future state, and fresh Neon context boundaries. Phase E live acceptance is 4/4; shared Phase B–D/Event regression is 20/20; syntax and diff checks pass. Phase F has not started.

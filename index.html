@@ -1760,6 +1760,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       import { LOCATIONS, ZONE_ANCHORS, getLocationById, getStartingLocation, getRandomLocation } from './data/locations.js?v=20260824world1';
       import { NPCs, getNPCById, getRandomNPC } from './data/npcs.js?v=20260824world1';
       import { ROUTES, getRoute, validateRoutes } from './data/routes.js';
+      import { getCachedRoute, getRouteVariantSummary } from './data/routeCacheSubset.js?v=20260827routes4';
       import {
         PLAYER_KEY,
         LEADERBOARD_KEY,
@@ -1785,7 +1786,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       } from './data/player.js?v=20260824world2';
 
       // Import game logic modules
-        import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, getFareFuelBudget, getRemainingTripFuel, resumeStalledTrip, abandonStalledFare, claimRescueFare, getGameEvents, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress } from './js/game.js?v=20260824pickup4';
+        import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, getFareFuelBudget, getRemainingTripFuel, resumeStalledTrip, abandonStalledFare, claimRescueFare, getGameEvents, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress, hasCurrentCachedRouteTestFares, updateFare, updateFareRouteEconomy } from './js/game.js?v=20260827routes4';
       import { matchesFareCondition, findQualifyingFares, autoMatchFare, canReachFare } from './js/fareMatcher.js?v=20260823h';
       import { calculateFuelEarned, calculateProgress, isTripCompletable } from './js/fuel.js';
       import { CRAZY_EVENTS } from './data/events.js';
@@ -1827,6 +1828,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         ZONE_ANCHORS,
         NPCs,
         ROUTES,
+        getCachedRoute,
+        getRouteVariantSummary,
         getLocationById,
         getNPCById,
         getRoute,
@@ -1851,6 +1854,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         // Game Logic
         selectFare,
         claimFare,
+        updateFare,
+        updateFareRouteEconomy,
         completePickup,
         generateInitialFares,
         refreshFares,
@@ -1866,6 +1871,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         isTripCompletable,
         simulatePickupProgress,
         simulateTripProgress,
+        hasCurrentCachedRouteTestFares,
         startPickupDrive,
         startPassengerDrive,
         getRemainingTripFuel,
@@ -1969,8 +1975,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
 
         let fares = window.CrazyTukGame.getAvailableFares();
-        if (!fares.length) {
+        const needsCachedRouteTestFares = !window.CrazyTukGame.hasCurrentCachedRouteTestFares?.(fares);
+        if (!fares.length || needsCachedRouteTestFares) {
           fares = window.CrazyTukGame.generateInitialFares(player.wallet);
+          if (needsCachedRouteTestFares) {
+            player = savePlayer({
+              ...player,
+              locationId: 'old_khao_san',
+              selectedFareId: null,
+              activeFareId: null,
+              activeTrip: null,
+              status: PLAYER_STATES.AVAILABLE
+            });
+          }
         } else if (fares.length < CONFIG.MIN_ACTIVE_FARES) {
           fares = window.CrazyTukGame.refreshFares(player.wallet);
         }
@@ -3477,7 +3494,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     <button id="titleLeaderboard" type="button" class="ui-button primary leaderboard-button" aria-label="Leaderboard">🏆</button>
     <button id="titleRules" type="button" class="ui-button rules-button" aria-label="How to play">📖</button>
     <button id="titleSettings" type="button" class="ui-button settings-button" aria-label="Settings">⚙</button>
-    <button id="titleTournament" type="button" class="ui-button tournament-button" aria-label="Open tournament">TOURNAMENT</button>
+    <button id="titleTournament" type="button" class="ui-button tournament-button" aria-label="Open Agent Mode">AGENT</button>
   </div>
   <p id="support" class="hint"></p>
   <footer class="start-footer">
@@ -3588,7 +3605,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
     <div class="map-topbar">
       <button id="mapBackButton" type="button" class="ui-button map-back-button" aria-label="Back to main screen">BACK</button>
-      <div id="agentTopStrip" class="agent-top-strip" hidden><span>TIME LEFT <b id="agentTopTime">10:00</b></span><span>BANKROLL <b id="agentTopBankroll">20 USDC</b></span><button id="agentStartShift" class="ui-button primary" type="button">START SHIFT</button></div>
+      <div id="agentTopStrip" class="agent-top-strip" hidden><span>STATUS <b id="agentTopStatus">READY NEXT SHIFT</b></span><span>TIME LEFT <b id="agentTopTime">DAILY</b></span><span>BANKROLL <b id="agentTopBankroll">20 USDC</b></span><button id="agentStartShift" class="ui-button primary" type="button" hidden>START SHIFT</button></div>
       <div class="map-topbar-right">
         <div class="map-topbar-actions">
           <button id="dashboardToggle" type="button" class="ui-button dashboard-toggle" aria-label="Open core menu">☰</button>
@@ -3777,7 +3794,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <div class="leaderboard-decoration" aria-hidden="true">
   </div>
   <h2>LEADERBOARD</h2>
-  <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard mode"><button id="leaderboardDriveTab" class="ui-button primary" role="tab" type="button">DRIVE</button><button id="leaderboardTournamentTab" class="ui-button" role="tab" type="button">TOURNAMENT</button></div>
+  <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard mode"><button id="leaderboardDriveTab" class="ui-button primary" role="tab" type="button">DRIVE</button><button id="leaderboardTournamentTab" class="ui-button" role="tab" type="button">DAILY AGENT</button></div>
   <div id="leaderboardBoard"></div>
   <div id="tournamentLeaderboardBoard" hidden></div>
   <button id="leaderboardBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
@@ -3807,18 +3824,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 </section>
 
 <section id="tournamentPanel" class="leaderboard-panel settings-panel" hidden aria-labelledby="tournamentTitle">
-  <div id="tournamentPhase" class="fare-sheet-kicker">TOURNAMENT MODE</div>
-  <h2 id="tournamentTitle">BANGKOK SHIFT #0042</h2>
-  <div class="tournament-countdown"><span id="tournamentCountdownLabel" class="stat-label">STARTS IN</span><span id="tournamentCountdownValue" class="stat-value">03:42:18</span></div>
+  <div id="tournamentPhase" class="fare-sheet-kicker">AGENT MODE</div>
+  <h2 id="tournamentTitle">DAILY AGENT SHIFT</h2>
+  <div class="tournament-countdown"><span id="tournamentCountdownLabel" class="stat-label">NEXT SHIFT</span><span id="tournamentCountdownValue" class="stat-value">DAILY</span></div>
   <div class="dashboard-section">
-    <h3 id="tournamentStatusTitle">REGISTRATION</h3>
+    <h3 id="tournamentStatusTitle">READY NEXT SHIFT</h3>
     <div class="stats-grid">
-      <div class="stat-card"><span id="tournamentStatOneLabel" class="stat-label">Drivers</span><span id="tournamentStatOneValue" class="stat-value">183</span></div>
+      <div class="stat-card"><span id="tournamentStatOneLabel" class="stat-label">Status</span><span id="tournamentStatOneValue" class="stat-value">READY</span></div>
       <div class="stat-card"><span id="tournamentStatTwoLabel" class="stat-label">Bankroll</span><span id="tournamentStatTwoValue" class="stat-value">20 USDC</span></div>
     </div>
   </div>
   <p id="tournamentNote" class="fare-sheet-request tournament-note">Hire a driver, configure a strategy, and watch the same Crazy Tuk economy play autonomously. You get <b>3 Pit Calls</b> during the Shift to adjust your driver.</p>
-  <button id="tournamentGarage" class="ui-button primary fare-sheet-action" type="button">ENTER TOURNAMENT</button>
+  <button id="tournamentGarage" class="ui-button primary fare-sheet-action" type="button">OPEN AGENT GARAGE</button>
   <button id="tournamentBack" class="ui-button core-panel-back" type="button">Back</button>
 </section>
 
@@ -3932,7 +3949,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   const PICKUP_ROUTE_CASING_LAYER_ID = 'crazy-tuk-pickup-route-casing';
   const PICKUP_ROUTE_LAYER_ID = 'crazy-tuk-pickup-route-line';
   const roadRouteCache = new Map();
-  const pendingRoadRoutes = new Map();
   let lastFittedRouteSignature = null;
   let rideThoughtFareId = null;
   let rideThoughtIndex = 0;
@@ -4010,10 +4026,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           'crazy-tuk-tiles': {
             type: 'raster',
             tiles: [
-              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+              'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
-            attribution: '© OpenStreetMap contributors © CARTO'
+            attribution: 'Tiles © Esri'
           }
         },
         layers: [
@@ -4190,9 +4206,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     destinationMarker.remove();
   }
 
-  function getDisplayRoute(fromId, toId) {
-    const cachedRoadRoute = roadRouteCache.get(`${fromId}:${toId}`);
+  function getDisplayRoute(fromId, toId, variant = 'primary') {
+    const routeCacheKey = `${fromId}:${toId}:${variant}`;
+    const cachedRoadRoute = roadRouteCache.get(routeCacheKey);
     if (cachedRoadRoute) return cachedRoadRoute;
+    const cachedRoute = window.CrazyTukGame?.getCachedRoute?.(fromId, toId, variant);
+    if (cachedRoute) {
+      console.info(`[route-cache] using ${cachedRoute.variant} route`, `${fromId} -> ${toId}`, {
+        distanceMeters: cachedRoute.distanceMeters,
+        durationSeconds: cachedRoute.durationSeconds
+      });
+      roadRouteCache.set(routeCacheKey, cachedRoute);
+      return cachedRoute;
+    }
     const predefined = window.CrazyTukGame?.getRoute?.(fromId, toId, true);
     if (predefined) {
       return predefined.from === fromId
@@ -4206,16 +4232,35 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       return { id: `stationary-${fromId}`, from: fromId, to: toId, coordinates: [from.geometry.coordinates] };
     }
     if (!window.CrazyTukGame?.CONFIG?.ALLOW_ROUTE_FALLBACK) return null;
+    console.warn('[route-cache] cached route missing; using in-app fallback', `${fromId} -> ${toId}`);
     return {
       id: `direct-${fromId}-${toId}`,
-      coordinates: [from.geometry.coordinates, to.geometry.coordinates]
+      from: fromId,
+      to: toId,
+      coordinates: createFallbackStreetRoute(from.geometry.coordinates, to.geometry.coordinates, fromId, toId),
+      source: 'direct-fallback'
     };
   }
 
-  function requestRoadRoute(fromId, toId) {
-    const key = `${fromId}:${toId}`;
+  function createFallbackStreetRoute(fromCoordinates, toCoordinates, fromId, toId) {
+    const [fromLng, fromLat] = fromCoordinates;
+    const [toLng, toLat] = toCoordinates;
+    const seed = [...`${fromId}:${toId}`].reduce((total, character) => total + character.charCodeAt(0), 0);
+    const bend = (seed % 2 === 0 ? 1 : -1) * Math.min(0.018, Math.max(0.003, Math.abs(toLng - fromLng) * 0.18 + Math.abs(toLat - fromLat) * 0.08));
+    const midLng = (fromLng + toLng) / 2;
+    const midLat = (fromLat + toLat) / 2;
+    return [
+      fromCoordinates,
+      [fromLng, midLat + bend],
+      [midLng + bend, midLat + bend],
+      [midLng + bend, toLat],
+      toCoordinates
+    ];
+  }
+
+  function requestRoadRoute(fromId, toId, variant = 'primary') {
+    const key = `${fromId}:${toId}:${variant}`;
     if (roadRouteCache.has(key)) return Promise.resolve(roadRouteCache.get(key));
-    if (pendingRoadRoutes.has(key)) return pendingRoadRoutes.get(key);
     const from = window.CrazyTukGame?.getLocationById?.(fromId);
     const to = window.CrazyTukGame?.getLocationById?.(toId);
     if (!from || !to) return Promise.resolve(null);
@@ -4225,44 +4270,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       return Promise.resolve(stationaryRoute);
     }
 
-    const query = new URLSearchParams({
-      from: from.geometry.coordinates.join(','),
-      to: to.geometry.coordinates.join(',')
-    });
-    const request = fetch(`/api/route?${query}`)
-      .then(async (response) => {
-        const data = await response.json();
-        if (!response.ok || !data.coordinates?.length) throw new Error(data.error || 'Road route unavailable');
-        const coordinates = [from.geometry.coordinates, ...data.coordinates, to.geometry.coordinates]
-          .filter((coordinate, index, all) => index === 0 || coordinate[0] !== all[index - 1][0] || coordinate[1] !== all[index - 1][1]);
-        const roadRoute = {
-          id: `road-${fromId}-${toId}`,
-          from: fromId,
-          to: toId,
-          coordinates,
-          distanceMeters: data.distanceMeters,
-          durationSeconds: data.durationSeconds
-        };
-        roadRouteCache.set(key, roadRoute);
-        roadRouteCache.set(`${toId}:${fromId}`, {
-          ...roadRoute,
-          id: `road-${toId}-${fromId}`,
-          from: toId,
-          to: fromId,
-          coordinates: [...coordinates].reverse()
-        });
-
-        const player = window.CrazyTukGame?.getPlayer?.();
-        if (player?.activeFareId || player?.selectedFareId) syncMapState(player);
-        return roadRoute;
-      })
-      .catch((error) => {
-        console.warn('Using fallback route:', error.message);
-        return getDisplayRoute(fromId, toId);
-      })
-      .finally(() => pendingRoadRoutes.delete(key));
-    pendingRoadRoutes.set(key, request);
-    return request;
+    const route = getDisplayRoute(fromId, toId, variant);
+    return Promise.resolve(route);
   }
 
   function clearRouteLine() {
@@ -4284,7 +4293,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     map.getSource(sourceId).setData({
       type: 'Feature',
       properties: {
-        routeId: route.id || null
+        routeId: route.id || null,
+        routeSource: route.source || 'predefined'
       },
       geometry: {
         type: 'LineString',
@@ -4571,16 +4581,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       if (activeFare) {
         focusedFareId = activeFare.id;
         const isPickupLeg = player.status === 'PICKUP' && player.activeTrip?.leg === 'PICKUP';
+        const tripVariant = activeFare.selectedRouteVariant || 'primary';
         if (isPickupLeg) {
           const pickupFromId = player.activeTrip.fromLocationId || player.locationId;
           pickupRoute = getDisplayRoute(pickupFromId, activeFare.pickupLocationId);
-          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
           requestRoadRoute(pickupFromId, activeFare.pickupLocationId);
-          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
           animationRoute = pickupRoute;
         } else {
-          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
-          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId);
+          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
+          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
           animationRoute = destinationRoute;
         }
         const routeTarget = window.CrazyTukGame?.getLocationById?.(activeFare.destinationLocationId);
@@ -4590,10 +4601,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       const selectedFare = fares.find((fare) => fare.id === player.selectedFareId);
       if (selectedFare) {
         focusedFareId = selectedFare.id;
+        const tripVariant = selectedFare.selectedRouteVariant || 'primary';
         pickupRoute = getDisplayRoute(player.locationId, selectedFare.pickupLocationId);
-        destinationRoute = getDisplayRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId);
+        destinationRoute = getDisplayRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId, tripVariant);
         requestRoadRoute(player.locationId, selectedFare.pickupLocationId);
-        requestRoadRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId);
+        requestRoadRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId, tripVariant);
         const destination = window.CrazyTukGame?.getLocationById?.(selectedFare.destinationLocationId);
         if (destination) setDestinationMarkerLocation(destination.geometry.coordinates, destination.properties.name);
       }
@@ -5000,18 +5012,22 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       document.querySelector('.driver-hero-art').textContent = agentDetails.portrait;
       document.querySelector('.driver-hero-copy span').textContent = 'Agent Driver';
       $("dashboardPlayerName").textContent = agentDetails.name;
-      $("dashboardWalletLabel").textContent = `#${getTournamentStandings()?.rank || 184} · Bangkok Shift #0042 · ● LIVE`;
+      $("dashboardWalletLabel").textContent = `#${getTournamentStandings()?.rank || 184} · Daily Agent Shift · ● LIVE`;
       $("agentDashboardRank").textContent = `#${getTournamentStandings()?.rank || 184}`;
       map?.resize();
       const player = window.CrazyTukGame?.getPlayer?.();
       if (!drivePlayerSnapshot && player) drivePlayerSnapshot = JSON.parse(JSON.stringify(player));
       agentRun = loadAgentRun() || { fuel: 100, score: 0, bankroll: 20, fares: 0 };
+      const shouldStartDevelopmentShift = window.CrazyTukGame?.CONFIG?.DEV_MODE && agentState?.funded && agentState?.shiftStatus !== 'FINISHED';
+      $("agentTopStatus").textContent = agentState?.shiftStatus === 'FINISHED' ? 'READY NEXT SHIFT' : (agentState?.shiftStatus === 'RUNNING' ? 'ACTIVE' : 'QUEUED');
       clearInterval(agentHudGuard);
       agentHudGuard = setInterval(syncAgentHud, 250);
       window.CrazyTukGame?.updateHUD?.(player);
       window.CrazyTukGame?.initFareMarkers?.();
       window.CrazyTukGame?.syncMapState?.(player);
       syncAgentHud();
+      // Transitional development harness only: production shifts will activate server-side.
+      if (shouldStartDevelopmentShift && agentState?.shiftStatus !== 'RUNNING') setTimeout(startAutonomousDriveShift, 250);
     });
   }
 
@@ -5033,7 +5049,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       pitCalls: Number(config.TOURNAMENT_PIT_CALLS) || 3,
       mockSwapUsd: Number(config.TOURNAMENT_MOCK_SWAP_USD) || 3,
       quoteInputLamports: String(config.TOURNAMENT_DFLOW_QUOTE_INPUT_AMOUNT_LAMPORTS || 30000000),
-      runnerUrl: String(config.AGENT_RUNNER_URL || '').replace(/\/$/, '')
+       runnerUrl: String(config.AGENT_RUNNER_URL || '').replace(/\/$/, ''),
+       vercelUrl: ''
     };
   }
   function getAgentRunnerClientId() {
@@ -5047,23 +5064,75 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   }
   async function ensureAgentRunnerRun() {
     const config = getTournamentConfig();
-    if (!config.runnerUrl || !agentRun) return null;
-    const session = await authenticateAgentRunner(config.runnerUrl);
+    if (!agentRun) return null;
+    const session = await authenticateAgentRunner('');
     if (!session) return null;
     if (agentRun.runnerId && agentRun.runnerWallet === session.wallet) return { id: agentRun.runnerId, token: session.token };
     const mockState = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
     const details = MOCK_DRIVER_DETAILS[mockState?.driver] || MOCK_DRIVER_DETAILS['degen-dao'];
-    const response = await fetch(`${config.runnerUrl}/v1/dev/agent-runs`, {
+    const response = await fetch('/api/agent/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
       body: JSON.stringify({ clientId: getAgentRunnerClientId(), name: details.name, persona: details.style })
     });
     if (!response.ok) throw new Error('Agent Runner registration failed');
     const payload = await response.json();
-    agentRun.runnerId = payload.agentRunId;
+    agentRun.runnerId = payload.agentRunId || payload.agentId;
     agentRun.runnerWallet = session.wallet;
     saveAgentRun();
     return { id: agentRun.runnerId, token: session.token };
+  }
+  async function syncDailyAgentShift() {
+    const session = await authenticateAgentRunner('');
+    if (!session) return null;
+    try {
+      const response = await fetch('/api/agent/shift', { headers: { authorization: `Bearer ${session.token}` } });
+      if (!response.ok) return null;
+      const payload = await response.json();
+      const serverState = payload.state;
+      if (serverState) {
+        $("agentTopStatus").textContent = serverState.status.replaceAll('_', ' ');
+        if (serverState.bankroll != null) $("agentTopBankroll").textContent = `${Number(serverState.bankroll).toFixed(2)} USDC`;
+        if (serverState.crazy_score != null) $("points").textContent = String(serverState.crazy_score);
+      } else if (payload.shift?.status) {
+        $("agentTopStatus").textContent = payload.shift.status === 'ACTIVE' ? 'QUEUED' : 'READY NEXT SHIFT';
+      }
+      return payload;
+    } catch {
+      return null;
+    }
+  }
+  async function syncDailyZones() {
+    if (!stageEl.classList.contains('agent-mode')) return;
+    try {
+      const session = await authenticateAgentRunner(''); if (!session) return;
+      const response = await fetch('/api/agent/zones', { headers: { authorization: `Bearer ${session.token}` } });
+      if (!response.ok) return;
+      const payload = await response.json();
+      const notable = (payload.zones || []).find((zone) => zone.state === 'SURGE' || zone.state === 'OVERSUPPLIED');
+      if (notable) window.CrazyTukTicker?.add({ icon: notable.state === 'SURGE' ? '⚡' : '⚠️', text: `${notable.zone_id.replaceAll('_', ' ')} · ${notable.state}` });
+    } catch { /* zone indicators are supplementary to the map */ }
+  }
+  async function recordDailyFareCompletion(fare, scoreDelta, gasDelta) {
+    const session = await authenticateAgentRunner(''); if (!session) return;
+    try {
+      await fetch('/api/agent/transition', {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
+        body: JSON.stringify({ action: 'advance_trip', idempotencyKey: `fare:${fare?.id}:${agentRun?.runnerId || 'local'}` })
+      });
+      void syncDailyAgentShift();
+      void syncDailyZones();
+    } catch { /* local development loop remains usable when Runner is unavailable */ }
+  }
+  async function recordDailyShiftOutcome(type, scoreDelta = 0, gasDelta = 0, fare = null) {
+    const session = await authenticateAgentRunner(''); if (!session) return;
+    try {
+      await fetch('/api/agent/transition', {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
+        body: JSON.stringify({ action: 'advance_trip', idempotencyKey: `${type.toLowerCase()}:${fare?.id || 'shift'}:${agentRun?.runnerId || 'local'}` })
+      });
+      void syncDailyAgentShift();
+    } catch { /* preserve local development behavior when Runner is unavailable */ }
   }
   async function authenticateAgentRunner(runnerUrl) {
     const wallet = WalletModule.getWalletPublicKey?.();
@@ -5072,14 +5141,15 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     try {
       const cached = JSON.parse(sessionStorage.getItem(storageKey) || 'null');
       if (cached?.token && cached?.expiresAt && new Date(cached.expiresAt).getTime() > Date.now() + 10_000) return { ...cached, wallet };
-      const challenge = await fetch(`${runnerUrl}/v1/auth/challenge`, {
+      const authBase = '';
+      const challenge = await fetch(`${authBase}/api/auth/challenge`, {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ wallet })
       });
       if (!challenge.ok) throw new Error('Agent Runner challenge failed');
       const payload = await challenge.json();
       const signatureBytes = await WalletModule.signMessage(payload.message);
       const signature = btoa(String.fromCharCode(...signatureBytes));
-      const verification = await fetch(`${runnerUrl}/v1/auth/verify`, {
+      const verification = await fetch(`${authBase}/api/auth/verify`, {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ challengeId: payload.challengeId, signature })
       });
@@ -5094,6 +5164,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   }
   async function requestAgentFareQuote(fare) {
     const config = getTournamentConfig();
+    // Quote simulation remains an explicitly opt-in legacy fallback.
+    if (config.useLegacyQuoteFallback !== true) return null;
     const runner = await ensureAgentRunnerRun();
     if (!runner || !config.runnerUrl) return null;
     const plan = getAgentQuotePlan(fare);
@@ -5149,6 +5221,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     $("points").textContent = Math.max(0, Math.round(agentRun.score)).toString();
     $("agentTopBankroll").textContent = `${agentRun.bankroll.toFixed(2)} USDC`;
   }
+  function chooseAgentRouteVariant(fare) {
+    const game = window.CrazyTukGame;
+    const summary = game?.getRouteVariantSummary?.(fare?.pickupLocationId, fare?.destinationLocationId);
+    if (!summary?.alternative) return fare?.selectedRouteVariant || 'primary';
+
+    const primary = summary.primary;
+    const alternative = summary.alternative;
+    const primaryScore = Number(primary.distanceMeters || Infinity) + Number(primary.durationSeconds || 0) * 2;
+    const alternativeScore = Number(alternative.distanceMeters || Infinity) + Number(alternative.durationSeconds || 0) * 2;
+
+    return alternativeScore < primaryScore * 0.97 ? 'alternative' : 'primary';
+  }
   function restoreDrivePlayer() {
     if (!drivePlayerSnapshot) return;
     const restored = window.CrazyTukGame?.savePlayer?.(drivePlayerSnapshot);
@@ -5161,6 +5245,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     agentShiftRunning = false;
     clearInterval(agentDriveClock);
     clearTimeout(agentNextFareTimer);
+    $("agentTopStatus").textContent = 'READY NEXT SHIFT';
     const bankroll = `${(agentRun?.bankroll || getTournamentConfig().bankroll).toFixed(2)} USDC`;
     const score = String(Math.round(agentRun?.score || 0));
     const tournament = getTournamentStandings();
@@ -5201,6 +5286,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     }
     $("hudActionLabel").textContent = 'CHOOSING FARE';
     const npc = game.getNPCById?.(fare.npcId);
+    const selectedRouteVariant = chooseAgentRouteVariant(fare);
+    if (selectedRouteVariant !== (fare.selectedRouteVariant || 'primary')) {
+      const updatedFare = game.updateFareRouteEconomy?.(fare.id, player.locationId, selectedRouteVariant)
+        || game.updateFare?.(fare.id, { selectedRouteVariant });
+      fare = updatedFare || { ...fare, selectedRouteVariant };
+      recordAgentActivity('Route variant chosen', `${selectedRouteVariant.toUpperCase()} line selected before pickup.`, 'ROUTE');
+    }
     recordAgentActivity('Fare selected', `${npc?.name || 'Passenger'} · ${fare.pointValue || 0} Crazy Score potential.`, 'EVALUATING');
     const selected = game.selectFare(fare.id, player.wallet);
     game.showFareDetails?.(fare);
@@ -5244,6 +5336,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       game.updateHUD?.(claimed);
       game.syncMapState?.(claimed);
       syncAgentHud();
+      void syncDailyAgentShift();
       $("fareSheet").hidden = true;
       $("hudActionLabel").textContent = 'AUTONOMOUS SHIFT';
       await game.startPickupDrive?.(fare.id, claimed.wallet, () => {
@@ -5252,6 +5345,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         agentRun.fares += 1;
         agentRun.score += Number(fare.pointValue || 0);
         agentRun.fuel = Math.max(0, agentRun.fuel - 2);
+        void recordDailyFareCompletion(fare, Number(fare.pointValue || 0), -2);
         saveAgentRun();
         syncAgentHud();
         recordAgentActivity('Fare complete', `${npc?.name || 'Passenger'} delivered · ${fare.pointValue || 0} points.`, 'DRIVING');
@@ -5269,6 +5363,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const duration = getAgentShiftDuration();
     agentPitCallsRemaining = tournamentConfig.pitCalls;
     agentRun = { fuel: 100, score: 0, bankroll: tournamentConfig.bankroll, fares: 0 };
+    $("agentTopStatus").textContent = 'ACTIVE';
     saveAgentRun();
     syncAgentHud();
     recordAgentActivity('Shift started', 'Agent is evaluating its first fare opportunity.', 'LIVE');
@@ -5328,16 +5423,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
     const isLive = state?.shiftStatus === 'RUNNING';
     if (!isLive) {
-      $("tournamentPhase").textContent = 'TOURNAMENT MODE';
-      $("tournamentCountdownLabel").textContent = 'STARTS IN';
-      $("tournamentCountdownValue").textContent = '03:42:18';
-      $("tournamentStatusTitle").textContent = 'REGISTRATION';
-      $("tournamentStatOneLabel").textContent = 'DRIVERS';
-      $("tournamentStatOneValue").textContent = '183';
+      $("tournamentPhase").textContent = 'AGENT MODE';
+      $("tournamentCountdownLabel").textContent = 'NEXT SHIFT';
+      $("tournamentCountdownValue").textContent = 'DAILY';
+      $("tournamentStatusTitle").textContent = 'READY NEXT SHIFT';
+      $("tournamentStatOneLabel").textContent = 'STATUS';
+      $("tournamentStatOneValue").textContent = 'READY';
       $("tournamentStatTwoLabel").textContent = 'BANKROLL';
       $("tournamentStatTwoValue").textContent = '20 USDC';
-      $("tournamentNote").innerHTML = 'Hire a driver, configure a strategy, and watch the same Crazy Tuk economy play autonomously. You get <b>3 Pit Calls</b> during the Shift to adjust your driver.';
-      $("tournamentGarage").textContent = 'ENTER TOURNAMENT';
+      $("tournamentNote").innerHTML = 'Hire a driver, configure a strategy, and queue for the next Daily Shift. You get <b>3 Pit Calls</b> during the Shift to adjust your driver.';
+      $("tournamentGarage").textContent = 'OPEN AGENT GARAGE';
       return;
     }
     const elapsed = Math.max(0, Math.floor((Date.now() - (state.shiftStartedAt || Date.now())) / 1000));
@@ -5345,12 +5440,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     $("tournamentPhase").textContent = 'LIVE SHIFT';
     $("tournamentCountdownLabel").textContent = 'TIME LEFT';
     $("tournamentCountdownValue").textContent = `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`;
-    $("tournamentStatusTitle").textContent = 'YOUR DRIVER IS LIVE';
+    $("tournamentStatusTitle").textContent = 'ACTIVE';
     $("tournamentStatOneLabel").textContent = 'ACTIVE / STALLED';
     $("tournamentStatOneValue").textContent = '176 / 7';
     $("tournamentStatTwoLabel").textContent = 'YOUR RANK';
     $("tournamentStatTwoValue").textContent = `#${getTournamentStandings()?.rank || 184}`;
-    $("tournamentNote").innerHTML = 'Your driver is choosing fares autonomously. You have <b>3 Pit Calls</b> available for strategy tuning.';
+    $("tournamentNote").innerHTML = 'Your agent is competing in the Daily Shift autonomously. You have <b>3 Pit Calls</b> available for strategy tuning.';
     $("tournamentGarage").textContent = 'WATCH DRIVER';
   }
   function hydrateAgentShift() {
@@ -5422,6 +5517,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   }));
   $("pitCallConfirm").addEventListener("click", () => {
     if (!agentShiftRunning || agentPitCallsRemaining <= 0) return;
+    void submitAgentPitCall();
+  });
+  async function submitAgentPitCall() {
+    if (!agentShiftRunning || agentPitCallsRemaining <= 0) return;
+    const session = await authenticateAgentRunner('');
+    if (!session) return;
+    const response = await fetch('/api/agent/pit-call', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${session.token}` },
+      body: JSON.stringify({ commandType: 'SET_STRATEGY', target: 'NEXT_DECISION', payload: { priority: agentPriority, risk: Number($("pitRisk").value), activity: Number($("pitActivity").value) }, idempotencyKey: `pit:${session.wallet}:${Date.now()}` })
+    });
+    if (!response.ok) return;
     agentPitCallsRemaining -= 1;
     $("pitCallBackdrop").hidden = true;
     window.CrazyTukGame?.showNotification?.(`Strategy updated · ${agentPitCallsRemaining} Pit Call${agentPitCallsRemaining === 1 ? '' : 's'} remaining · ${agentPriority}`, 'success');

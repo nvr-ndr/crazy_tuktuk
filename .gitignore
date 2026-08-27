@@ -41,6 +41,8 @@ Desktop.ini
 .agents/
 codex-clipboard-*
 pasted-text.txt
+CRAZY_TUK_DAILY_AGENT_MODE_IMPLEMENTATION.md
+CRAZY_TUK_LOCAL_ROUTE_CACHE/
 
 # High-resolution NPC source art; optimized numbered portraits are tracked.
 assets/npc/original/

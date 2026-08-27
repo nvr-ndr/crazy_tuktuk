@@ -5,16 +5,40 @@ import { CONFIG } from '../data/config.js';
 import { getRandomNPC, getNPCById, createFare } from '../data/npcs.js?v=20260824world1';
 import { getLocationById } from '../data/locations.js?v=20260824world1';
 import { ROUTES, getRoute, getRoutesFromLocation } from '../data/routes.js';
+import { getRouteVariantSummary } from '../data/routeCacheSubset.js';
+import { calculateFareEconomy, getRouteMetrics } from '../data/routeMetrics.js';
 import { PLAYER_STATES } from '../data/config.js';
 import { scheduleEventsForRide, getStartingPassengerMood, getPassengerMoodLabel } from './events.js';
 import { PLAYER_KEY, getPlayer, loadOrCreatePlayer, updatePlayer, hasEnoughFuel, loadLeaderboard, saveLeaderboard } from '../data/player.js?v=20260824world2';
 
-const FARES_KEY = "crazytuk_faresV4";
+const FARES_KEY = "crazytuk_faresV5";
 const GAME_EVENTS_KEY = "crazytuk_gameEventsV1";
+export const CACHED_ROUTE_TEST_VERSION = "cached-route-prototype-v4";
+const CACHED_ROUTE_TEST_PAIRS = [
+  { pickupLocationId: 'old_lost_backpack', destinationLocationId: 'old_grand_palace', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'yao_yaowarat_road', destinationLocationId: 'siam_mbk', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'siam_square', destinationLocationId: 'sil_lumpini', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'sil_sala_daeng', destinationLocationId: 'asok_terminal21', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'bn_bitec', destinationLocationId: 'bkp_rajamangala', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'bkp_exam_panic', destinationLocationId: 'ari_bts', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'sil_face_factory', destinationLocationId: 'bkl_wedding_hotel', selectedRouteVariant: 'primary' },
+  { pickupLocationId: 'asok_omakase', destinationLocationId: 'sil_crypto_dungeon', selectedRouteVariant: 'primary' },
+];
 
 export function getAvailableFares() {
   const saved = localStorage.getItem(FARES_KEY);
   return saved ? JSON.parse(saved) : [];
+}
+
+export function hasCurrentCachedRouteTestFares(fares = getAvailableFares()) {
+  return fares.slice(0, CACHED_ROUTE_TEST_PAIRS.length).every((fare, index) => {
+    const testPair = CACHED_ROUTE_TEST_PAIRS[index];
+    return fare?.routeCacheTestVersion === CACHED_ROUTE_TEST_VERSION
+      && fare.pickupLocationId === testPair.pickupLocationId
+      && fare.destinationLocationId === testPair.destinationLocationId
+      && Boolean(fare.routeOptions?.pickup)
+      && Boolean(fare.routeOptions?.trip);
+  });
 }
 
 export function saveFares(fares) {
@@ -69,7 +93,7 @@ export function generateInitialFares(playerWallet) {
     fares[0] = { ...fares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
   }
 
-  return saveFares(keepOneFarePerPickupZone(fares));
+  return saveFares(applyCachedRouteTestFares(fares));
 }
 
 export function refreshFares(playerWallet) {
@@ -99,7 +123,7 @@ export function refreshFares(playerWallet) {
     remainingFares[0] = { ...remainingFares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
   }
 
-  return saveFares(keepOneFarePerPickupZone(remainingFares));
+  return saveFares(applyCachedRouteTestFares(remainingFares));
 }
 
 export function getPlayerFare(playerWallet, fareId) {
@@ -115,6 +139,9 @@ export function hasRoutesFromLocation(locationId) {
 }
 
 function getLocationDistanceKm(fromId, toId) {
+  const metrics = getRouteMetrics(fromId, toId);
+  if (metrics && Number.isFinite(metrics.distanceKm)) return metrics.distanceKm;
+
   const from = getLocationById(fromId);
   const to = getLocationById(toId);
   if (!from || !to) return Infinity;
@@ -144,6 +171,84 @@ function keepOneFarePerPickupZone(fares) {
   });
 }
 
+function applyCachedRouteTestFares(fares) {
+  const byNpc = [...fares];
+  const testFares = CACHED_ROUTE_TEST_PAIRS.map((testPair, index) => {
+    const baseFare = byNpc[index] || byNpc[0];
+    if (!baseFare) return null;
+    const currentLocationId = 'old_khao_san';
+    const tripRouteOptions = getRouteVariantSummary(testPair.pickupLocationId, testPair.destinationLocationId);
+    const pickupRouteOptions = getRouteVariantSummary(currentLocationId, testPair.pickupLocationId);
+    const economy = calculateFareEconomy({
+      currentLocationId,
+      pickupLocationId: testPair.pickupLocationId,
+      destinationLocationId: testPair.destinationLocationId,
+      variant: testPair.selectedRouteVariant,
+    });
+    if (!tripRouteOptions || !pickupRouteOptions || !economy) return null;
+    const createdAt = Date.now();
+    return {
+      ...baseFare,
+      id: `${baseFare.id}-route-test-${index}`,
+      createdAt,
+      pickupLocationId: testPair.pickupLocationId,
+      destinationLocationId: testPair.destinationLocationId,
+      selectedRouteVariant: testPair.selectedRouteVariant,
+      routeCacheTestVersion: CACHED_ROUTE_TEST_VERSION,
+      pointValue: economy.pointValue,
+      roadTrafficLevel: economy.roadTrafficLevel,
+      routeQuality: economy.routeQuality,
+      expiresAt: createdAt + (economy.patienceMinutes * 60 * 1000),
+      routeMetrics: {
+        source: economy.source,
+        pickupFuel: economy.pickup.fuelCost,
+        rideFuel: economy.ride.fuelCost,
+        totalFuel: economy.totalFuel,
+        distanceMeters: economy.pickup.distanceMeters + economy.ride.distanceMeters,
+        durationSeconds: economy.totalDurationSeconds,
+      },
+      routeOptions: {
+        pickup: pickupRouteOptions,
+        trip: tripRouteOptions,
+      },
+    };
+  }).filter(Boolean);
+
+  const rest = byNpc
+    .slice(testFares.length)
+    .filter((fare) => !testFares.some((testFare) => testFare.npcId === fare.npcId));
+
+  return [...testFares, ...rest].slice(0, CONFIG.MAX_ACTIVE_FARES);
+}
+
+export function updateFareRouteEconomy(fareId, currentLocationId, variant = 'primary') {
+  const fare = getAvailableFares().find((entry) => entry.id === fareId);
+  if (!fare) return null;
+
+  const economy = calculateFareEconomy({
+    currentLocationId,
+    pickupLocationId: fare.pickupLocationId,
+    destinationLocationId: fare.destinationLocationId,
+    variant,
+  });
+  if (!economy) return updateFare(fareId, { selectedRouteVariant: variant });
+
+  return updateFare(fareId, {
+    selectedRouteVariant: variant,
+    pointValue: economy.pointValue,
+    roadTrafficLevel: economy.roadTrafficLevel,
+    routeQuality: economy.routeQuality,
+    routeMetrics: {
+      source: economy.source,
+      pickupFuel: economy.pickup.fuelCost,
+      rideFuel: economy.ride.fuelCost,
+      totalFuel: economy.totalFuel,
+      distanceMeters: economy.pickup.distanceMeters + economy.ride.distanceMeters,
+      durationSeconds: economy.totalDurationSeconds,
+    },
+  });
+}
+
 // One fuel covers roughly three kilometers across the expanded Bangkok map.
 export function getPickupFuelCost(locationId, fromLocationId = null) {
   const player = getPlayer();
@@ -161,7 +266,10 @@ export function getRemainingTripFuel(player = getPlayer()) {
 export function getFareFuelBudget(fare, player = getPlayer()) {
   if (!fare) return null;
   const pickupFuel = getPickupFuelCost(fare.pickupLocationId, player?.locationId);
-  const rideFuel = getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
+  const rideMetrics = getRouteMetrics(fare.pickupLocationId, fare.destinationLocationId, fare.selectedRouteVariant || 'primary');
+  const rideFuel = Number.isFinite(rideMetrics?.fuelCost)
+    ? rideMetrics.fuelCost
+    : getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
   return {
     pickupFuel,
     rideFuel,
@@ -346,13 +454,21 @@ export function completePickup(fareId, playerWallet) {
     player.status = PLAYER_STATES.DRIVING;
     const previousTrip = player.activeTrip;
 
-    const calculatedFuelCost = getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
+    const rideMetrics = getRouteMetrics(fare.pickupLocationId, fare.destinationLocationId, fare.selectedRouteVariant || 'primary');
+    const calculatedFuelCost = Number.isFinite(rideMetrics?.fuelCost)
+      ? rideMetrics.fuelCost
+      : getPickupFuelCost(fare.destinationLocationId, fare.pickupLocationId);
 
-    // Preserve authored routes where available and price new world locations by distance.
-    const route = getRoute(fare.pickupLocationId, fare.destinationLocationId, true) || {
-      id: `direct-${fare.pickupLocationId}-${fare.destinationLocationId}`,
-      fuelCost: Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : CONFIG.FALLBACK_ROUTE_FUEL,
-      durationMs: Math.max(CONFIG.FALLBACK_ROUTE_DURATION_MS, (Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : CONFIG.FALLBACK_ROUTE_FUEL) * CONFIG.ROUTE_DURATION_PER_FUEL_MS)
+    // Route-cache metrics now drive ride fuel. Authored routes remain a final metadata fallback.
+    const authoredRoute = getRoute(fare.pickupLocationId, fare.destinationLocationId, true);
+    const route = {
+      id: rideMetrics?.source === 'cached-subset'
+        ? `cached-${fare.pickupLocationId}-${fare.destinationLocationId}-${rideMetrics.variant || 'primary'}`
+        : authoredRoute?.id || `fallback-${fare.pickupLocationId}-${fare.destinationLocationId}`,
+      fuelCost: Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : authoredRoute?.fuelCost || CONFIG.FALLBACK_ROUTE_FUEL,
+      durationMs: rideMetrics?.durationSeconds
+        ? Math.max(CONFIG.FALLBACK_ROUTE_DURATION_MS, rideMetrics.durationSeconds * 1000)
+        : authoredRoute?.durationMs || Math.max(CONFIG.FALLBACK_ROUTE_DURATION_MS, (Number.isFinite(calculatedFuelCost) ? calculatedFuelCost : CONFIG.FALLBACK_ROUTE_FUEL) * CONFIG.ROUTE_DURATION_PER_FUEL_MS)
     };
 
     player.activeTrip = {
