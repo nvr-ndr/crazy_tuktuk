@@ -324,6 +324,13 @@
       font-size: 9px;
       white-space: nowrap;
     }
+    /* Keep the compact map controls identical in Normal and Agent modes. */
+    .stage.agent-mode .map-back-button {
+      min-width: 0;
+      padding: 5px 8px;
+      font-size: 9px;
+    }
+    .stage.agent-mode .dashboard-toggle { width: 30px; height: 30px; padding: 0; font-size: 16px; }
     .top-connect-button {
       display: flex;
       align-items: center;
@@ -1657,6 +1664,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       .hudrow { grid-template-columns: minmax(0, 1fr) minmax(116px, 1fr) minmax(0, 1fr); }
       .map-topbar { gap: 8px; }
       .map-back-button { padding-inline: 14px; }
+      .stage.agent-mode .map-back-button { padding-inline: 8px; }
       .top-connect-button { width: auto; min-width: 0; }
       .fare-sheet, .swap-sheet-backdrop { top: calc(50% + 128px); bottom: auto; }
       .dashboard { left: 0; width: 100vw; transform: none; }
@@ -1717,6 +1725,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     .agent-top-strip b { color:#fff; font-size:14px; letter-spacing:0; }
     .agent-top-strip button { width:fit-content; margin-left:auto; padding:7px 12px; font-size:11px; }
     .stage.agent-mode .agent-top-strip { display:grid; grid-template-columns:1fr 1fr auto; min-height:42px; box-sizing:border-box; }
+    .stage.agent-mode .agent-top-strip > span:first-child { display:none; }
+    .stage.agent-mode .agent-top-strip { grid-template-columns:1fr 1fr; }
     .stage.agent-mode .agent-top-strip span { text-align:center; }
     .stage.agent-mode .agent-top-strip button { align-self:center; padding:6px 10px; line-height:1; }
     .stage.agent-mode .agent-top-strip button { margin-bottom:5px; }
@@ -1760,7 +1770,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     .stage.agent-mode #hud .fuel .hud-stat-label, .stage.agent-mode #hud .points .hud-stat-label, .stage.agent-mode #hudActionLabel { font-size:0; }
     .stage.agent-mode #hud .fuel .hud-stat-label::after { content:'FUEL'; font-size:10px; }
     .stage.agent-mode #hud .points .hud-stat-label::after { content:'SCORE'; font-size:10px; }
-    .stage.agent-mode #hudActionLabel::after { content:'AUTONOMOUS SHIFT'; font-size:11px; }
+    .stage.agent-mode #hudActionLabel { font-size:11px; }
     @media (max-width: 540px) { .agent-top-strip { top:58px; width:min(calc(100vw - 32px), 480px); } .agent-top-strip span { font-size:8px; } .agent-top-strip b { font-size:12px; } .stage.agent-mode .agent-pit-call { right:14px; bottom:78px; } }
 </style>
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
@@ -1803,7 +1813,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         getStallDuration,
         getTopPlayers,
         setPlayerStatus,
-        getPlayerDisplayName
+        getPlayerDisplayName,
+        savePlayer
       } from './data/player.js?v=20260824world2';
 
       // Import game logic modules
@@ -2638,6 +2649,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           }
           updateHUD(next);
           window.CrazyTukGame.syncMapState?.(next);
+          if (next.status === PLAYER_STATES.STALLED && stageEl.classList.contains('agent-mode')) {
+            finishAgentShift();
+            return;
+          }
           if (next.status === PLAYER_STATES.DRIVING) {
             clearInterval(pickupDriveTimer);
             pickupDriveTimer = null;
@@ -2677,6 +2692,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           }
           updateHUD(next);
           window.CrazyTukGame.syncMapState?.(next);
+          if (next.status === PLAYER_STATES.STALLED && stageEl.classList.contains('agent-mode')) {
+            finishAgentShift();
+            return;
+          }
           if (next.status === PLAYER_STATES.AVAILABLE && !next.activeFareId) {
             clearInterval(passengerDriveTimer);
             passengerDriveTimer = null;
@@ -3265,13 +3284,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               const tripFuelSpent = player.activeTrip?.fuelSpent || 0;
               const fuelRemaining = Math.max(0, tripFuelCost - tripFuelSpent);
               const isStalled = player.status === PLAYER_STATES.STALLED;
+              const isAgentMode = stageEl.classList.contains('agent-mode');
               const stalledActions = tripCard.querySelector('[data-stalled-actions]');
-              if (stalledActions) stalledActions.hidden = !isStalled;
+              if (stalledActions) stalledActions.hidden = !isStalled || isAgentMode;
               tripCard.classList.toggle('stalled', isStalled);
               setNpcAvatar(document.getElementById('tripCardAvatar'), npc);
               document.getElementById('tripCardKicker').textContent = isStalled ? 'OUT OF FUEL · TRIP STALLED' : player.status === PLAYER_STATES.PICKUP ? 'HEADING TO PICKUP' : 'PASSENGER ON BOARD';
               document.getElementById('tripCardTitle').textContent = isStalled ? `Stalled en route to ${destination?.properties?.name || 'destination'}` : player.status === PLAYER_STATES.PICKUP ? `Picking up ${npc?.name || 'passenger'}` : `Driving to ${destination?.properties?.name || 'destination'}`;
-              document.getElementById('tripCardMessage').textContent = isStalled ? `You ran out of gas. Swap to add fuel; about ${Math.ceil(fuelRemaining)} fuel remains for this trip.` : player.status === PLAYER_STATES.PICKUP ? `${npc?.name || 'Your passenger'} is waiting at the pickup point.` : `“Take me to ${destination?.properties?.name || 'my destination'}!”`;
+              document.getElementById('tripCardMessage').textContent = isStalled ? (isAgentMode ? 'Daily shift ended. The agent is parked until the next shift.' : `You ran out of gas. Swap to add fuel; about ${Math.ceil(fuelRemaining)} fuel remains for this trip.`) : player.status === PLAYER_STATES.PICKUP ? `${npc?.name || 'Your passenger'} is waiting at the pickup point.` : `“Take me to ${destination?.properties?.name || 'my destination'}!”`;
               document.getElementById('tripCardPercent').textContent = `${roundedProgress}%`;
               document.getElementById('tripCardProgress').style.width = `${progress}%`;
               document.getElementById('tripCardPassenger').textContent = npc?.name || 'Passenger';
@@ -5276,6 +5296,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     $("fuel").textContent = Math.max(0, Math.round(agentRun.fuel)).toString();
     $("points").textContent = Math.max(0, Math.round(agentRun.score)).toString();
     $("agentTopBankroll").textContent = `${agentRun.bankroll.toFixed(2)} USDC`;
+    $("hudActionLabel").textContent = $("agentTopStatus").textContent.trim() || 'ACTIVE';
   }
   function chooseAgentRouteVariant(fare) {
     const game = window.CrazyTukGame;
@@ -5330,7 +5351,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const game = window.CrazyTukGame;
     const player = game?.getPlayer?.();
     const available = () => (game?.getAvailableFares?.() || []).filter((entry) => entry.expiresAt > Date.now());
-    if (Number(agentRun?.fuel || 0) <= 0) {
+    const availableFuel = Number(game.getPlayer?.()?.fuel || 0);
+    if (availableFuel <= 0) {
       agentShiftRunning = false;
       agentRun.status = 'PARKED';
       saveAgentRun();
@@ -5338,11 +5360,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       recordAgentActivity('Agent parked', 'Daily gas is exhausted; score is frozen until the next shift.', 'PARKED');
       return;
     }
-    let fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= agentRun.fuel);
+    let fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= availableFuel);
     if (!game || !player) return;
     if (!fare) {
       game.refreshFares?.(player.wallet);
-      fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= agentRun.fuel);
+      fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= Number(game.getPlayer?.()?.fuel || 0));
     }
     if (!fare) {
       agentShiftRunning = false;
@@ -5414,7 +5436,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         agentRun.fares += 1;
         agentRun.score += Number(fare.pointValue || 0);
         const routeFuel = Math.max(1, Math.ceil(Number(fare.routeMetrics?.totalFuel || fare.totalFuel || 2)));
-        agentRun.fuel = Math.max(0, agentRun.fuel - routeFuel);
+        agentRun.fuel = Number(game.getPlayer?.()?.fuel || 0);
         void recordDailyFareCompletion(fare, Number(fare.pointValue || 0), -routeFuel);
         saveAgentRun();
         syncAgentHud();
@@ -5432,7 +5454,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const tournamentConfig = getTournamentConfig();
     const duration = getAgentShiftDuration();
     agentPitCallsRemaining = tournamentConfig.pitCalls;
-    agentRun = { fuel: 100, score: 0, bankroll: tournamentConfig.bankroll, fares: 0 };
+    const agentPlayer = game.getPlayer();
+    agentPlayer.fuel = 100;
+    savePlayer(agentPlayer);
+    agentRun = { fuel: agentPlayer.fuel, score: 0, bankroll: tournamentConfig.bankroll, fares: 0 };
     $("agentTopStatus").textContent = 'ACTIVE';
     saveAgentRun();
     syncAgentHud();
