@@ -1815,6 +1815,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       validateRoutes();
 
       // Export game data to window for easy access during MVP
+      // Expose the imported wallet facade to the later classic script that
+      // owns Agent Mode controls and authentication.
+      window.WalletModule = WalletModule;
       window.CrazyTukGame = {
         CONFIG,
         FUEL_TIERS,
