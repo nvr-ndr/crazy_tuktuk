@@ -35,8 +35,8 @@ test('Agent Mode starts and exposes observable state', async ({ page }) => {
     const readyButton = page.locator('#garageCreateDriver');
     await expect(readyButton).toBeVisible();
     await readyButton.click({ force: true });
-    await readyButton.click();
-    await readyButton.click();
+    await readyButton.click({ force: true });
+    await readyButton.click({ force: true });
   }
   await page.waitForTimeout(1_500);
 
