@@ -5121,6 +5121,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   let agentPitCallsRemaining = 3;
   let agentPriority = 'BALANCED';
   let agentFareCount = 0;
+  const AGENT_FUEL_RESERVE = 1;
   const AGENT_RUN_KEY = 'crazytuk_agent_run_v1';
   let drivePlayerSnapshot = null;
   let agentRun = null;
@@ -5360,18 +5361,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       recordAgentActivity('Agent parked', 'Daily gas is exhausted; score is frozen until the next shift.', 'PARKED');
       return;
     }
-    let fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= availableFuel);
+    let fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) + AGENT_FUEL_RESERVE <= availableFuel);
     if (!game || !player) return;
     if (!fare) {
       game.refreshFares?.(player.wallet);
-      fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) <= Number(game.getPlayer?.()?.fuel || 0));
+      fare = available().find((entry) => Number(entry.routeMetrics?.totalFuel || entry.totalFuel || 0) + AGENT_FUEL_RESERVE <= Number(game.getPlayer?.()?.fuel || 0));
     }
     if (!fare) {
       agentShiftRunning = false;
       agentRun.status = 'PARKED';
       saveAgentRun();
       syncAgentHud();
-      recordAgentActivity('Agent parked', 'No available fare can be completed with remaining gas.', 'PARKED');
+      recordAgentActivity('Agent parked', `No available fare fits the ${AGENT_FUEL_RESERVE}-gas safety reserve.`, 'PARKED');
       return;
     }
     $("hudActionLabel").textContent = 'CHOOSING FARE';
