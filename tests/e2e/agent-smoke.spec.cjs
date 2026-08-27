@@ -23,6 +23,7 @@ test('Agent Mode starts and exposes observable state', async ({ page }) => {
   const agentStrip = page.locator('#agentTopStrip');
   if (!(await agentStrip.isVisible())) {
     await page.locator('#titleTournament').click();
+    await page.waitForTimeout(1_000);
     await expect(page.locator('#tournamentGarage')).toBeVisible();
     await page.locator('#tournamentGarage').click();
     await page.waitForTimeout(1_000);
