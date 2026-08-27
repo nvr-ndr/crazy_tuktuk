@@ -3247,7 +3247,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               document.getElementById('tripCardPercent').textContent = `${roundedProgress}%`;
               document.getElementById('tripCardProgress').style.width = `${progress}%`;
               document.getElementById('tripCardPassenger').textContent = npc?.name || 'Passenger';
-              document.getElementById('tripCardReward').textContent = `${Math.ceil(fuelRemaining)} FUEL LEFT · GAS ${tripFuelSpent.toFixed(1).replace('.0', '')} / ${tripFuelCost} · +${fareToShow.pointValue || 0} PTS`;
+              const displayedFuelSpent = Number(tripFuelSpent).toFixed(1).replace(/\.0$/, '');
+              const displayedFuelCost = Number(tripFuelCost).toFixed(1).replace(/\.0$/, '');
+              document.getElementById('tripCardReward').textContent = `TRIP FUEL ${displayedFuelSpent} / ${displayedFuelCost} · +${fareToShow.pointValue || 0} PTS`;
               tripCard.hidden = false;
             } else if (tripCard) {
               tripCard.classList.remove('stalled');
