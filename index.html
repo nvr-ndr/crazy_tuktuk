@@ -5021,7 +5021,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       // The legacy mock-driver funding flag must not gate a real wallet Agent
       // session. Authentication and server registration are enforced when the
       // first Agent API call is made.
-      const shouldStartDevelopmentShift = window.CrazyTukGame?.CONFIG?.DEV_MODE && agentState?.shiftStatus !== 'FINISHED';
+      const shouldStartDevelopmentShift = window.CrazyTukGame?.CONFIG?.DEV_MODE;
       $("agentTopStatus").textContent = agentState?.shiftStatus === 'FINISHED' ? 'READY NEXT SHIFT' : (agentState?.shiftStatus === 'RUNNING' ? 'ACTIVE' : 'QUEUED');
       clearInterval(agentHudGuard);
       agentHudGuard = setInterval(syncAgentHud, 250);
