@@ -24,7 +24,10 @@ const { chromium } = require('playwright');
   const status = await page.locator('#agentTopStatus').textContent();
   if (!/ACTIVE|ON TRIP|EVALUATING|FARE|QUEUED/i.test(status || '')) throw new Error('Agent did not start: ' + status);
   if (railway.length) throw new Error('Railway requests detected: ' + railway.join(', '));
-  const relevantErrors = errors.filter(error => !error.includes('ObjectMultiplex'));
+  const relevantErrors = errors.filter(error =>
+    !error.includes('ObjectMultiplex')
+    && !error.includes('MetaMask encountered an error setting the global Ethereum provider')
+  );
   if (relevantErrors.length) throw new Error('Console errors detected: ' + relevantErrors.join('\n'));
   console.log('PASS Agent CDP smoke: status=' + status.trim() + ', railwayRequests=0, consoleErrors=0');
   await browser.close();
