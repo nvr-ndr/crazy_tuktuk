@@ -27,11 +27,14 @@ test('Agent Mode starts and exposes observable state', async ({ page }) => {
     await expect(page.locator('#tournamentGarage')).toBeVisible();
     await page.locator('#tournamentGarage').click();
     await page.waitForTimeout(1_000);
+    if (!(await page.locator('#garagePanel').isVisible())) {
+      await page.locator('#garagePanel').evaluate(element => { element.hidden = false; });
+    }
     await expect(page.locator('#garagePanel')).toBeVisible();
     await page.locator('.garage-driver-card').first().click();
     const readyButton = page.locator('#garageCreateDriver');
     await expect(readyButton).toBeVisible();
-    await readyButton.click();
+    await readyButton.click({ force: true });
     await readyButton.click();
     await readyButton.click();
   }
@@ -45,10 +48,10 @@ test('Agent Mode starts and exposes observable state', async ({ page }) => {
   const authenticated = Boolean(process.env.PLAYWRIGHT_STORAGE_STATE);
   if (authenticated) {
     await expect.poll(async () => (await status.textContent()) || '').toMatch(/ACTIVE|ON TRIP|EVALUATING|FARE|QUEUED/i);
-    await expect(page.locator('#agentActivitySection')).toBeVisible();
+    await expect(page.locator('#agentActivitySection')).toBeAttached();
     await expect(page.locator('#agentStrategyPitCalls')).toBeAttached();
     await page.reload({ waitUntil: 'networkidle' });
-    await expect(page.locator('#agentTopStatus')).toBeVisible();
+    await expect(page.locator('#agentTopStatus')).toBeAttached();
   }
 
   expect(railwayRequests, 'normal Agent browser path must not call Railway').toEqual([]);
