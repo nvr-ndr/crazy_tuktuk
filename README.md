@@ -1,8 +1,70 @@
-# Crazy Tuk
+# 🛺 CrazyTukTuk
 
-Crazy Tuk is a browser-based Bangkok tuk-tuk game where confirmed Solana swaps provide fuel for passenger fares. Players select a fare, swap through DFlow, drive a road-following route, manage fuel, and earn points.
+**Swap. Drive. Survive Bangkok.**
 
-## Run Locally
+CrazyTukTuk is a swap-powered Bangkok tuk-tuk strategy game built for the DFlow × Superteam Thailand Buildathon. It turns the moment after a Solana swap into interactive gameplay: find passengers, evaluate fares, manage fuel and time, react to Crazy Events, and complete rides across a living Bangkok map.
+
+> **Buildathon theme:** Build what happens after the swap.
+
+## Game modes
+
+### Driver Mode
+
+Players explore Bangkok, compare fares, execute DFlow-powered swaps, pick up passengers, follow road-based routes, manage fuel, and make decisions during Crazy Events that affect time, fuel, score, earnings, and passenger satisfaction.
+
+### Agentic Mode
+
+Players fund an agent wallet and let an autonomous driver evaluate fares, routes, zone conditions, and events. Scheduled wakes allow the agent to continue operating when the browser is closed. Limited **Pit Calls** let players guide the agent’s strategy without taking over every decision.
+
+## How it works
+
+```text
+Player or Agent decision
+          ↓
+      DFlow swap
+          ↓
+    Confirmed game action
+          ↓
+  Passenger / route / fuel state
+          ↓
+       Gameplay continues
+```
+
+Distance, pickup cost, trip cost, traffic, surge, passenger tolerance, current position, and event risk all influence whether a fare is worth taking.
+
+## Crazy Events
+
+Trips can encounter traffic incidents, passenger requests, shortcuts, opportunities, mechanical problems, weather, and other Bangkok moments. Events may modify time, fuel, score, earnings, risk, or passenger satisfaction. Some resolve automatically; others require a choice.
+
+## Technology
+
+- **Frontend:** responsive JavaScript UI, MapLibre, Bangkok map and route visualization
+- **Blockchain:** Solana, DFlow, supported Solana wallets
+- **Backend:** Vercel serverless APIs and scheduled Agent wakes
+- **Database:** Neon Postgres for persistent Agent state, fares, trips, events, commands, and route state
+- **Routing:** cached/precomputed Bangkok route geometry with lazy-loaded Cloudflare R2 route chunks
+
+## Architecture
+
+Agent wakes acquire an execution lease, reconstruct current state from Neon, evaluate the next decision, progress trips or events, persist the result, and schedule the next wake. The system is designed to continue without a permanently running game process or an open browser.
+
+## Project status
+
+- [x] Bangkok game map
+- [x] Passenger and fare system
+- [x] Driver gameplay loop
+- [x] Road-following route visualization
+- [x] Cached and lazy-loaded route data
+- [x] DFlow swap integration architecture
+- [x] Crazy Events system
+- [x] Agentic fare selection and Pit Calls
+- [x] Persistent Agent trips and scheduled wakes
+- [x] Neon-backed Agent APIs
+- [ ] Additional UI polish
+- [ ] Expanded economy and districts
+- [ ] Competitive leaderboard experience
+
+## Run locally
 
 Requirements:
 
@@ -10,7 +72,7 @@ Requirements:
 - A modern browser
 - Phantom or another supported Solana wallet for real swap testing
 
-Start the dependency-free development server:
+Start the local server:
 
 ```powershell
 node dev-server.cjs
@@ -18,32 +80,21 @@ node dev-server.cjs
 
 Open `http://localhost:8080`.
 
-The app can run in development mode without completing a real transaction by using the mock-confirmed-swap control.
+## Links
 
-## Repository Structure
+- [Live demo](https://crazy-tuktuk.vercel.app/)
+- [DFlow × Superteam Thailand Buildathon](https://stth-buildathon.vercel.app/)
+- [Buildathon rules](https://stth-buildathon.vercel.app/rules/)
+- [Superteam Thailand](https://x.com/SuperteamTH)
+
+## Vision
+
+Most swap interfaces end with “Transaction confirmed.” CrazyTukTuk treats that moment as the beginning:
 
 ```text
-api/              Serverless DFlow and road-routing endpoints
-assets/           Game artwork and branding
-data/             Locations, NPCs, routes, player state, and configuration
-js/               Wallet, swap, dashboard, fuel, and game modules
-tests/manual/     Browser-console and manual flow tests
-index.html        Game shell and map UI
-dev-server.cjs    Local static/API development server
-vercel.json       Vercel deployment configuration
+Transaction confirmed.
+Passenger acquired.
+Start the engine.
 ```
 
-Product specifications and implementation handoff documents are kept as Markdown files in the repository root.
-
-## Environment
-
-The DFlow order endpoint works without an API key for the current buildathon flow. If a protected upstream environment is used later, configure `DFLOW_API_KEY` as a server-side environment variable. Never expose it in client-side code or commit it to Git.
-
-## Deployment
-
-The repository is structured for deployment from its root on Vercel. The static game files use the root output directory, while files under `api/` are deployed as serverless functions.
-
-## Manual Verification
-
-Manual test scripts are stored in `tests/manual/`. Run the application first, then follow the instructions in the relevant script or guide.
-
+**DFlow provides the transaction layer. CrazyTukTuk provides what happens next.**
