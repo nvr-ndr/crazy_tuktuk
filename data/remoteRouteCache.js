@@ -1,7 +1,7 @@
 import { hydrateCachedRoutes } from './routeCacheSubset.js?v=20260827routes4';
 
 const ROUTE_ASSET_BASE = 'https://pub-6318bca05ff3439585d2c1d2553d01da.r2.dev';
-const MANIFEST_URL = `${ROUTE_ASSET_BASE}/routes/v1/manifest.json`;
+const MANIFEST_URL = `${ROUTE_ASSET_BASE}/routes/v2/manifest.json`;
 const chunkCache = new Map();
 let manifestPromise = null;
 
