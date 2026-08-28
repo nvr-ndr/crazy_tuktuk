@@ -4638,7 +4638,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     }
   }
 
-  function syncMapState(player) {
+  async function syncMapState(player) {
     if (!map || !player) return;
 
     let pickupRoute = null;
@@ -4655,14 +4655,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const tripVariant = activeFare.selectedRouteVariant || 'primary';
         if (isPickupLeg) {
           const pickupFromId = player.activeTrip.fromLocationId || player.locationId;
-          pickupRoute = getDisplayRoute(pickupFromId, activeFare.pickupLocationId);
-          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
-          requestRoadRoute(pickupFromId, activeFare.pickupLocationId);
-          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
+          pickupRoute = await requestRoadRoute(pickupFromId, activeFare.pickupLocationId);
+          destinationRoute = await requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
           animationRoute = pickupRoute;
         } else {
-          destinationRoute = getDisplayRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
-          requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
+          destinationRoute = await requestRoadRoute(activeFare.pickupLocationId, activeFare.destinationLocationId, tripVariant);
           animationRoute = destinationRoute;
         }
         const routeTarget = window.CrazyTukGame?.getLocationById?.(activeFare.destinationLocationId);
@@ -4673,10 +4670,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       if (selectedFare) {
         focusedFareId = selectedFare.id;
         const tripVariant = selectedFare.selectedRouteVariant || 'primary';
-        pickupRoute = getDisplayRoute(player.locationId, selectedFare.pickupLocationId);
-        destinationRoute = getDisplayRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId, tripVariant);
-        requestRoadRoute(player.locationId, selectedFare.pickupLocationId);
-        requestRoadRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId, tripVariant);
+        pickupRoute = await requestRoadRoute(player.locationId, selectedFare.pickupLocationId);
+        destinationRoute = await requestRoadRoute(selectedFare.pickupLocationId, selectedFare.destinationLocationId, tripVariant);
         const destination = window.CrazyTukGame?.getLocationById?.(selectedFare.destinationLocationId);
         if (destination) setDestinationMarkerLocation(destination.geometry.coordinates, destination.properties.name);
       }
