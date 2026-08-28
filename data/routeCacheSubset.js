@@ -5,6 +5,13 @@ export const CACHED_ROUTE_SUBSET = [{"id":"old_khao_san->old_lost_backpack","fro
 
 const routeMap = new Map(CACHED_ROUTE_SUBSET.map(route => [`${route.from}:${route.to}`, route]));
 
+export function hydrateCachedRoutes(routes = []) {
+  for (const route of routes) {
+    if (route?.from && route?.to && route?.primary) routeMap.set(`${route.from}:${route.to}`, route);
+  }
+  return routeMap.size;
+}
+
 function toRoute(route, selected, reversed = false) {
   const variant = selected === route.alternative ? 'alternative' : 'primary';
   return {

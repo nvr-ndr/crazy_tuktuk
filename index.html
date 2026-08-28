@@ -1792,6 +1792,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       import { NPCs, getNPCById, getRandomNPC } from './data/npcs.js?v=20260824world1';
       import { ROUTES, getRoute, validateRoutes } from './data/routes.js';
       import { getCachedRoute, getRouteVariantSummary } from './data/routeCacheSubset.js?v=20260827routes4';
+      import { ensureRemoteRouteChunk } from './data/remoteRouteCache.js?v=20260828r2';
       import {
         PLAYER_KEY,
         LEADERBOARD_KEY,
@@ -1865,6 +1866,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         ROUTES,
         getCachedRoute,
         getRouteVariantSummary,
+        ensureRemoteRouteChunk,
         getLocationById,
         getNPCById,
         getRoute,
@@ -4328,20 +4330,20 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     ];
   }
 
-  function requestRoadRoute(fromId, toId, variant = 'primary') {
+  async function requestRoadRoute(fromId, toId, variant = 'primary') {
     const key = `${fromId}:${toId}:${variant}`;
-    if (roadRouteCache.has(key)) return Promise.resolve(roadRouteCache.get(key));
+    if (roadRouteCache.has(key)) return roadRouteCache.get(key);
     const from = window.CrazyTukGame?.getLocationById?.(fromId);
     const to = window.CrazyTukGame?.getLocationById?.(toId);
-    if (!from || !to) return Promise.resolve(null);
+    if (!from || !to) return null;
     if (fromId === toId) {
       const stationaryRoute = { id: `stationary-${fromId}`, from: fromId, to: toId, coordinates: [from.geometry.coordinates] };
       roadRouteCache.set(key, stationaryRoute);
-      return Promise.resolve(stationaryRoute);
+      return stationaryRoute;
     }
-
+    await window.CrazyTukGame?.ensureRemoteRouteChunk?.(fromId);
     const route = getDisplayRoute(fromId, toId, variant);
-    return Promise.resolve(route);
+    return route;
   }
 
   function clearRouteLine() {

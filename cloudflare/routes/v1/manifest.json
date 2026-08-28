@@ -1,0 +1,216 @@
+{
+  "version": "routes-v1",
+  "generatedAt": "2026-08-27T23:30:26.941Z",
+  "source": "data/routeCacheSubset.js",
+  "routeCount": 79,
+  "chunkCount": 16,
+  "chunks": [
+    {
+      "key": "ari_bts",
+      "url": "routes/v1/ari_bts.json",
+      "routeKeys": [
+        "ari_bts:old_lost_backpack",
+        "ari_bts:yao_yaowarat_road",
+        "ari_bts:siam_square",
+        "ari_bts:sil_sala_daeng",
+        "ari_bts:bn_bitec",
+        "ari_bts:bkp_exam_panic",
+        "ari_bts:sil_face_factory",
+        "ari_bts:asok_omakase"
+      ],
+      "bytes": 52634,
+      "sha256": "f4144156fbef00b138e3c0908a15f1ecf7cec08462615eb5a05c02f2ebee14d7"
+    },
+    {
+      "key": "asok_omakase",
+      "url": "routes/v1/asok_omakase.json",
+      "routeKeys": [
+        "asok_omakase:old_grand_palace",
+        "asok_omakase:sil_crypto_dungeon"
+      ],
+      "bytes": 29422,
+      "sha256": "04e50363a638c41054bc0abf6f03a940d86cf72ca88c0200fdb79513f9085365"
+    },
+    {
+      "key": "asok_terminal21",
+      "url": "routes/v1/asok_terminal21.json",
+      "routeKeys": [
+        "asok_terminal21:old_lost_backpack",
+        "asok_terminal21:yao_yaowarat_road",
+        "asok_terminal21:siam_square",
+        "asok_terminal21:sil_sala_daeng",
+        "asok_terminal21:bn_bitec",
+        "asok_terminal21:bkp_exam_panic",
+        "asok_terminal21:sil_face_factory",
+        "asok_terminal21:asok_omakase"
+      ],
+      "bytes": 73544,
+      "sha256": "e7026084054293b2ba8aa6408f9c304a7c6ec17ab1fa732d44373921210dd042"
+    },
+    {
+      "key": "bkl_wedding_hotel",
+      "url": "routes/v1/bkl_wedding_hotel.json",
+      "routeKeys": [
+        "bkl_wedding_hotel:old_lost_backpack",
+        "bkl_wedding_hotel:yao_yaowarat_road",
+        "bkl_wedding_hotel:siam_square",
+        "bkl_wedding_hotel:sil_sala_daeng",
+        "bkl_wedding_hotel:bn_bitec",
+        "bkl_wedding_hotel:bkp_exam_panic",
+        "bkl_wedding_hotel:sil_face_factory",
+        "bkl_wedding_hotel:asok_omakase"
+      ],
+      "bytes": 101836,
+      "sha256": "04d2d6d31060b2460163009a2fde128ef7ba2ae437f89b08323edee2ad2b6e4a"
+    },
+    {
+      "key": "bkp_exam_panic",
+      "url": "routes/v1/bkp_exam_panic.json",
+      "routeKeys": [
+        "bkp_exam_panic:old_grand_palace",
+        "bkp_exam_panic:ari_bts"
+      ],
+      "bytes": 41734,
+      "sha256": "372d1cd1f4ff5409dcbd9ce7abc371f8d982f30b1135688c1618f369ef4dccc5"
+    },
+    {
+      "key": "bkp_rajamangala",
+      "url": "routes/v1/bkp_rajamangala.json",
+      "routeKeys": [
+        "bkp_rajamangala:old_lost_backpack",
+        "bkp_rajamangala:yao_yaowarat_road",
+        "bkp_rajamangala:siam_square",
+        "bkp_rajamangala:sil_sala_daeng",
+        "bkp_rajamangala:bn_bitec",
+        "bkp_rajamangala:bkp_exam_panic",
+        "bkp_rajamangala:sil_face_factory",
+        "bkp_rajamangala:asok_omakase"
+      ],
+      "bytes": 90825,
+      "sha256": "82ab1a14f17a5aaa38d9aebd2187ab2f5fbd0d46bbc574b286ede851d239acbb"
+    },
+    {
+      "key": "bn_bitec",
+      "url": "routes/v1/bn_bitec.json",
+      "routeKeys": [
+        "bn_bitec:old_grand_palace",
+        "bn_bitec:bkp_rajamangala"
+      ],
+      "bytes": 17879,
+      "sha256": "313c209767ac42eee16fc87a628e1e73a6c71081bd2075982e022223b8157414"
+    },
+    {
+      "key": "old_khao_san",
+      "url": "routes/v1/old_khao_san.json",
+      "routeKeys": [
+        "old_khao_san:old_lost_backpack",
+        "old_khao_san:yao_yaowarat_road",
+        "old_khao_san:siam_square",
+        "old_khao_san:sil_sala_daeng",
+        "old_khao_san:bn_bitec",
+        "old_khao_san:bkp_exam_panic",
+        "old_khao_san:sil_face_factory",
+        "old_khao_san:asok_omakase"
+      ],
+      "bytes": 100311,
+      "sha256": "0662c8c01ee86146a578583c149cab7be2cc0c50868a723a79e3bab0c031fc54"
+    },
+    {
+      "key": "old_lost_backpack",
+      "url": "routes/v1/old_lost_backpack.json",
+      "routeKeys": [
+        "old_lost_backpack:old_grand_palace"
+      ],
+      "bytes": 2313,
+      "sha256": "cad1e62789367d212bed887a314a5a161f5d3968f264980f05bfada8c7e6470a"
+    },
+    {
+      "key": "siam_mbk",
+      "url": "routes/v1/siam_mbk.json",
+      "routeKeys": [
+        "siam_mbk:old_lost_backpack",
+        "siam_mbk:yao_yaowarat_road",
+        "siam_mbk:siam_square",
+        "siam_mbk:sil_sala_daeng",
+        "siam_mbk:bn_bitec",
+        "siam_mbk:bkp_exam_panic",
+        "siam_mbk:sil_face_factory",
+        "siam_mbk:asok_omakase"
+      ],
+      "bytes": 41774,
+      "sha256": "f2b977ec667e2ea67796a5a03cc955335e75dfe6e057f019a0b1ccc7f60170f1"
+    },
+    {
+      "key": "siam_square",
+      "url": "routes/v1/siam_square.json",
+      "routeKeys": [
+        "siam_square:old_grand_palace",
+        "siam_square:sil_lumpini"
+      ],
+      "bytes": 19487,
+      "sha256": "2b475e424774a1dbaf21fe0ee256f4163fbd582730453b269fc66e0f79cc8ad6"
+    },
+    {
+      "key": "sil_crypto_dungeon",
+      "url": "routes/v1/sil_crypto_dungeon.json",
+      "routeKeys": [
+        "sil_crypto_dungeon:old_lost_backpack",
+        "sil_crypto_dungeon:yao_yaowarat_road",
+        "sil_crypto_dungeon:siam_square",
+        "sil_crypto_dungeon:sil_sala_daeng",
+        "sil_crypto_dungeon:bn_bitec",
+        "sil_crypto_dungeon:bkp_exam_panic",
+        "sil_crypto_dungeon:sil_face_factory",
+        "sil_crypto_dungeon:asok_omakase"
+      ],
+      "bytes": 65650,
+      "sha256": "6dbf13da74c94ce13de2d9cf164e10d19528a8c6564d39aeb277c155442368f3"
+    },
+    {
+      "key": "sil_face_factory",
+      "url": "routes/v1/sil_face_factory.json",
+      "routeKeys": [
+        "sil_face_factory:old_grand_palace",
+        "sil_face_factory:bkl_wedding_hotel"
+      ],
+      "bytes": 23808,
+      "sha256": "7f42b3e0b45ea75b1caa9c57e1e4f66de30836e5334c0b87f798c990f1ebdad1"
+    },
+    {
+      "key": "sil_lumpini",
+      "url": "routes/v1/sil_lumpini.json",
+      "routeKeys": [
+        "sil_lumpini:old_lost_backpack",
+        "sil_lumpini:yao_yaowarat_road",
+        "sil_lumpini:siam_square",
+        "sil_lumpini:sil_sala_daeng",
+        "sil_lumpini:bn_bitec",
+        "sil_lumpini:bkp_exam_panic",
+        "sil_lumpini:sil_face_factory",
+        "sil_lumpini:asok_omakase"
+      ],
+      "bytes": 51612,
+      "sha256": "011bb823863a013487d775881aa1178b7e1e734ea0dc7bd88792db0d54133f82"
+    },
+    {
+      "key": "sil_sala_daeng",
+      "url": "routes/v1/sil_sala_daeng.json",
+      "routeKeys": [
+        "sil_sala_daeng:old_grand_palace",
+        "sil_sala_daeng:asok_terminal21"
+      ],
+      "bytes": 14883,
+      "sha256": "425dd44d08b54d287b193b2223149056d59b6622a59f26eb4d1861004daeceed"
+    },
+    {
+      "key": "yao_yaowarat_road",
+      "url": "routes/v1/yao_yaowarat_road.json",
+      "routeKeys": [
+        "yao_yaowarat_road:old_grand_palace",
+        "yao_yaowarat_road:siam_mbk"
+      ],
+      "bytes": 7114,
+      "sha256": "db0d0226050afa3fd3372ad7b1102fd6b6ecdc1efc87b8ea6951d44651c07fc1"
+    }
+  ]
+}
