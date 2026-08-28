@@ -44,6 +44,12 @@ pasted-text.txt
 CRAZY_TUK_DAILY_AGENT_MODE_IMPLEMENTATION.md
 CRAZY_TUK_LOCAL_ROUTE_CACHE/
 
+# Local planning and verification material; keep README.md public.
+*.md
+!README.md
+docs/
+tests/
+
 # High-resolution NPC source art; optimized numbered portraits are tracked.
 assets/npc/original/
 
