@@ -2354,6 +2354,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (restoreFare && previousContext?.fareId && player?.status === PLAYER_STATES.AVAILABLE) {
           const fare = getAvailableFares().find((entry) => entry.id === previousContext.fareId);
           if (fare) window.CrazyTukMapUI?.showFareDetails?.(fare);
+        } else if (!restoreFare) {
+          closeFareSheet(false);
         }
       }
 
@@ -2389,7 +2391,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
 
       function returnToStartScreen() {
-        closeFareSheet(true);
+        closeFareSheet(false);
         closeSwapSheet({ restoreFare: false });
         closeCompletionSheet();
         closeFeedModal();
@@ -2539,7 +2541,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (!WalletModule.isWalletConnected()) {
           outputEstimate.value = 'Connect wallet';
           status.textContent = 'Connect your wallet to load a live quote.';
-          submit.textContent = 'CONNECT WALLET';
+          submit.textContent = 'CONNECT';
           submit.disabled = false;
           return;
         }
