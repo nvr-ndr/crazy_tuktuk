@@ -4694,6 +4694,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     if (!map || !player) return;
     const syncVersion = ++routeSyncVersion;
 
+    // A dismissed fare is a terminal map state. Clear synchronously and stop
+    // before any remote route work can repopulate the layers.
+    if (!player.activeFareId && !player.selectedFareId) {
+      clearDestinationMarker();
+      clearRouteLine();
+      map.getContainer().classList.remove('route-focused');
+      lastFittedRouteSignature = null;
+      initFareMarkers();
+      updateNpcThoughts(player, null);
+      return;
+    }
+
     let pickupRoute = null;
     let destinationRoute = null;
     let animationRoute = null;
@@ -4728,12 +4740,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const destination = window.CrazyTukGame?.getLocationById?.(selectedFare.destinationLocationId);
         if (destination) setDestinationMarkerLocation(destination.geometry.coordinates, destination.properties.name);
       }
-    } else {
-      clearDestinationMarker();
-      clearRouteLine();
-      lastFittedRouteSignature = null;
-    }
-
     if (syncVersion !== routeSyncVersion) return;
 
     map.getContainer().classList.toggle('route-focused', Boolean(pickupRoute || destinationRoute));
