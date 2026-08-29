@@ -1127,7 +1127,7 @@
     .fare-sheet-timer-meta { display: flex; justify-content: space-between; margin-bottom: 6px; color: rgba(255,255,255,.68); font-size: 9px; font-weight: 900; letter-spacing: .09em; }
     .fare-sheet-timer-track { height: 7px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.18); }
     .fare-sheet-timer-bar { width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--danger), var(--warn)); transition: width 1s linear; }
-    .fare-sheet-action { display: block; width: fit-content; max-width: 100%; min-height: 48px; margin-inline: auto; padding-inline: 22px; font-size: 15px; }
+    .fare-sheet-action { display: block; width: fit-content; max-width: 100%; min-height: 48px; margin-top:20px; margin-inline: auto; padding-inline: 22px; font-size: 15px; }
     @keyframes fare-sheet-in {
       from { opacity: 0; transform: translateY(calc(-50% + 22px)) scale(.98); }
       to { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -2504,6 +2504,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           ? (qualification.qualifies ? '✓ Qualifies' : `✕ ${qualification.reasons?.[0] || 'Does not qualify'}`)
           : 'May match a fare';
         qualificationEl.style.color = !fare || qualification.qualifies ? 'var(--good)' : 'var(--danger)';
+        if (isDemoMode()) {
+          document.getElementById('swapOutputEstimate').value = 'SIMULATED';
+          document.getElementById('swapStatus').textContent = 'Demo Mode: no wallet action required.';
+          submit.textContent = 'SIMULATE SWAP';
+          submit.disabled = false;
+          return;
+        }
         quoteDebounceTimer = setTimeout(requestAutomaticQuote, 450);
       }
 
@@ -3306,7 +3313,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               const tripFuelSpent = player.activeTrip?.fuelSpent || 0;
               const fuelRemaining = Math.max(0, tripFuelCost - tripFuelSpent);
               const isStalled = player.status === PLAYER_STATES.STALLED;
-              const isAgentMode = stageEl.classList.contains('agent-mode');
+              const isAgentMode = document.querySelector('.stage')?.classList.contains('agent-mode') || false;
               const stalledActions = tripCard.querySelector('[data-stalled-actions]');
               if (stalledActions) stalledActions.hidden = !isStalled || isAgentMode;
               tripCard.classList.toggle('stalled', isStalled);
