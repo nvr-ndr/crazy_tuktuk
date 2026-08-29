@@ -4749,6 +4749,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const destination = window.CrazyTukGame?.getLocationById?.(selectedFare.destinationLocationId);
         if (destination) setDestinationMarkerLocation(destination.geometry.coordinates, destination.properties.name);
       }
+    }
     if (syncVersion !== routeSyncVersion) return;
 
     map.getContainer().classList.toggle('route-focused', Boolean(pickupRoute || destinationRoute));
