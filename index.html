@@ -3884,19 +3884,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <h2 id="rulesTitle">HOW TO PLAY</h2>
   <div class="rules-content">
     <section>
-      <h3>Connect Your Wallet</h3>
+      <h3>🔐 Connect Your Wallet</h3>
       <p>Use the connect button and choose a supported Solana wallet before making swaps.</p>
     </section>
     <section>
-      <h3>Accept Fares</h3>
+      <h3>📍 Accept Fares</h3>
       <p>Tap passengers on the map to review their route, reward, patience timer, and swap requirement.</p>
     </section>
     <section>
-      <h3>Swap For Fuel</h3>
+      <h3>⛽ Swap For Fuel</h3>
       <p>Complete swaps to earn fuel. Higher-value swaps can keep the tuk moving longer.</p>
     </section>
     <section>
-      <h3>Finish The Ride</h3>
+      <h3>🏁 Finish The Ride</h3>
       <p>Drive from pickup to destination, avoid stalling, and collect points when the passenger arrives.</p>
     </section>
   </div>
@@ -5037,8 +5037,35 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     });
   }
 
-  function renderTournamentLeaderboard() {
+  async function renderTournamentLeaderboard() {
     const boardEl = $("tournamentLeaderboardBoard");
+    try {
+      const response = await fetch('/api/leaderboard');
+      if (response.ok) {
+        const payload = await response.json();
+        const entries = payload.leaderboard || [];
+        boardEl.replaceChildren();
+        if (!entries.length) {
+          boardEl.innerHTML = '<div class="board-empty">No Agent scores have been recorded yet.</div>';
+          return;
+        }
+        entries.slice(0, 10).forEach((entry, index) => {
+          const row = document.createElement('div');
+          row.className = 'board-row';
+          const wallet = entry.ownerWallet || entry.walletPublicKey || '';
+          const identity = wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Wallet pending';
+          const badge = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+          row.innerHTML = `<b><span>#${entry.rank || index + 1}</span><span>${badge}</span></b><span>${entry.name} · ${identity}</span><strong>${entry.points.toLocaleString()}</strong>`;
+          boardEl.append(row);
+          setTimeout(() => row.classList.add('show'), index * 70);
+        });
+        return;
+      }
+    } catch (error) {
+      console.warn('[leaderboard] Neon unavailable', error);
+    }
+    boardEl.innerHTML = '<div class="board-empty">Live Agent leaderboard is temporarily unavailable.</div>';
+    return;
     const tournament = getTournamentStandings();
     boardEl.replaceChildren();
     if (!tournament) {
