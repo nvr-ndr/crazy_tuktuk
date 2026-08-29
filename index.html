@@ -2131,7 +2131,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         });
         setupFrontSettingsControls();
         const devFuelControls = document.getElementById('devFuelControls');
-        if (devFuelControls) devFuelControls.hidden = !CONFIG.DEV_MODE;
+        if (devFuelControls) devFuelControls.hidden = true;
 
         // Set up fare click listener
         document.addEventListener('fare-click', handleFareClick);
@@ -5509,9 +5509,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   let settingsTitleTaps = 0;
   let settingsTitleTapTimer = null;
   const developerPanelEl = $("developerPanel");
+  const devFuelControlsEl = $("devFuelControls");
   const developerUnlocked = () => localStorage.getItem('crazytuk_developer_unlocked') === 'true';
   const syncDeveloperPanel = () => {
     if (developerPanelEl) developerPanelEl.hidden = !developerUnlocked();
+    if (devFuelControlsEl) devFuelControlsEl.hidden = !developerUnlocked();
   };
   titleSettingsEl.addEventListener("click", () => {
     openPanel(settingsPanelEl);
@@ -5532,8 +5534,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   });
   syncDeveloperPanel();
   titleTournamentEl.addEventListener("click", () => openPanel(tournamentPanelEl, renderTournamentLobby));
-  const devFuelControls = $("devFuelControls");
-  if (devFuelControls && window.CrazyTukGame?.CONFIG?.DEV_MODE) devFuelControls.hidden = false;
   $("leaderboardBack").addEventListener("click", () => closePanel(leaderboardPanelEl));
   $("leaderboardDriveTab").addEventListener("click", () => setLeaderboardMode('drive'));
   $("leaderboardTournamentTab").addEventListener("click", () => setLeaderboardMode('tournament'));
