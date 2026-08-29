@@ -3234,7 +3234,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           const label = button.querySelector(labelSelector);
           button.classList.toggle('connected', connected);
           button.classList.remove('primary');
-          if (label) label.textContent = connected ? 'Connected' : 'Connect Wallet';
+          if (label) label.textContent = connected ? 'Connected' : 'Connect';
           button.style.borderColor = connected ? 'var(--good)' : '';
         };
 
