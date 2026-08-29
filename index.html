@@ -2321,6 +2321,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function closeFareSheet(preserveSelection = false) {
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
         document.querySelector('.map-container')?.classList.remove('route-focused');
+        map?.getContainer()?.classList.remove('route-focused');
         document.querySelectorAll('.fare-marker.selected').forEach((marker) => marker.classList.remove('selected'));
         const player = getPlayer();
         if (player) updateHUD(player);
@@ -3952,16 +3953,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     </div>
   </div>
   <button id="settingsSave" class="ui-button primary settings-save" type="button">SAVE SETTINGS</button>
-  <section id="developerPanel" class="developer-panel" hidden aria-labelledby="developerTitle">
-    <h3 id="developerTitle">DEVELOPER TOOLS</h3>
-    <p class="settings-help">Demo-only controls. These never affect real wallet balances.</p>
-    <div class="dev-grid">
-      <button class="ui-button" data-dev-fuel="0" type="button">FORCE STALL</button>
-      <button class="ui-button" data-dev-fuel="100" type="button">REFILL FUEL</button>
-      <button id="devLockButton" class="ui-button" type="button">LOCK TOOLS</button>
-    </div>
-  </section>
+  <button id="developerOpen" class="ui-button settings-save" type="button" hidden>OPEN DEVELOPER TOOLS</button>
   <button id="settingsBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
+</section>
+
+<section id="developerPanel" class="leaderboard-panel settings-panel developer-page" hidden aria-labelledby="developerTitle">
+  <h2 id="developerTitle">🛠 DEVELOPER TOOLS</h2>
+  <p class="settings-help">Demo-only controls. These never affect real wallet balances.</p>
+  <div class="dev-grid">
+    <button class="ui-button" data-dev-fuel="0" type="button">FORCE STALL</button>
+    <button class="ui-button" data-dev-fuel="100" type="button">REFILL FUEL</button>
+    <button id="devLockButton" class="ui-button" type="button">LOCK TOOLS</button>
+  </div>
+  <button id="developerBack" class="ui-button map-back-button panel-scene-back" type="button">BACK TO SETTINGS</button>
 </section>
 
 <script>
@@ -5512,10 +5516,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   let settingsTitleTapTimer = null;
   const developerPanelEl = $("developerPanel");
   const devFuelControlsEl = $("devFuelControls");
+  const developerOpenEl = $("developerOpen");
   const developerUnlocked = () => localStorage.getItem('crazytuk_developer_unlocked') === 'true';
   const syncDeveloperPanel = () => {
     if (developerPanelEl) developerPanelEl.hidden = !developerUnlocked();
     if (devFuelControlsEl) devFuelControlsEl.hidden = !developerUnlocked();
+    if (developerOpenEl) developerOpenEl.hidden = !developerUnlocked();
   };
   titleSettingsEl.addEventListener("click", () => {
     openPanel(settingsPanelEl);
@@ -5544,6 +5550,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     localStorage.removeItem('crazytuk_developer_unlocked');
     syncDeveloperPanel();
     window.CrazyTukGame?.showNotification?.('Developer tools locked.', 'info');
+  });
+  $("developerOpen")?.addEventListener('click', () => {
+    if (developerUnlocked()) {
+      settingsPanelEl.hidden = true;
+      developerPanelEl.hidden = false;
+    }
+  });
+  $("developerBack")?.addEventListener('click', () => {
+    developerPanelEl.hidden = true;
+    settingsPanelEl.hidden = false;
   });
   syncDeveloperPanel();
   titleTournamentEl.addEventListener("click", () => openPanel(tournamentPanelEl, renderTournamentLobby));
