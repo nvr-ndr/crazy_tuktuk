@@ -2321,6 +2321,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
 
       function closeFareSheet(preserveSelection = false) {
+        routeSyncVersion += 1;
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
         document.querySelector('.map-container')?.classList.remove('route-focused');
         document.querySelector('.maplibregl-map')?.classList.remove('route-focused');
@@ -4070,6 +4071,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   const PICKUP_ROUTE_CASING_LAYER_ID = 'crazy-tuk-pickup-route-casing';
   const PICKUP_ROUTE_LAYER_ID = 'crazy-tuk-pickup-route-line';
   const roadRouteCache = new Map();
+  let routeSyncVersion = 0;
   let lastFittedRouteSignature = null;
   let rideThoughtFareId = null;
   let rideThoughtIndex = 0;
@@ -4690,6 +4692,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
   async function syncMapState(player) {
     if (!map || !player) return;
+    const syncVersion = ++routeSyncVersion;
 
     let pickupRoute = null;
     let destinationRoute = null;
@@ -4730,6 +4733,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       clearRouteLine();
       lastFittedRouteSignature = null;
     }
+
+    if (syncVersion !== routeSyncVersion) return;
 
     map.getContainer().classList.toggle('route-focused', Boolean(pickupRoute || destinationRoute));
 
