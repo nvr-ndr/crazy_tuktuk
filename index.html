@@ -124,7 +124,7 @@
     }
     .start-footer { position: absolute; bottom: max(12px, env(safe-area-inset-bottom)); left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .78rem; font-weight: 800; text-shadow: 0 2px 8px #000; }
     .start-footer a { color: #fff; text-decoration: none; }
-    .install-interstitial { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: max(22px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom)); overflow: hidden; background: radial-gradient(circle at 50% 24%, rgba(246,212,107,.3), transparent 34%), linear-gradient(155deg, #173d2e, #352014 72%); color: #fff5cf; opacity: 0; transition: opacity .48s ease; }
+    .install-interstitial { position: fixed; z-index: 90; inset: 0; display: grid; place-items: center; padding: max(22px, env(safe-area-inset-top)) 20px max(22px, env(safe-area-inset-bottom)); overflow: hidden; background: radial-gradient(circle at 50% 38%, #e94560, #ff0000 68%); color: #fff5cf; opacity: 0; transition: opacity .48s ease; }
     /* The author `display` above beats the UA rule for [hidden], which left this
        laid out at z-index 90 with opacity 0 — an invisible shield swallowing every
        click on the start screen. */
@@ -1260,7 +1260,7 @@
       opacity: 0;
       transition: opacity .25s ease, transform .25s ease;
     }
-    .stage:not(.agent-mode) .city-ticker { top: max(8px, env(safe-area-inset-top) + 2px); }
+    .stage:not(.agent-mode) .city-ticker { top: max(12px, env(safe-area-inset-top)); }
     .city-ticker.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
     .city-ticker-icon { flex: 0 0 auto; font-size: 15px; }
     .city-ticker-text { min-width: 0; overflow: hidden; flex: 1; font-size: 10px; font-weight: 800; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
@@ -1689,7 +1689,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       #titleTournament { font-size: 0; }
       #titleTournament::after { font-size: .48rem; }
       #leaderboardBack, #rulesBack, #settingsBack, #developerBack { min-height: 30px; padding: 4px 12px; font-size: .62rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
-      .city-ticker { top: max(58px, env(safe-area-inset-top) + 50px) !important; width: calc(100% - 92px); min-height: 25px; padding: 4px 7px; }
+      .stage:not(.agent-mode) .city-ticker { top: max(12px, env(safe-area-inset-top)) !important; }
+      .city-ticker { width: calc(100% - 92px); min-height: 25px; padding: 4px 7px; }
       .city-ticker-text { font-size: 8px; }
       .fare-sheet { left: 12px; right: 12px; width: auto; transform: none; padding: 11px; }
       .trip-card { left: 12px; right: 12px; width: auto; transform: none; }
@@ -3688,7 +3689,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     </div>
 
     <div class="map-topbar">
-      <button id="mapBackButton" type="button" class="ui-button map-back-button" aria-label="Back to main screen">BACK</button>
+      <button id="mapBackButton" type="button" class="ui-button map-back-button" aria-label="Back to main screen">←</button>
       <div id="agentTopStrip" class="agent-top-strip" hidden><span>STATUS <b id="agentTopStatus">READY NEXT SHIFT</b></span><span>TIME LEFT <b id="agentTopTime">DAILY</b></span><span>BANKROLL <b id="agentTopBankroll">20 USDC</b></span><button id="agentStartShift" class="ui-button primary" type="button" hidden>START SHIFT</button></div>
       <div class="map-topbar-right">
         <div class="map-topbar-actions">
@@ -3887,19 +3888,27 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <div class="rules-content">
     <section>
       <h3>🔐 Connect Your Wallet</h3>
-      <p>Use the connect button and choose a supported Solana wallet before making swaps.</p>
+      <p>Connect a supported Solana wallet before making real swaps or starting an Agent shift. Demo Mode can simulate wallet actions for showcases.</p>
     </section>
     <section>
       <h3>📍 Accept Fares</h3>
-      <p>Tap passengers on the map to review their route, reward, patience timer, and swap requirement.</p>
+      <p>Tap a passenger on the map to review the road route, reward, patience timer, traffic, and swap requirement. Only one active fare appears in each pickup zone.</p>
     </section>
     <section>
       <h3>⛽ Swap For Fuel</h3>
-      <p>Complete swaps to earn fuel. Higher-value swaps can keep the tuk moving longer.</p>
+      <p>Use DFlow to complete an eligible SOL or token swap and earn fuel. The swap value and route distance determine the fuel reward; wallet approval is required outside Demo Mode.</p>
+    </section>
+    <section>
+      <h3>🛺 Drive The Route</h3>
+      <p>Follow the cached road route from your tuk-tuk to pickup, then onward to the destination. Keep enough fuel for both legs or the ride can stall.</p>
+    </section>
+    <section>
+      <h3>✨ Watch The Moments</h3>
+      <p>Random road moments can affect the ride, fuel, score, or passenger mood. Read each event and adapt before completing the fare.</p>
     </section>
     <section>
       <h3>🏁 Finish The Ride</h3>
-      <p>Drive from pickup to destination, avoid stalling, and collect points when the passenger arrives.</p>
+      <p>Arrive at the destination to complete the fare and collect points. Your dashboard, reviews, swap history, and leaderboard reflect the connected wallet and Neon-backed game data.</p>
     </section>
   </div>
   <button id="rulesBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>

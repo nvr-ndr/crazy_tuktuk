@@ -27,7 +27,9 @@ const CACHED_ROUTE_TEST_PAIRS = [
 
 export function getAvailableFares() {
   const saved = localStorage.getItem(FARES_KEY);
-  return saved ? JSON.parse(saved) : [];
+  if (!saved) return [];
+  const fares = JSON.parse(saved);
+  return keepOneFarePerPickupZone(fares);
 }
 
 export function hasCurrentCachedRouteTestFares(fares = getAvailableFares()) {
@@ -42,8 +44,9 @@ export function hasCurrentCachedRouteTestFares(fares = getAvailableFares()) {
 }
 
 export function saveFares(fares) {
-  localStorage.setItem(FARES_KEY, JSON.stringify(fares));
-  return fares;
+  const normalized = keepOneFarePerPickupZone(fares);
+  localStorage.setItem(FARES_KEY, JSON.stringify(normalized));
+  return normalized;
 }
 
 export function addFare(fare) {
