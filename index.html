@@ -1259,6 +1259,8 @@
       pointer-events: none;
       opacity: 0;
       transition: opacity .25s ease, transform .25s ease;
+      width: min(640px, calc(100% - 180px));
+      max-width: calc(100% - 180px);
     }
     .stage:not(.agent-mode) .city-ticker { top: max(12px, env(safe-area-inset-top)); }
     .city-ticker.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -1690,7 +1692,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       #titleTournament::after { font-size: .48rem; }
       #leaderboardBack, #rulesBack, #settingsBack, #developerBack { min-height: 30px; padding: 4px 12px; font-size: .62rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
       .stage:not(.agent-mode) .city-ticker { top: max(12px, env(safe-area-inset-top)) !important; }
-      .city-ticker { width: calc(100% - 92px); min-height: 25px; padding: 4px 7px; }
+      .city-ticker { width: calc(100% - 160px); max-width: calc(100% - 160px); min-height: 25px; padding: 4px 7px; gap: 4px; }
       .city-ticker-text { font-size: 8px; }
       .fare-sheet { left: 12px; right: 12px; width: auto; transform: none; padding: 11px; }
       .trip-card { left: 12px; right: 12px; width: auto; transform: none; }
@@ -2996,7 +2998,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
       }
 
-      async function handleWalletClick() {
+      async function handleWalletClick(origin) {
+        const walletOrigin = origin?.currentTarget || origin || null;
         const walletState = WalletModule.getWalletState();
 
         if (walletState.state === WalletModule.WALLET_STATES.CONNECTED) {
@@ -3031,11 +3034,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
           // Fallback to wallet modal
           const modal = WalletModule.createWalletModal();
-          document.body.appendChild(modal);
+          const host = walletOrigin?.closest?.('#garagePanel, #settingsPanel, #tournamentPanel, #dashboardView') || document.body;
+          host.appendChild(modal);
           console.log('Wallet modal shown');
         }
       }
-      window.CrazyTukWalletConnect = handleWalletClick;
+      window.CrazyTukWalletConnect = (origin) => handleWalletClick(origin);
 
       function handleWalletConnect(event) {
         console.log('Wallet connected:', event.detail);
@@ -3571,7 +3575,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 <div id="startScreen" class="start-screen">
   <h1>Crazy TukTuk</h1>
   <button id="startWalletButton" type="button" class="ui-button start-connect-button" aria-label="Connect wallet">
-    <span class="start-wallet-label">Connect Wallet</span>
+    <span class="start-wallet-label">Connect</span>
   </button>
   <img class="start-logo" src="assets/branding/logo.png" alt="Crazy Tuk" />
   <div class="title-tools">
@@ -3795,7 +3799,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             <small id="dashboardWalletLabel">Wallet not connected</small>
           </div>
           <button id="topWalletButton" type="button" class="ui-button top-connect-button dashboard-wallet-button" aria-label="Connect wallet">
-            <span class="top-wallet-label">Connect Wallet</span>
+            <span class="top-wallet-label">Connect</span>
           </button>
         </section>
 
@@ -5694,7 +5698,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       $('garageConfig').hidden = false;
       const live = !window.CrazyTukDemoMode?.();
       $('garageWalletState').textContent = live ? 'WALLET REQUIRED' : 'READY TO CREATE';
-      $('garageCreateDriver').textContent = live ? 'CONNECT WALLET' : 'CREATE DRIVER';
+      $('garageCreateDriver').textContent = live ? 'CONNECT' : 'CREATE DRIVER';
       const existing = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
       localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({
         ...(existing || {}), driver: card.dataset.driver, strategy: existing?.strategy || 'AGGRESSIVE',
@@ -5724,7 +5728,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const walletConnected = window.WalletModule?.isWalletConnected?.() || false;
     if (live && !walletConnected) {
       walletState.textContent = 'WALLET REQUIRED';
-      button.textContent = 'CONNECT WALLET';
+      button.textContent = 'CONNECT';
       button.disabled = false;
     } else if (live && !state.funded) {
       walletState.textContent = 'WALLET CONNECTED';
@@ -5743,7 +5747,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   $('garageCreateDriver').addEventListener('click', () => {
     const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
     if (!window.CrazyTukDemoMode?.() && !window.WalletModule?.isWalletConnected?.()) {
-      window.CrazyTukWalletConnect?.();
+      window.CrazyTukWalletConnect?.($('garageCreateDriver'));
       setTimeout(updateMockAgentUI, 500);
       return;
     }
