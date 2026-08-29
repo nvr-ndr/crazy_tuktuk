@@ -2323,7 +2323,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function closeFareSheet(preserveSelection = false) {
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
         document.querySelector('.map-container')?.classList.remove('route-focused');
-        map?.getContainer()?.classList.remove('route-focused');
+        if (window.CrazyTukMap?.getContainer) window.CrazyTukMap.getContainer().classList.remove('route-focused');
         document.querySelectorAll('.fare-marker.selected').forEach((marker) => marker.classList.remove('selected'));
         const player = getPlayer();
         if (player) updateHUD(player);
@@ -2394,6 +2394,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (gameScene) gameScene.hidden = true;
         if (startScene) startScene.hidden = false;
       }
+      window.returnToStartScreen = returnToStartScreen;
 
       function showCompletionSheet(fare) {
         if (!fare) return;
@@ -5762,7 +5763,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     $("agentDashboardStrategy").hidden = true;
     $("agentDashboardCareer").hidden = true;
     $("driverDashboardStats").hidden = false;
-    returnToStartScreen();
+    window.returnToStartScreen?.();
   });
   updateMockAgentUI();
 })();
