@@ -2323,7 +2323,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function closeFareSheet(preserveSelection = false) {
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
         document.querySelector('.map-container')?.classList.remove('route-focused');
-        if (window.CrazyTukMap?.getContainer) window.CrazyTukMap.getContainer().classList.remove('route-focused');
+        document.querySelector('.maplibregl-map')?.classList.remove('route-focused');
+        clearRouteLine();
         document.querySelectorAll('.fare-marker.selected').forEach((marker) => marker.classList.remove('selected'));
         const player = getPlayer();
         if (player) updateHUD(player);
@@ -4726,6 +4727,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
     } else {
       clearDestinationMarker();
+      clearRouteLine();
       lastFittedRouteSignature = null;
     }
 
