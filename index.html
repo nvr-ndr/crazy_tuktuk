@@ -1691,7 +1691,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       #leaderboardBack, #rulesBack, #settingsBack, #developerBack { min-height: 30px; padding: 4px 12px; font-size: .62rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
       .city-ticker { top: max(58px, env(safe-area-inset-top) + 50px) !important; width: calc(100% - 92px); min-height: 25px; padding: 4px 7px; }
       .city-ticker-text { font-size: 8px; }
-      .fare-sheet { padding: 11px; }
+      .fare-sheet { left: 12px; right: 12px; width: auto; transform: none; padding: 11px; }
+      .trip-card { left: 12px; right: 12px; width: auto; transform: none; }
       .fare-sheet-head { gap: 8px; }
       .fare-sheet-portrait { width: 44px; height: 44px; flex-basis: 44px; border-radius: 13px; font-size: 22px; }
       .fare-sheet-kicker { display: inline; margin-right: 5px; font-size: 8px; }
@@ -3561,10 +3562,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <img class="start-logo" src="assets/branding/logo.png" alt="Crazy Tuk" />
   <div class="title-tools">
     <button id="enable" type="button" class="ui-button big">START</button>
+    <button id="titleTournament" type="button" class="ui-button tournament-button" aria-label="Open Agent Mode">AGENT</button>
     <button id="titleLeaderboard" type="button" class="ui-button primary leaderboard-button" aria-label="Leaderboard">🏆</button>
     <button id="titleRules" type="button" class="ui-button rules-button" aria-label="How to play">📖</button>
     <button id="titleSettings" type="button" class="ui-button settings-button" aria-label="Settings">⚙</button>
-    <button id="titleTournament" type="button" class="ui-button tournament-button" aria-label="Open Agent Mode">AGENT</button>
   </div>
   <p id="support" class="hint"></p>
   <footer class="start-footer">
