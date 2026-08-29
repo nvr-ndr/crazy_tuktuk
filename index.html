@@ -1425,9 +1425,9 @@
     #leaderboardPanel { position: fixed; isolation: isolate; background: linear-gradient(135deg, var(--panel2), var(--bg)) center / cover no-repeat; background-blend-mode: normal; overflow: hidden; }
     #leaderboardPanel::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: rgba(5,8,18,.19); }
     #leaderboardPanel > :not(.leaderboard-decoration) { position: relative; z-index: 2; }
-    #rulesPanel, #settingsPanel, #tournamentPanel, #garagePanel { position: fixed; isolation: isolate; background: linear-gradient(135deg, var(--panel2), var(--bg)) center / cover no-repeat; background-blend-mode: normal; overflow: hidden; }
-    #rulesPanel::before, #settingsPanel::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: rgba(5,8,18,.19); }
-    #rulesPanel > *, #settingsPanel > * { position: relative; z-index: 2; }
+    #rulesPanel, #settingsPanel, #developerPanel, #tournamentPanel, #garagePanel { position: fixed; isolation: isolate; background: linear-gradient(135deg, var(--panel2), var(--bg)) center / cover no-repeat; background-blend-mode: normal; overflow: hidden; }
+    #rulesPanel::before, #settingsPanel::before, #developerPanel::before { content: ""; position: absolute; z-index: 1; inset: 0; pointer-events: none; background: rgba(5,8,18,.19); }
+    #rulesPanel > *, #settingsPanel > *, #developerPanel > * { position: relative; z-index: 2; }
     .leaderboard-decoration { position: absolute; z-index: 0; inset: 0; pointer-events: none; overflow: hidden; }
     #sceneTransition { position: fixed; z-index: 80; pointer-events: none; left: 50%; top: 50%; width: 180vmax; height: 180vmax; border-radius: 50%; opacity: 0; box-shadow: 0 0 0 220vmax rgba(17,9,5,.96); transform: translate(-50%, -50%); }
     #sceneTransition.close { animation: iris-close .62s cubic-bezier(.2,.72,.18,1) forwards; }
@@ -1619,7 +1619,7 @@
         48% { transform: translate(-50%, calc(-50% + 5px)) scale(.96); }
         100% { transform: translate(-50%, -50%) scale(1); }
       }
-      #leaderboardPanel, #rulesPanel, #settingsPanel {
+      #leaderboardPanel, #rulesPanel, #settingsPanel, #developerPanel {
         background-image:
           linear-gradient(rgba(5,8,18,.24), rgba(5,8,18,.24)),
           url('assets/backgrounds/start-screen-desktop.png');
@@ -1660,13 +1660,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         box-shadow: 0 4px #0f5c33, 0 8px 14px rgba(0,0,0,.28);
       }
       .game { background: #fc0000; }
-      #leaderboardPanel, #rulesPanel, #settingsPanel {
+      #leaderboardPanel, #rulesPanel, #settingsPanel, #developerPanel {
         background-image:
           linear-gradient(rgba(255,232,194,.12), rgba(255,232,194,.12)),
           url('assets/backgrounds/start-screen.png');
         background-blend-mode: screen, normal;
       }
-      #leaderboardPanel::before, #rulesPanel::before, #settingsPanel::before { background: rgba(5,8,18,.04); }
+      #leaderboardPanel::before, #rulesPanel::before, #settingsPanel::before, #developerPanel::before { background: rgba(5,8,18,.04); }
       .hudrow { grid-template-columns: minmax(0, 1fr) minmax(116px, 1fr) minmax(0, 1fr); }
       .map-topbar { gap: 8px; }
       .map-back-button { padding-inline: 14px; }
@@ -1770,7 +1770,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     #tournamentLeaderboardBoard { display:grid; align-content:start; flex:1; gap:8px; min-height:0; margin:12px 0 18px; overflow-y:auto; }
     #tournamentLeaderboardBoard[hidden], #leaderboardBoard[hidden] { display:none; }
     #leaderboardBack.panel-scene-back, #rulesBack.panel-scene-back, #settingsBack.panel-scene-back { position:absolute; z-index:3; top:12px; left:12px; width:fit-content; margin:0 !important; }
-    #leaderboardPanel > h2, #rulesPanel > h2, #settingsPanel > h2 { margin-top:52px; }
+    #leaderboardPanel > h2, #rulesPanel > h2, #settingsPanel > h2, #developerPanel > h2 { margin-top:52px; }
     @keyframes agent-trip-card-in { from { opacity:0; transform:translate(-50%, 18px) scale(.98); } to { opacity:1; transform:translateX(-50%) scale(1); } }
     .stage.agent-mode .top-connect-container { display:none; }
     .stage.agent-mode #hud .fuel .hud-stat-label, .stage.agent-mode #hud .points .hud-stat-label, .stage.agent-mode #hudActionLabel { font-size:0; }
@@ -3941,17 +3941,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <label class="toggle-switch"><input type="checkbox" id="setting-fuel-warnings" checked><span class="toggle-slider"></span></label>
     </div>
   </div>
-  <div id="devFuelControls" class="settings-list" hidden>
-    <h3>DEVELOPMENT FUEL HARNESS</h3>
-    <div class="settings-row"><span>Set fuel for repeatable stall tests</span></div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px">
-      <button class="ui-button" data-dev-fuel="0" type="button">0%</button>
-      <button class="ui-button" data-dev-fuel="10" type="button">10%</button>
-      <button class="ui-button" data-dev-fuel="25" type="button">25%</button>
-      <button class="ui-button" data-dev-fuel="50" type="button">50%</button>
-      <button class="ui-button" data-dev-fuel="100" type="button">FILL</button>
-    </div>
-  </div>
   <button id="settingsSave" class="ui-button primary settings-save" type="button">SAVE SETTINGS</button>
   <button id="developerOpen" class="ui-button settings-save" type="button" hidden>OPEN DEVELOPER TOOLS</button>
   <button id="settingsBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
@@ -3959,11 +3948,23 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
 <section id="developerPanel" class="leaderboard-panel settings-panel developer-page" hidden aria-labelledby="developerTitle">
   <h2 id="developerTitle">🛠 DEVELOPER TOOLS</h2>
-  <p class="settings-help">Demo-only controls. These never affect real wallet balances.</p>
-  <div class="dev-grid">
-    <button class="ui-button" data-dev-fuel="0" type="button">FORCE STALL</button>
-    <button class="ui-button" data-dev-fuel="100" type="button">REFILL FUEL</button>
-    <button id="devLockButton" class="ui-button" type="button">LOCK TOOLS</button>
+  <div class="settings-list developer-settings-list">
+    <div class="settings-row"><span>Demo-only controls</span></div>
+    <p class="settings-help">These controls never affect real wallet balances.</p>
+    <div class="settings-row"><span>Set fuel for repeatable stall tests</span></div>
+    <div class="dev-grid">
+      <button class="ui-button" data-dev-fuel="0" type="button">0%</button>
+      <button class="ui-button" data-dev-fuel="10" type="button">10%</button>
+      <button class="ui-button" data-dev-fuel="25" type="button">25%</button>
+      <button class="ui-button" data-dev-fuel="50" type="button">50%</button>
+      <button class="ui-button" data-dev-fuel="100" type="button">FILL</button>
+    </div>
+    <div class="settings-row"><span>Demo actions</span></div>
+    <div class="dev-grid">
+      <button class="ui-button" data-dev-fuel="0" type="button">FORCE STALL</button>
+      <button class="ui-button" data-dev-fuel="100" type="button">REFILL FUEL</button>
+      <button id="devLockButton" class="ui-button" type="button">LOCK TOOLS</button>
+    </div>
   </div>
   <button id="developerBack" class="ui-button map-back-button panel-scene-back" type="button">BACK TO SETTINGS</button>
 </section>
