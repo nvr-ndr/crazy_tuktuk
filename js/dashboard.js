@@ -13,7 +13,11 @@ export const DashboardStats = {
     try {
       const player = window.CrazyTukGame?.getPlayer();
       const wallet = window.CrazyTukGame?.getWalletPublicKey?.();
-      const walletStats = await window.CrazyTukGame?.getSwapStatistics?.(wallet);
+      // A disconnected wallet is a normal dashboard state. Do not query the
+      // DFlow history endpoint with a null wallet address.
+      const walletStats = wallet
+        ? await window.CrazyTukGame?.getSwapStatistics?.(wallet)
+        : null;
 
       if (!player) {
         throw new Error('No player data available');
@@ -118,7 +122,7 @@ export const TransactionHistory = {
       const wallet = window.CrazyTukGame?.getWalletPublicKey?.();
 
       if (!wallet) {
-        throw new Error('Wallet not connected');
+        return { swaps: [], source: 'DISCONNECTED', total: 0 };
       }
 
       const history = await window.CrazyTukGame?.getSwapHistoryWithFallback?.(wallet);
