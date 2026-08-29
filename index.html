@@ -2074,7 +2074,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         bindSheetAction('fareSheetClose', closeFareSheet);
         bindSheetAction('fareSheetAction', handleActionClick);
         bindSheetAction('swapSheetClose', closeSwapSheet);
-        bindSheetAction('swapSubmit', submitDFlowSwap);
+        bindSheetAction('swapSubmit', () => isDemoMode() ? runMockFareLoop() : submitDFlowSwap());
         bindSheetAction('mockSwapSubmit', runMockFareLoop);
         bindSheetAction('tripRefuel', () => {
           const player = getPlayer();
@@ -2108,7 +2108,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           console.log('Top wallet button listener attached');
         }
 
-        document.getElementById('mapBackButton')?.addEventListener('click', returnToStartScreen);
         document.getElementById('dashboardToggle')?.addEventListener('click', handleDashboardToggle);
         console.log('Map navigation listeners attached');
 
@@ -2450,7 +2449,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         document.getElementById('swapSheetTitle').textContent = context.context === 'SELECTED_FARE' ? 'SWAP & PICK UP' : 'MAKE A SWAP';
         document.getElementById('swapSubmit').textContent = 'FINDING RATE...';
         document.getElementById('swapSubmit').disabled = true;
-        document.getElementById('mockSwapSubmit').hidden = !isDemoMode();
+        document.getElementById('mockSwapSubmit').hidden = true;
+        if (isDemoMode()) {
+          document.getElementById('swapSubmit').textContent = 'SIMULATE SWAP';
+          document.getElementById('swapSubmit').disabled = false;
+        }
         document.querySelector('.stage')?.classList.add('swap-open');
         document.getElementById('swapSheetBackdrop').hidden = false;
         updateSwapPreview();
@@ -3943,10 +3946,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <span>Fuel Warnings</span>
       <label class="toggle-switch"><input type="checkbox" id="setting-fuel-warnings" checked><span class="toggle-slider"></span></label>
     </div>
-    <div class="setting-item">
-      <span>Demo Mode <small>(simulated swaps and agent data)</small></span>
-      <label class="toggle-switch"><input type="checkbox" id="setting-demo-mode"><span class="toggle-slider"></span></label>
-    </div>
   </div>
   <button id="settingsSave" class="ui-button primary settings-save" type="button">SAVE SETTINGS</button>
   <button id="developerOpen" class="ui-button settings-save" type="button" hidden>OPEN DEVELOPER TOOLS</button>
@@ -3954,8 +3953,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 </section>
 
 <section id="developerPanel" class="leaderboard-panel settings-panel developer-page" hidden aria-labelledby="developerTitle">
-  <h2 id="developerTitle">🛠 DEVELOPER TOOLS</h2>
+  <h2 id="developerTitle">🛠 DEV TOOLS</h2>
   <div class="settings-list developer-settings-list">
+    <div class="setting-item">
+      <span>Demo Mode <small>(simulated swaps and agent data)</small></span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-demo-mode"><span class="toggle-slider"></span></label>
+    </div>
     <div class="settings-row"><span>Demo-only controls</span></div>
     <p class="settings-help">These controls never affect real wallet balances.</p>
     <div class="settings-row"><span>Set fuel for repeatable stall tests</span></div>
@@ -3973,7 +3976,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <button id="devLockButton" class="ui-button" type="button">LOCK TOOLS</button>
     </div>
   </div>
-  <button id="developerBack" class="ui-button map-back-button panel-scene-back" type="button">BACK TO SETTINGS</button>
+  <button id="developerBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
 </section>
 
 <script>
