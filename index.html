@@ -2328,7 +2328,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
         document.querySelector('.map-container')?.classList.remove('route-focused');
         document.querySelector('.maplibregl-map')?.classList.remove('route-focused');
-        clearRouteLine();
+        window.CrazyTukMapUI?.clearRouteLine?.();
         document.querySelectorAll('.fare-marker.selected').forEach((marker) => marker.classList.remove('selected'));
         const player = getPlayer();
         if (player) updateHUD(player);
@@ -4542,6 +4542,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     showFareDetails,
     focusFareRoute,
     invalidateRouteSync: () => { routeSyncVersion += 1; },
+    clearRouteLine,
     prepareRoadRoute: requestRoadRoute,
     syncMapState
   };
