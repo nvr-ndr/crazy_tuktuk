@@ -1688,7 +1688,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       #titleTournament::after { content: 'AGENT'; }
       #titleTournament { font-size: 0; }
       #titleTournament::after { font-size: .48rem; }
-      #leaderboardBack, #rulesBack, #settingsBack { min-height: 30px; padding: 4px 12px; font-size: .62rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
+      #leaderboardBack, #rulesBack, #settingsBack, #developerBack { min-height: 30px; padding: 4px 12px; font-size: .62rem; border-radius: 9px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
       .city-ticker { top: max(58px, env(safe-area-inset-top) + 50px) !important; width: calc(100% - 92px); min-height: 25px; padding: 4px 7px; }
       .city-ticker-text { font-size: 8px; }
       .fare-sheet { padding: 11px; }
@@ -1769,7 +1769,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     .leaderboard-tabs button { width:fit-content; min-height:34px; padding:7px 13px; font-size:11px; }
     #tournamentLeaderboardBoard { display:grid; align-content:start; flex:1; gap:8px; min-height:0; margin:12px 0 18px; overflow-y:auto; }
     #tournamentLeaderboardBoard[hidden], #leaderboardBoard[hidden] { display:none; }
-    #leaderboardBack.panel-scene-back, #rulesBack.panel-scene-back, #settingsBack.panel-scene-back { position:absolute; z-index:3; top:12px; left:12px; width:fit-content; margin:0 !important; }
+    #leaderboardBack.panel-scene-back, #rulesBack.panel-scene-back, #settingsBack.panel-scene-back, #developerBack.panel-scene-back { position:absolute; z-index:3; top:12px; left:12px; width:fit-content; margin:0 !important; }
     #leaderboardPanel > h2, #rulesPanel > h2, #settingsPanel > h2, #developerPanel > h2 { margin-top:52px; }
     @keyframes agent-trip-card-in { from { opacity:0; transform:translate(-50%, 18px) scale(.98); } to { opacity:1; transform:translateX(-50%) scale(1); } }
     .stage.agent-mode .top-connect-container { display:none; }
@@ -1853,6 +1853,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       validateRoutes();
 
       // Export game data to window for easy access during MVP
+      const isDemoMode = () => localStorage.getItem('crazytuk_demo_mode') !== 'false';
+      window.CrazyTukDemoMode = isDemoMode;
       // Expose the imported wallet facade to the later classic script that
       // owns Agent Mode controls and authentication.
       window.WalletModule = WalletModule;
@@ -2448,7 +2450,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         document.getElementById('swapSheetTitle').textContent = context.context === 'SELECTED_FARE' ? 'SWAP & PICK UP' : 'MAKE A SWAP';
         document.getElementById('swapSubmit').textContent = 'FINDING RATE...';
         document.getElementById('swapSubmit').disabled = true;
-        document.getElementById('mockSwapSubmit').hidden = !CONFIG.DEV_MODE;
+        document.getElementById('mockSwapSubmit').hidden = !isDemoMode();
         document.querySelector('.stage')?.classList.add('swap-open');
         document.getElementById('swapSheetBackdrop').hidden = false;
         updateSwapPreview();
@@ -2797,7 +2799,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
 
       function runMockFareLoop() {
-        if (!CONFIG.DEV_MODE || !swapContext) return;
+        if (!isDemoMode() || !swapContext) return;
         const fareId = swapContext.fareId;
         const amount = Number(document.getElementById('swapInputAmount').value) || CONFIG.MIN_GAME_SWAP_USD;
         const status = document.getElementById('swapStatus');
@@ -2835,7 +2837,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       }
 
       function setDevelopmentFuel(percent) {
-        if (!CONFIG.DEV_MODE) return;
+        if (!isDemoMode()) return;
         const player = getPlayer();
         if (!player) return;
         player.fuel = Math.round(CONFIG.FUEL_CAPACITY * (Number(percent) / 100));
@@ -2925,7 +2927,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           ['setting-music', 'crazytuk_music_enabled', false],
           ['setting-vibration', 'crazytuk_vibration_enabled', true],
           ['setting-notifications', 'crazytuk_notifications_enabled', true],
-          ['setting-fuel-warnings', 'crazytuk_fuel_warnings', true]
+          ['setting-fuel-warnings', 'crazytuk_fuel_warnings', true],
+          ['setting-demo-mode', 'crazytuk_demo_mode', true]
         ];
         const syncControl = ([id, key, defaultValue]) => {
           const input = document.getElementById(id);
@@ -3939,6 +3942,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     <div class="setting-item">
       <span>Fuel Warnings</span>
       <label class="toggle-switch"><input type="checkbox" id="setting-fuel-warnings" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-item">
+      <span>Demo Mode <small>(simulated swaps and agent data)</small></span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-demo-mode"><span class="toggle-slider"></span></label>
     </div>
   </div>
   <button id="settingsSave" class="ui-button primary settings-save" type="button">SAVE SETTINGS</button>
@@ -5114,7 +5121,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       // The legacy mock-driver funding flag must not gate a real wallet Agent
       // session. Authentication and server registration are enforced when the
       // first Agent API call is made.
-      const shouldStartDevelopmentShift = window.CrazyTukGame?.CONFIG?.DEV_MODE;
+      const shouldStartDevelopmentShift = window.CrazyTukDemoMode?.();
       $("agentTopStatus").textContent = agentState?.shiftStatus === 'FINISHED' ? 'READY NEXT SHIFT' : (agentState?.shiftStatus === 'RUNNING' ? 'ACTIVE' : 'QUEUED');
       clearInterval(agentHudGuard);
       agentHudGuard = setInterval(syncAgentHud, 250);
@@ -5307,7 +5314,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   function getAgentShiftDuration() {
     const configured = getTournamentConfig().duration;
     const override = Number(new URLSearchParams(window.location.search).get('agentShiftSeconds'));
-    return window.CrazyTukGame?.CONFIG?.DEV_MODE && Number.isFinite(override) && override >= 30 && override <= configured ? override : configured;
+    return window.CrazyTukDemoMode?.() && Number.isFinite(override) && override >= 30 && override <= configured ? override : configured;
   }
   function loadAgentRun() {
     try { return JSON.parse(localStorage.getItem(AGENT_RUN_KEY) || 'null'); } catch { return null; }
@@ -5751,6 +5758,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     $("agentDashboardStrategy").hidden = true;
     $("agentDashboardCareer").hidden = true;
     $("driverDashboardStats").hidden = false;
+    returnToStartScreen();
   });
   updateMockAgentUI();
 })();
