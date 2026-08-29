@@ -2320,6 +2320,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
       function closeFareSheet(preserveSelection = false) {
         document.getElementById('fareSheet')?.setAttribute('hidden', '');
+        document.querySelector('.map-container')?.classList.remove('route-focused');
+        document.querySelectorAll('.fare-marker.selected').forEach((marker) => marker.classList.remove('selected'));
         const player = getPlayer();
         if (player) updateHUD(player);
         if (!preserveSelection && player?.status === PLAYER_STATES.AVAILABLE && player.selectedFareId) {
@@ -5517,6 +5519,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   };
   titleSettingsEl.addEventListener("click", () => {
     openPanel(settingsPanelEl);
+    settingsTitleTaps += 1;
+    clearTimeout(settingsTitleTapTimer);
+    settingsTitleTapTimer = setTimeout(() => { settingsTitleTaps = 0; }, 3000);
+    if (settingsTitleTaps >= 7) {
+      settingsTitleTaps = 0;
+      localStorage.setItem('crazytuk_developer_unlocked', 'true');
+      syncDeveloperPanel();
+      window.CrazyTukGame?.showNotification?.('Developer tools unlocked.', 'info');
+    }
+  });
+  $("settingsTitle")?.addEventListener("click", () => {
     settingsTitleTaps += 1;
     clearTimeout(settingsTitleTapTimer);
     settingsTitleTapTimer = setTimeout(() => { settingsTitleTaps = 0; }, 3000);
