@@ -3032,6 +3032,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           console.log('Wallet modal shown');
         }
       }
+      window.CrazyTukWalletConnect = handleWalletClick;
 
       function handleWalletConnect(event) {
         console.log('Wallet connected:', event.detail);
@@ -5641,7 +5642,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       document.querySelectorAll('.garage-driver-card').forEach((candidate) => candidate.classList.remove('selected'));
       card.classList.add('selected');
       $('garageConfig').hidden = false;
-      $('garageWalletState').textContent = 'READY TO CREATE';
+      const live = !window.CrazyTukDemoMode?.();
+      $('garageWalletState').textContent = live ? 'WALLET REQUIRED' : 'READY TO CREATE';
+      $('garageCreateDriver').textContent = live ? 'CONNECT WALLET' : 'CREATE DRIVER';
+      const existing = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+      localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({
+        ...(existing || {}), driver: card.dataset.driver, strategy: existing?.strategy || 'AGGRESSIVE',
+        funded: live ? false : Boolean(existing?.funded), createdAt: existing?.createdAt || Date.now()
+      }));
     });
   });
   document.querySelectorAll('[data-strategy]').forEach((button) => {
@@ -5662,7 +5670,17 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       selectedCard.classList.add('selected');
       $('garageConfig').hidden = false;
     }
-    if (state.funded) {
+    const live = !window.CrazyTukDemoMode?.();
+    const walletConnected = window.WalletModule?.isWalletConnected?.() || false;
+    if (live && !walletConnected) {
+      walletState.textContent = 'WALLET REQUIRED';
+      button.textContent = 'CONNECT WALLET';
+      button.disabled = false;
+    } else if (live && !state.funded) {
+      walletState.textContent = 'WALLET CONNECTED';
+      button.textContent = 'FUND AGENT';
+      button.disabled = false;
+    } else if (state.funded) {
       walletState.textContent = 'MOCK DRIVER FUNDED';
       button.textContent = 'DRIVER READY';
       button.disabled = false;
@@ -5674,6 +5692,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   }
   $('garageCreateDriver').addEventListener('click', () => {
     const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
+    if (!window.CrazyTukDemoMode?.() && !window.WalletModule?.isWalletConnected?.()) {
+      window.CrazyTukWalletConnect?.();
+      setTimeout(updateMockAgentUI, 500);
+      return;
+    }
     if (!state) {
       localStorage.setItem(MOCK_AGENT_KEY, JSON.stringify({ driver: document.querySelector('.garage-driver-card.selected')?.dataset.driver || 'degen-dao', strategy: 'AGGRESSIVE', funded: false, createdAt: Date.now() }));
       updateMockAgentUI();
