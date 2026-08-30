@@ -1894,7 +1894,7 @@ export function createFare(playerWallet, npcId) {
   // Random point value
   const pointValues = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100];
   const pointValue = pointValues[Math.floor(Math.random() * pointValues.length)];
-  const minimumUsdValues = [1, 1, 3, 5, 10, 15, 20, 25];
+  const minimumUsdValues = [1, 1, 2, 3, 5, 10, 15, 20, 25];
   const minimumUsd = minimumUsdValues[Math.floor(Math.random() * minimumUsdValues.length)];
   const roadTrafficLevel = pointValue >= 70 ? 'RED' : pointValue >= 35 ? 'YELLOW' : 'GREEN';
   const marketTrafficLevel = minimumUsd >= 25 || condition === 'VOLATILE_TO_STABLE' ? 'RED' : minimumUsd >= 10 ? 'YELLOW' : 'GREEN';
@@ -1913,7 +1913,7 @@ export function createFare(playerWallet, npcId) {
     pickupLocationId,
     destinationLocationId,
     condition: condition,
-    minimumUsd: condition === "ANY_SWAP" ? 1 : minimumUsd,
+    minimumUsd: condition === "ANY_SWAP" ? 0 : minimumUsd,
     pointValue: pointValue,
     roadTrafficLevel,
     marketTrafficLevel,

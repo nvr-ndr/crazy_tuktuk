@@ -93,7 +93,7 @@ export function generateInitialFares(playerWallet) {
   }
 
   if (fares[0]) {
-    fares[0] = { ...fares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
+    fares[0] = { ...fares[0], condition: 'ANY_SWAP', minimumUsd: 0 };
   }
 
   return saveFares(applyCachedRouteTestFares(rebalanceFareEconomy(fares)));
@@ -122,8 +122,8 @@ export function refreshFares(playerWallet) {
     }
   }
 
-  if (!remainingFares.some((fare) => fare.condition === 'ANY_SWAP' && fare.minimumUsd <= 5) && remainingFares[0]) {
-    remainingFares[0] = { ...remainingFares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
+  if (!remainingFares.some((fare) => fare.condition === 'ANY_SWAP' && fare.minimumUsd <= 0) && remainingFares[0]) {
+    remainingFares[0] = { ...remainingFares[0], condition: 'ANY_SWAP', minimumUsd: 0 };
   }
 
   return saveFares(applyCachedRouteTestFares(rebalanceFareEconomy(remainingFares)));
