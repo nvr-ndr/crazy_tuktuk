@@ -161,7 +161,7 @@ function getLocationDistanceKm(fromId, toId) {
 
 function getFarePickupZone(fare) {
   const location = getLocationById(fare?.pickupLocationId);
-  return location?.zoneId || `location:${fare?.pickupLocationId || 'unknown'}`;
+  return location?.properties?.zoneId || `location:${fare?.pickupLocationId || 'unknown'}`;
 }
 
 function keepOneFarePerPickupZone(fares) {

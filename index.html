@@ -4024,8 +4024,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const groups = new Map();
     fares.forEach((fare) => {
       const location = game.getLocationById?.(fare.pickupLocationId);
-      const key = location?.zoneId || fare.pickupLocationId || 'city';
-      const group = groups.get(key) || { count: 0, surge: 1, label: location?.zoneLabel || location?.name || 'CITYWIDE' };
+      const key = location?.properties?.zoneId || fare.pickupLocationId || 'city';
+      const group = groups.get(key) || { count: 0, surge: 1, label: location?.properties?.zoneLabel || location?.properties?.name || 'CITYWIDE' };
       group.count += 1;
       group.surge = Math.max(group.surge, Number(fare.surgeMultiplier) || 1);
       groups.set(key, group);
