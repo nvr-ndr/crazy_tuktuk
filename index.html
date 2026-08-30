@@ -5656,7 +5656,16 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   });
   if (developerPanelEl) developerPanelEl.hidden = true;
   syncDeveloperPanel();
-  titleTournamentEl.addEventListener("click", () => openPanel(tournamentPanelEl, renderTournamentLobby));
+  function resetDemoAgentFlow() {
+    if (!window.CrazyTukDemoMode?.()) return;
+    localStorage.removeItem(MOCK_AGENT_KEY);
+    localStorage.removeItem(AGENT_RUN_KEY);
+    localStorage.removeItem('crazytuk_agent_result_v1');
+  }
+  titleTournamentEl.addEventListener("click", () => {
+    resetDemoAgentFlow();
+    openPanel(tournamentPanelEl, renderTournamentLobby);
+  });
   $("leaderboardBack").addEventListener("click", () => closePanel(leaderboardPanelEl));
   $("leaderboardDriveTab").addEventListener("click", () => setLeaderboardMode('drive'));
   $("leaderboardTournamentTab").addEventListener("click", () => setLeaderboardMode('tournament'));
@@ -5664,6 +5673,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   $("settingsBack").addEventListener("click", () => closePanel(settingsPanelEl));
   $("tournamentBack").addEventListener("click", () => closePanel(tournamentPanelEl));
   $("tournamentGarage").addEventListener("click", () => {
+    resetDemoAgentFlow();
     const state = JSON.parse(localStorage.getItem(MOCK_AGENT_KEY) || 'null');
     if (state?.shiftStatus === 'RUNNING') {
       enterAgentDriveMode();
