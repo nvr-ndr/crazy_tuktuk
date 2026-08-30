@@ -4459,6 +4459,22 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       (routeBounds, coordinate) => routeBounds.extend(coordinate),
       new maplibregl.LngLatBounds(route.coordinates[0], route.coordinates[0])
     );
+    // Avoid a camera move (and the resulting raster-tile refresh) when the
+    // selected route is already comfortably visible. Only refit when the
+    // route extends materially beyond the current viewport.
+    const visibleBounds = map.getBounds();
+    const visibleSw = visibleBounds.getSouthWest();
+    const visibleNe = visibleBounds.getNorthEast();
+    const lngMargin = Math.max(0.01, (visibleNe.lng - visibleSw.lng) * 0.12);
+    const latMargin = Math.max(0.01, (visibleNe.lat - visibleSw.lat) * 0.12);
+    const comfortablyVisible = route.coordinates.every(([lng, lat]) => (
+      lng >= visibleSw.lng + lngMargin && lng <= visibleNe.lng - lngMargin
+      && lat >= visibleSw.lat + latMargin && lat <= visibleNe.lat - latMargin
+    ));
+    if (comfortablyVisible) {
+      lastFittedRouteSignature = signature;
+      return;
+    }
     const mapHeight = map.getContainer().clientHeight || window.innerHeight;
     map.fitBounds(bounds, {
       padding: {
@@ -4468,7 +4484,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         right: 54
       },
       maxZoom: 14.5,
-      duration: 650,
+      duration: 0,
       essential: true
     });
     lastFittedRouteSignature = signature;
