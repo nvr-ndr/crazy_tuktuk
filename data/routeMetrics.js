@@ -80,7 +80,7 @@ export function getCombinedRouteMetrics(legs) {
   };
 }
 
-export function calculateFareEconomy({ currentLocationId, pickupLocationId, destinationLocationId, variant = 'primary' }) {
+export function calculateFareEconomy({ currentLocationId, pickupLocationId, destinationLocationId, variant = 'primary', condition = 'ANY_SWAP', minimumUsd = 1 }) {
   const pickup = getRouteMetrics(currentLocationId, pickupLocationId);
   const ride = getRouteMetrics(pickupLocationId, destinationLocationId, variant);
   if (!pickup || !ride) return null;
@@ -88,10 +88,12 @@ export function calculateFareEconomy({ currentLocationId, pickupLocationId, dest
   const totalFuel = pickup.fuelCost + ride.fuelCost;
   const totalDistanceKm = pickup.distanceKm + ride.distanceKm;
   const totalDurationSeconds = pickup.durationSeconds + ride.durationSeconds;
-  const longTripBonus = Math.floor(totalDistanceKm / 4) * 5;
-  const fuelPressureBonus = Math.max(0, totalFuel - 3) * 4;
+  const distanceBonus = totalDistanceKm * 3.5;
+  const fuelPressureBonus = Math.max(0, totalFuel - 2) * 3;
+  const swapDifficultyBonus = Math.min(28, Math.max(0, Number(minimumUsd) - 1) * 1.4)
+    + ({ ANY_SWAP: 0, MIN_USD: 4, SOL_PAIR: 6, STABLE_TO_STABLE: 3, STABLE_TO_VOLATILE: 7, VOLATILE_TO_STABLE: 9 }[condition] || 0);
   const alternativeBonus = ride.hasAlternative ? 5 : 0;
-  const pointValue = Math.min(120, Math.max(15, Math.round((20 + longTripBonus + fuelPressureBonus + alternativeBonus) / 5) * 5));
+  const pointValue = Math.min(120, Math.max(15, Math.round((10 + distanceBonus + fuelPressureBonus + swapDifficultyBonus + alternativeBonus) / 5) * 5));
 
   return {
     pickup,

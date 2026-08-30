@@ -96,7 +96,7 @@ export function generateInitialFares(playerWallet) {
     fares[0] = { ...fares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
   }
 
-  return saveFares(applyCachedRouteTestFares(fares));
+  return saveFares(applyCachedRouteTestFares(rebalanceFareEconomy(fares)));
 }
 
 export function refreshFares(playerWallet) {
@@ -126,7 +126,16 @@ export function refreshFares(playerWallet) {
     remainingFares[0] = { ...remainingFares[0], condition: 'ANY_SWAP', minimumUsd: 1 };
   }
 
-  return saveFares(applyCachedRouteTestFares(remainingFares));
+  return saveFares(applyCachedRouteTestFares(rebalanceFareEconomy(remainingFares)));
+}
+
+function rebalanceFareEconomy(fares) {
+  const currentLocationId = getPlayer()?.locationId || 'old_khao_san';
+  return fares.map((fare) => {
+    const economy = calculateFareEconomy({ currentLocationId, pickupLocationId: fare.pickupLocationId, destinationLocationId: fare.destinationLocationId, condition: fare.condition, minimumUsd: fare.minimumUsd });
+    if (!economy) return fare;
+    return { ...fare, pointValue: economy.pointValue, roadTrafficLevel: economy.roadTrafficLevel, routeQuality: economy.routeQuality, routeMetrics: { ...(fare.routeMetrics || {}), totalFuel: economy.totalFuel, distanceMeters: economy.pickup.distanceMeters + economy.ride.distanceMeters, durationSeconds: economy.totalDurationSeconds } };
+  });
 }
 
 export function getPlayerFare(playerWallet, fareId) {
@@ -239,6 +248,8 @@ export function updateFareRouteEconomy(fareId, currentLocationId, variant = 'pri
     pickupLocationId: fare.pickupLocationId,
     destinationLocationId: fare.destinationLocationId,
     variant,
+    condition: fare.condition,
+    minimumUsd: fare.minimumUsd,
   });
   if (!economy) return updateFare(fareId, { selectedRouteVariant: variant });
 
