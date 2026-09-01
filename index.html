@@ -785,6 +785,13 @@
       font-weight: 500;
       color: var(--text);
     }
+    #dflowBonusSettings { align-items: flex-start; gap: 16px; }
+    #dflowBonusSettings > span:first-child { display: grid; gap: 3px; min-width: 0; }
+    #dflowBonusSettings > span:first-child b { color: #f6d46b; }
+    #dflowBonusSettings small { display: block; color: rgba(255,255,255,.72); font-size: 11px; line-height: 1.2; }
+    .vehicle-style-options { display: grid; flex: 0 0 min(190px, 48%); gap: 7px; }
+    .vehicle-style-options label { display: flex; align-items: center; gap: 7px; min-height: 30px; padding: 6px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 9px; color: #fff5cf; font-size: 11px; line-height: 1.1; white-space: nowrap; }
+    .vehicle-style-options input { margin: 0; accent-color: #f6d46b; }
     .toggle-switch {
       position: relative;
       display: inline-block;
@@ -3195,7 +3202,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         syncProductionTestBanner();
         document.getElementById('settingsSave')?.addEventListener('click', () => {
           if (nameInput) {
-            updatePlayer((player) => ({ ...player, name: nameInput.value.trim().slice(0, 32) }));
+        savePlayer({ ...getPlayer(), name: nameInput.value.trim().slice(0, 32) });
             updateDashboardHero(getPlayer());
           }
           showNotification('Settings saved on this device.', 'success');
@@ -3215,7 +3222,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             return;
           }
           const value = dashboardNameInput.value.trim().slice(0, 32);
-          updatePlayer((player) => ({ ...player, name: value }));
+          savePlayer({ ...getPlayer(), name: value });
           if (nameInput) nameInput.value = value;
           dashboardName.textContent = value || 'Anon';
           dashboardName.hidden = false;
@@ -3237,6 +3244,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (!wallet || !dflowBonusEligible) return 'classic';
         return localStorage.getItem(`${VEHICLE_STYLE_KEY}${wallet}`) === 'dflow_bonus' ? 'dflow_bonus' : 'classic';
       }
+      window.CrazyTukVehicleStyle = getVehicleStyle;
       function refreshPlayerVehicleMarker() {
         const icon = document.querySelector('.player-marker-icon');
         if (icon) icon.textContent = getVehicleStyle() === 'dflow_bonus' ? '🚕' : '🛺';
@@ -4639,7 +4647,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const element = document.createElement('div');
     element.className = 'player-marker';
     element.innerHTML = '<span class="mood-emitter" hidden aria-hidden="true"></span><span class="npc-thought" hidden></span><span class="player-marker-icon">🛺</span>';
-    element.querySelector('.player-marker-icon').textContent = getVehicleStyle() === 'dflow_bonus' ? '🚕' : '🛺';
+    element.querySelector('.player-marker-icon').textContent = window.CrazyTukVehicleStyle?.() === 'dflow_bonus' ? '🚕' : '🛺';
 
     playerMarker = new maplibregl.Marker({
       element,
