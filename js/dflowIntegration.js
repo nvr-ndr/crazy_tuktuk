@@ -10,10 +10,42 @@ import {
   validateSwapParams,
   testDFlowConnection
 } from './dflow.js?v=20260823o';
-import { signTransaction } from './wallet.js?v=20260823e';
+import { signTransaction } from './wallet.js?v=20260830wallet1';
 import { interpretConfirmedSwap } from './interpretSwap.js';
 import { calculateFuelEarned } from './fuel.js';
 const DFLOW_ENABLED = true; // Set to false to force simulated mode
+const SOLANA_RPC_URLS = [
+  'https://solana-rpc.publicnode.com',
+  'https://api.mainnet-beta.solana.com',
+  'https://api.mainnet.solana.com'
+];
+
+export async function waitForConfirmedTransaction(connections, signature, timeoutMs = 30000) {
+  let lastError = null;
+  let lastStatus = null;
+  const deadline = Date.now() + timeoutMs;
+  for (const connection of connections) {
+    try {
+      while (Date.now() < deadline) {
+        const response = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true });
+        const status = response.value?.[0];
+        lastStatus = status;
+        if (status?.err) return { value: status };
+        if (status?.confirmationStatus === 'confirmed' || status?.confirmationStatus === 'finalized') {
+          return { value: status };
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+      lastError = new Error(lastStatus ? 'Transaction is still awaiting Solana confirmation.' : 'Transaction was not found in Solana confirmation status.');
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  // A submitted transaction that is not visible yet is not a failed
+  // transaction. Return a confirming state so the UI can show Solscan and
+  // avoid asking the user to sign the same swap again.
+  return { value: lastStatus, pending: true, error: lastError?.message || 'Still waiting for Solana confirmation.' };
+}
 
 /**
  * Authoritative swap-to-game-event bridge with real DFlow support
@@ -106,12 +138,13 @@ async function processWithDFlowAPI(swap) {
     const signature = typeof walletResult === 'string' ? walletResult : walletResult?.signature;
     if (!signature) throw new Error('Wallet did not return a transaction signature.');
 
-    const connection = new window.solanaWeb3.Connection(
-      'https://api.mainnet-beta.solana.com',
-      'confirmed'
-    );
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-    const confirmed = !confirmation.value?.err;
+    const connections = SOLANA_RPC_URLS.map((endpoint) => new window.solanaWeb3.Connection(endpoint, 'confirmed'));
+    // Wallet adapters return a submitted signature. Poll status directly so
+    // confirmation does not depend on a blockhash that the adapter may have
+    // refreshed while signing.
+    const confirmation = await waitForConfirmedTransaction(connections, signature);
+    const pending = confirmation.pending === true;
+    const confirmed = !pending && !confirmation.value?.err;
 
     // Calculate fuel awarded (same as fake swap logic)
     const fuelAwarded = calculateFuelFromUsd(swap.usdValue);
@@ -127,9 +160,9 @@ async function processWithDFlowAPI(swap) {
     const state = swap.fareContext || 'AVAILABLE';
 
     const result = {
-      state: confirmed ? 'SUCCESS' : 'ERROR',
+      state: confirmed ? 'SUCCESS' : pending ? 'CONFIRMING' : 'ERROR',
       confirmed,
-      error: confirmed ? null : 'DFlow returned without confirmed Solana status.',
+      error: confirmed ? null : pending ? confirmation.error : 'DFlow returned a failed Solana status.',
       fuelAwarded: fuelAwarded,
       fareAssigned: fareAssigned,
       fareContext: state,
@@ -143,8 +176,9 @@ async function processWithDFlowAPI(swap) {
         outputMint: swap.outputMint,
         inputAmount: swap.inputAmount,
         usdValue: swap.usdValue,
+        testMode: swap.testMode === true,
         fuelAwarded,
-        state: confirmed ? 'CONFIRMED' : 'UNCONFIRMED',
+        state: confirmed ? 'CONFIRMED' : pending ? 'CONFIRMING' : 'FAILED',
         timestamp: Date.now()
       },
       swappedWith: 'DFLOW_API'

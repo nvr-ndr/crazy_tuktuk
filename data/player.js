@@ -324,6 +324,5 @@ export function getPlayerDisplayName() {
   const player = getPlayer();
   if (!player) return 'Anon';
   if (player.name?.trim()) return player.name.trim();
-  if (player.wallet) return `Anon ${player.wallet.slice(0, 4)}${player.wallet.slice(-4)}`;
-  return player.anonymousId || 'Anon';
+  return 'Anon';
 }

@@ -12,7 +12,8 @@ const handlers = {
   '/api/cron/agent-wake': require('./_handlers/agent-wake'),
   '/api/dflow/order': require('./_handlers/order'),
   '/api/dflow/eligibility': require('./_handlers/dflowEligibility'),
-  '/api/leaderboard': require('./_handlers/leaderboard')
+  '/api/leaderboard': require('./_handlers/leaderboard'),
+  '/api/standard': require('./_handlers/standard')
 };
 
 module.exports = async function handler(request, response) {

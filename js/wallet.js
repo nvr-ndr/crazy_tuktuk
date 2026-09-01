@@ -233,9 +233,19 @@ async function initWalletConnect() {
 /**
  * Disconnect wallet
  */
-export function disconnectWallet() {
+export async function disconnectWallet() {
   try {
     console.log('Disconnecting wallet...');
+
+    const walletState = getWalletState();
+    const provider = walletState.adapter === 'phantom'
+      ? (WalletAdapters.phantom || getPhantomProvider())
+      : walletState.adapter === 'solflare'
+        ? (WalletAdapters.solflare || getSolflareProvider())
+        : null;
+    if (provider?.disconnect) {
+      await provider.disconnect();
+    }
 
     // Reset wallet state
     removeWalletState();

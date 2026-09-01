@@ -13,9 +13,11 @@ const sessionLifetimeMinutes = 30;
 const dailyGasAllocation = Number(process.env.DAILY_AGENT_GAS_ALLOCATION || 100);
 
 function dailyShiftWindow(now = new Date()) {
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const shifted = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const key = shifted.toISOString().slice(0, 10);
+  const start = new Date(`${key}T00:00:00+07:00`);
   const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { key: start.toISOString().slice(0, 10), start, end };
+  return { key, start, end };
 }
 
 async function ensureDailyShift(now = new Date()) {
@@ -23,7 +25,9 @@ async function ensureDailyShift(now = new Date()) {
   const result = await queryDatabase(
     `INSERT INTO daily_shifts (id, shift_key, status, starts_at, ends_at)
      VALUES ($1, $2, CASE WHEN now() >= $3 THEN 'ACTIVE' ELSE 'QUEUED' END, $3, $4)
-     ON CONFLICT (shift_key) DO UPDATE SET status = CASE
+     ON CONFLICT (shift_key) DO UPDATE SET starts_at = CASE WHEN daily_shifts.status IN ('FINALIZING','COMPLETE') THEN daily_shifts.starts_at ELSE EXCLUDED.starts_at END,
+       ends_at = CASE WHEN daily_shifts.status IN ('FINALIZING','COMPLETE') THEN daily_shifts.ends_at ELSE EXCLUDED.ends_at END,
+       status = CASE
        WHEN daily_shifts.status IN ('FINALIZING','COMPLETE') THEN daily_shifts.status
        WHEN now() >= daily_shifts.ends_at THEN 'FINALIZING'
        WHEN now() >= daily_shifts.starts_at THEN 'ACTIVE'

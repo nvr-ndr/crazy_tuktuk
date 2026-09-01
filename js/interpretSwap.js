@@ -49,6 +49,7 @@ export function normalizeSwapEvent(swapEvent) {
     inputAmount: swapEvent.inputAmount,
     outputAmount: swapEvent.outputAmount,
     usdValue: swapEvent.usdValue,
+    testMode: swapEvent.testMode === true,
     confirmedAt: swapEvent.confirmedAt
   };
 }
@@ -101,7 +102,8 @@ export function interpretConfirmedSwap(swapEvent) {
     outputToken: swapEvent.outputMint,
     inputCategory: GAME_CONFIG.STABLE_TOKENS.includes(swapEvent.inputMint) ? 'stable' : 'volatile',
     outputCategory: GAME_CONFIG.STABLE_TOKENS.includes(swapEvent.outputMint) ? 'stable' : 'volatile',
-    usdValue: swapEvent.usdValue
+    usdValue: swapEvent.usdValue,
+    testMode: normalizedSwap.testMode
   });
 
   let fareAssigned = null;

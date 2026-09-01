@@ -8,7 +8,7 @@ import { ROUTES, getRoute, getRoutesFromLocation } from '../data/routes.js';
 import { getRouteVariantSummary } from '../data/routeCacheSubset.js';
 import { calculateFareEconomy, getRouteMetrics } from '../data/routeMetrics.js';
 import { PLAYER_STATES } from '../data/config.js';
-import { scheduleEventsForRide, getStartingPassengerMood, getPassengerMoodLabel } from './events.js';
+import { scheduleEventsForRide, getStartingPassengerMood, getPassengerMoodLabel, getPassengerRating } from './events.js';
 import { PLAYER_KEY, getPlayer, loadOrCreatePlayer, updatePlayer, hasEnoughFuel, loadLeaderboard, saveLeaderboard } from '../data/player.js?v=20260824world2';
 
 const FARES_KEY = "crazytuk_faresV5";
@@ -564,7 +564,10 @@ export function simulatePickupProgress(fareId, playerWallet) {
 
 // Complete fare
 export function completeFare(fareId, playerWallet) {
-  return updatePlayer(player => {
+  const completedFare = getPlayerFare(playerWallet, fareId);
+  let completionEventHistory = [];
+  let completionMood = 50;
+  const updated = updatePlayer(player => {
     const fare = getPlayerFare(playerWallet, fareId);
     if (!fare) return null;
 
@@ -572,6 +575,8 @@ export function completeFare(fareId, playerWallet) {
 
     const trip = player.activeTrip;
     if (!trip) return null;
+    completionEventHistory = trip.eventHistory || [];
+    completionMood = Number(trip.passengerMood ?? 50);
     updateFare(fareId, { eventHistory: trip.eventHistory || [], passengerMood: trip.passengerMood, passengerMoodLabel: trip.passengerMoodLabel });
     localStorage.setItem('crazytuk_last_event_history', JSON.stringify(trip.eventHistory || []));
     localStorage.setItem('crazytuk_last_passenger_mood', JSON.stringify({ value: trip.passengerMood, label: trip.passengerMoodLabel }));
@@ -580,18 +585,20 @@ export function completeFare(fareId, playerWallet) {
     player.points += fare.pointValue;
     player.completedFares += 1;
 
-    const leaderboard = loadLeaderboard();
-    const playerName = player.wallet
-      ? `${player.wallet.slice(0, 4)}...${player.wallet.slice(-4)}`
-      : (player.name || 'Guest Driver');
-    const existingEntry = leaderboard.find(entry => entry.wallet === player.wallet || entry.name === playerName);
-    if (existingEntry) {
-      existingEntry.points = Math.max(existingEntry.points || 0, player.points);
-      existingEntry.name = playerName;
-    } else {
-      leaderboard.push({ name: playerName, wallet: player.wallet, points: player.points });
+    if (localStorage.getItem('crazytuk_production_test_mode') !== 'true') {
+      const leaderboard = loadLeaderboard();
+      const playerName = player.wallet
+        ? `${player.wallet.slice(0, 4)}...${player.wallet.slice(-4)}`
+        : (player.name || 'Guest Driver');
+      const existingEntry = leaderboard.find(entry => entry.wallet === player.wallet || entry.name === playerName);
+      if (existingEntry) {
+        existingEntry.points = Math.max(existingEntry.points || 0, player.points);
+        existingEntry.name = playerName;
+      } else {
+        leaderboard.push({ name: playerName, wallet: player.wallet, points: player.points });
+      }
+      saveLeaderboard(leaderboard.sort((a, b) => b.points - a.points).slice(0, 100));
     }
-    saveLeaderboard(leaderboard.sort((a, b) => b.points - a.points).slice(0, 100));
 
     player.activeFareId = null;
     player.activeTrip = null;
@@ -613,6 +620,22 @@ export function completeFare(fareId, playerWallet) {
 
     return player;
   });
+  if (updated && typeof window !== 'undefined') {
+    void window.CrazyTukStandard?.recordGameResult?.({
+      fareId,
+      wallet: updated.wallet || playerWallet,
+      finalStars: getPassengerRating(completedFare?.passengerMood ?? completionMood),
+      fareSnapshot: {
+        distanceKm: Number(completedFare?.routeMetrics?.distanceMeters || 0) / 1000,
+        totalFuel: Number(completedFare?.routeMetrics?.totalFuel || completedFare?.totalFuel || 0),
+        condition: completedFare?.condition || 'ANY_SWAP',
+        eventId: completionEventHistory.at(-1)?.eventId || null,
+        eventOutcomeId: completionEventHistory.at(-1)?.outcomeId || null,
+      },
+      fareCompleted: true,
+    });
+  }
+  return updated;
 }
 
 // Get fare route for animation

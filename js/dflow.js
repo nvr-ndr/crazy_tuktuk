@@ -34,6 +34,7 @@ export async function getSwapQuote(params) {
       slippageBps: String(Math.round((params.slippageTolerance || 0.5) * 100))
     });
     if (params.wallet) query.set('userPublicKey', params.wallet);
+    if (params.testMode) query.set('testMode', 'true');
 
     const response = await fetch(`${DFLOW_API_URL}/order?${query}`);
 

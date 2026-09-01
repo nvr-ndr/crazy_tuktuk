@@ -11,6 +11,13 @@ export function matchesFareCondition(swap, fare) {
 
   const reasons = [];
 
+  // Production Test Mode intentionally uses a small SOL→USDC amount that may
+  // be below normal fare thresholds. The selected fare is still the test
+  // target, so treat the capped test swap as a valid fare condition.
+  if (swap.testMode === true && ((swap.inputToken === 'SOL' && swap.outputToken === 'USDC') || (swap.inputToken === 'USDC' && swap.outputToken === 'SOL')) && (swap.inputToken !== 'USDC' || Number(swap.usdValue) >= 0.25)) {
+    return { qualifies: true, reasons: ['PRODUCTION_TEST_MODE'] };
+  }
+
   // Check USD value minimum
   if (swap.usdValue < CONFIG.MIN_GAME_SWAP_USD) {
     reasons.push('MIN_USD_VALUE');

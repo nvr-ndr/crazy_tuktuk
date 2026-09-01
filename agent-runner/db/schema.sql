@@ -263,3 +263,43 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS agent_sessions_active_token_idx ON agent_sessions (token_hash, expires_at) WHERE revoked_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS standard_players (
+  wallet_address TEXT PRIMARY KEY,
+  display_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE standard_players ADD COLUMN IF NOT EXISTS display_name TEXT;
+CREATE TABLE IF NOT EXISTS standard_transactions (
+  id UUID PRIMARY KEY, player_wallet TEXT NOT NULL REFERENCES standard_players(wallet_address),
+  mode TEXT NOT NULL DEFAULT 'STANDARD' CHECK (mode='STANDARD'), environment TEXT NOT NULL CHECK (environment IN ('NORMAL','PRODUCTION_TEST')),
+  input_mint TEXT NOT NULL, output_mint TEXT NOT NULL, input_amount_raw NUMERIC(30,0) NOT NULL, output_amount_raw NUMERIC(30,0),
+  transaction_signature TEXT NOT NULL UNIQUE, platform_fee_bps SMALLINT NOT NULL CHECK (platform_fee_bps BETWEEN 0 AND 10000),
+  platform_fee_mode TEXT NOT NULL CHECK (platform_fee_mode IN ('inputMint','outputMint')), platform_fee_account TEXT,
+  status TEXT NOT NULL CHECK (status IN ('SUBMITTED','CONFIRMED','FAILED')), created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(), confirmed_at TIMESTAMPTZ, backfilled BOOLEAN NOT NULL DEFAULT false
+);
+CREATE TABLE IF NOT EXISTS standard_game_results (
+  id UUID PRIMARY KEY, player_wallet TEXT NOT NULL REFERENCES standard_players(wallet_address), fare_session_id TEXT NOT NULL,
+  competition_period DATE NOT NULL, environment TEXT NOT NULL CHECK (environment IN ('NORMAL','PRODUCTION_TEST')), score_delta INTEGER NOT NULL,
+  resulting_period_score INTEGER NOT NULL, fare_completed BOOLEAN NOT NULL, transaction_signature TEXT REFERENCES standard_transactions(transaction_signature),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(), UNIQUE (player_wallet, fare_session_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS standard_game_results_transaction_idx ON standard_game_results (transaction_signature) WHERE transaction_signature IS NOT NULL;
+ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS final_stars SMALLINT;
+ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS event_id TEXT;
+ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS event_outcome_id TEXT;
+ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS score_version TEXT;
+ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS fare_snapshot JSONB;
+CREATE TABLE IF NOT EXISTS standard_daily_reward_awards (
+  id UUID PRIMARY KEY, competition_period DATE NOT NULL, environment TEXT NOT NULL CHECK (environment IN ('NORMAL','PRODUCTION_TEST')),
+  player_wallet TEXT NOT NULL REFERENCES standard_players(wallet_address), rank INTEGER NOT NULL CHECK (rank BETWEEN 1 AND 3),
+  pool_amount_atomic NUMERIC(30,0) NOT NULL CHECK (pool_amount_atomic > 0), award_amount_atomic NUMERIC(30,0) NOT NULL CHECK (award_amount_atomic > 0),
+  source TEXT NOT NULL DEFAULT 'STANDARD_LEADERBOARD', status TEXT NOT NULL DEFAULT 'ACCRUED' CHECK (status IN ('ACCRUED','RESERVED','PAID')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(), paid_at TIMESTAMPTZ,
+  UNIQUE (competition_period, environment, player_wallet, rank)
+);
+CREATE INDEX IF NOT EXISTS standard_results_period_idx ON standard_game_results (competition_period, environment, player_wallet);
+CREATE INDEX IF NOT EXISTS standard_transactions_wallet_idx ON standard_transactions (player_wallet, created_at DESC);
+CREATE INDEX IF NOT EXISTS standard_awards_unpaid_idx ON standard_daily_reward_awards (status, player_wallet);
