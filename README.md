@@ -14,12 +14,14 @@ Players explore Bangkok, compare fares, execute DFlow-powered swaps, pick up pas
 
 ### Agentic Mode
 
-Players fund an agent wallet and let an autonomous driver evaluate fares, routes, zone conditions, and events. Scheduled wakes allow the agent to continue operating when the browser is closed. Limited **Pit Calls** let players guide the agent’s strategy without taking over every decision.
+**Preview:** Players can explore persistent agent state, autonomous fare/route/event decisions, scheduled wakes, and limited **Pit Calls**. Live DFlow Agent CLI trading is pending DFlow production API access; this mode must not be described as currently executing autonomous onchain trades.
+
+Agentic Mode currently demonstrates the persistence, decision, and wake infrastructure. Autonomous live swaps and funded onchain execution will remain disabled until the required DFlow API access is available and verified.
 
 ## How it works
 
 ```text
-Player or Agent decision
+Player decision (live) / Agent decision (preview)
           ↓
       DFlow swap
           ↓
@@ -31,6 +33,25 @@ Player or Agent decision
 ```
 
 Distance, pickup cost, trip cost, traffic, surge, passenger tolerance, current position, and event risk all influence whether a fare is worth taking.
+
+## Competitive scoring
+
+Standard Mode uses a server-calculated score. The browser cannot submit an arbitrary score delta.
+
+The current formula is intentionally compact and keeps capital independent from competitive points:
+
+```text
+Objective fare value = clamp(round((10 + distance × 3.5 + fuel pressure + condition bonus) / 5) × 5, 15, 120)
+
+Passenger multiplier:
+  1★ = 0.8×   2★ = 0.9×   3★ = 1.0×   4★ = 1.1×   5★ = 1.2×
+
+Final score = objective fare value × passenger multiplier + event contribution
+```
+
+Fuel pressure applies only when a fare uses more than the baseline fuel allowance. Fare minimum-dollar requirements, swap size, and Production Test Mode amounts do not increase the score. Standard does not award an alternative-route bonus; Agentic Mode retains its separate route-selection logic.
+
+Crazy Event outcomes are allowlisted for Standard scoring and contribute at most ±40 points per fare. Passenger satisfaction is converted to a bounded 1–5 star rating, so strong service can improve a score without overwhelming route and fuel performance. Results are recorded idempotently against the completed fare and confirmed transaction.
 
 ## Crazy Events
 
@@ -60,6 +81,8 @@ Agent wakes acquire an execution lease, reconstruct current state from Neon, eva
 - [x] Agentic fare selection and Pit Calls
 - [x] Persistent Agent trips and scheduled wakes
 - [x] Neon-backed Agent APIs
+- [x] Agentic preview infrastructure
+- [ ] Live DFlow Agent CLI production trading (pending DFlow API access)
 - [ ] Additional UI polish
 - [ ] Expanded economy and districts
 - [ ] Competitive leaderboard experience
