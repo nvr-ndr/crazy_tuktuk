@@ -95,6 +95,7 @@
     .title-tools .rules-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; background: #287e68; box-shadow: 0 7px #15503f, 0 12px 22px rgba(0,0,0,.28); }
     .title-tools .settings-button { flex: 0 0 clamp(42px, 11vw, 46px); min-height: clamp(42px, 11vw, 46px); padding-inline: 0; background: #6250a9; box-shadow: 0 7px #352b67, 0 12px 22px rgba(0,0,0,.28); }
     .title-tools .tournament-button { flex: 0 0 auto; min-height: clamp(42px, 11vw, 46px); padding-inline: 13px; background: #d69b2d; box-shadow: 0 7px #80591a, 0 12px 22px rgba(0,0,0,.28); }
+    #productionTestBanner { position: fixed; z-index: 970; bottom: calc(62px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: max-content; max-width: min(78vw, 280px); padding: 4px 8px; border: 1px solid #ff8c42; border-radius: 999px; background: rgba(91,31,9,.9); color: #fff5cf; font-size: .58rem; line-height: 1.1; font-weight: 900; text-align: center; white-space: nowrap; box-shadow: 0 2px 0 rgba(0,0,0,.3); pointer-events: none; }
     .start-connect-button {
       position: absolute;
       z-index: 3;
@@ -505,6 +506,19 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .dashboard-player-name-input {
+      width: min(100%, 190px);
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: white;
+      font: 900 20px/1.1 system-ui, sans-serif;
+    }
+    .dashboard-player-name-input::placeholder { color: rgba(255,255,255,.78); }
+    .dashboard-name-editor { display:flex; align-items:center; gap:7px; min-width:0; }
+    .dashboard-name-editor > span { overflow:hidden; color:white; font-size:20px; font-weight:900; line-height:1.1; text-overflow:ellipsis; white-space:nowrap; }
+    .dashboard-name-edit { border:0; background:transparent; color:#f6d46b; font-size:18px; cursor:pointer; }
     .driver-hero-copy small {
       overflow: hidden;
       color: rgba(255,255,255,.7);
@@ -1184,6 +1198,12 @@
       font: inherit;
       font-weight: 800;
     }
+    .swap-input-tools { display:flex; align-items:center; justify-content:space-between; min-height:16px; margin-top:-3px; }
+    .swap-balance { color:rgba(255,255,255,.55); font-size:9px; font-weight:800; }
+    .swap-percent-buttons { display:flex; gap:4px; opacity:0; transform:translateY(-2px); transition:opacity .18s ease, transform .18s ease; }
+    .swap-row:focus-within + .swap-input-tools .swap-percent-buttons, .swap-input-tools:hover .swap-percent-buttons { opacity:1; transform:none; }
+    .swap-percent-buttons button { padding:2px 5px; border:1px solid rgba(255,255,255,.18); border-radius:7px; background:rgba(255,255,255,.08); color:rgba(255,255,255,.8); font:800 8px/1 system-ui,sans-serif; cursor:pointer; }
+    .swap-percent-buttons button:disabled { cursor:not-allowed; opacity:.35; }
     .swap-impact { display: grid; align-content: center; gap: 8px; margin: 0; padding: 10px; border-radius: 14px; background: rgba(0,0,0,.22); font-size: 11px; }
     .swap-impact div { display: grid; gap: 2px; }
     .swap-impact span { color: rgba(255,255,255,.62); font-size: 8px; font-weight: 800; letter-spacing: .06em; }
@@ -1200,6 +1220,29 @@
       text-align: right;
       text-transform: uppercase;
     }
+    .swap-progress,
+    .swap-success {
+      margin: 12px 0 4px;
+      padding: 16px 14px;
+      border: 1px solid rgba(246,212,107,.32);
+      border-radius: 16px;
+      background: rgba(0,0,0,.2);
+      text-align: center;
+    }
+    .swap-progress[hidden], .swap-success[hidden] { display: none; }
+    .swap-progress-icon, .swap-success-icon { display: block; margin-bottom: 7px; font-size: 26px; }
+    .swap-progress-icon { animation: swap-pulse 1.1s ease-in-out infinite; }
+    @keyframes swap-pulse { 50% { opacity: .42; transform: scale(.88); } }
+    .swap-progress strong, .swap-success strong { display: block; font-size: 15px; letter-spacing: .04em; }
+    .swap-progress p, .swap-success p { margin: 6px 0 0; color: rgba(255,255,255,.74); font-size: 11px; line-height: 1.35; }
+    .swap-success { border-color: rgba(66,232,137,.48); }
+    .swap-success-icon { color: var(--good); }
+    .swap-solscan-link { display: inline-block; margin-top: 10px; color: var(--warn); font-size: 11px; font-weight: 900; }
+    #swapContinue { display: block; width: fit-content; margin: 12px auto 0; }
+    #swapContinue[hidden] { display: none; }
+    .swap-error { margin: 12px 0 4px; padding: 10px 12px; border: 1px solid rgba(255,82,99,.45); border-radius: 13px; background: rgba(92,18,28,.35); color: #ffd9dd; font-size: 10px; line-height: 1.35; }
+    .swap-error[hidden] { display: none; }
+    .swap-error strong { display: block; margin-bottom: 3px; color: #ff9ba5; font-size: 11px; }
     .swap-attribution { margin: 7px 0 0; color: rgba(255,255,255,.72); font-size: 9px; font-weight: 700; text-align: center; text-shadow: 0 2px 5px rgba(0,0,0,.8); }
     .dev-swap-button { display: block; width: fit-content; max-width: 100%; margin: 8px auto 0; padding-inline: 18px; min-height: 38px; background: rgba(255,255,255,.1); box-shadow: none; color: var(--warn); font-size: 11px; }
     .dev-swap-button[hidden] { display: none; }
@@ -1844,8 +1887,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         getAvailableWallets,
         createWalletModal,
         WALLET_STATES
-      } from './js/wallet.js?v=20260823e';
-      import DFlowModule, { processSwap, getSwapHistoryWithFallback, getSwapStatistics, initDFlowIntegration } from './js/dflowIntegration.js?v=20260823q';
+        } from './js/wallet.js?v=20260830wallet1';
+      import DFlowModule, { processSwap, getSwapHistoryWithFallback, getSwapStatistics, initDFlowIntegration } from './js/dflowIntegration.js?v=20260830swapconfirm4';
       import DashboardModule, {
         DashboardStats,
         TransactionHistory,
@@ -1859,6 +1902,46 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
       // Export game data to window for easy access during MVP
       const isDemoMode = () => localStorage.getItem('crazytuk_demo_mode') === 'true';
+      const isProductionTestMode = () => localStorage.getItem('crazytuk_production_test_mode') === 'true';
+      const TEST_SWAP_DEFAULT_SOL = CONFIG.PRODUCTION_TEST_DEFAULT_SOL;
+      const TEST_SWAP_MAX_SOL = CONFIG.PRODUCTION_TEST_MAX_SOL;
+      async function recordStandardTransaction(result, inputMint, outputMint, inputAmountRaw, testMode) {
+        if (isDemoMode() || !result?.signature) return;
+        const wallet = WalletModule.getWalletPublicKey();
+        if (!wallet) return;
+        const fareId = swapContext?.fareId || null;
+        if (fareId) localStorage.setItem(`crazytuk_standard_swap:${fareId}`, result.signature);
+        try {
+          await fetch('/api/standard', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: 'STANDARD', environment: testMode ? 'PRODUCTION_TEST' : 'NORMAL', playerWallet: wallet, displayName: window.CrazyTukGame?.getPlayer?.()?.name || null, transactionSignature: result.signature, inputMint, outputMint, inputAmountRaw: String(inputAmountRaw), outputAmountRaw: result.swap?.outputAmount ?? null, platformFeeBps: 80, platformFeeMode: inputMint === 'USDC' ? 'inputMint' : 'outputMint' }) });
+        } catch (error) { console.warn('[standard] transaction persistence unavailable', error); }
+      }
+      window.CrazyTukStandard = {
+        recordGameResult: async ({ fareId, wallet, finalStars, fareSnapshot, fareCompleted }) => {
+          if (isDemoMode() || !fareId || !wallet) return;
+          const signature = localStorage.getItem(`crazytuk_standard_swap:${fareId}`);
+          if (!signature) return;
+          const testMode = isProductionTestMode();
+          try {
+            await fetch('/api/standard?action=result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'result', environment: testMode ? 'PRODUCTION_TEST' : 'NORMAL', playerWallet: wallet, fareSessionId: fareId, transactionSignature: signature, finalStars, fareSnapshot, fareCompleted }) });
+          } catch (error) { console.warn('[standard] result persistence unavailable', error); }
+        }
+      };
+      function syncProductionTestBanner() {
+        const banner = document.getElementById('productionTestBanner');
+        const game = document.getElementById('game');
+        const dashboard = document.getElementById('dashboard');
+        const scenePanels = ['leaderboardPanel', 'rulesPanel', 'settingsPanel', 'developerPanel', 'tournamentPanel', 'garagePanel']
+          .map((id) => document.getElementById(id))
+          .filter(Boolean);
+        const mapVisible = game && !game.hidden && dashboard?.hidden && scenePanels.every((panel) => panel.hidden);
+        if (banner) banner.hidden = !(isProductionTestMode() && mapVisible);
+      }
+      window.syncCrazyTukProductionTestBanner = syncProductionTestBanner;
+      const productionTestSceneObserver = new MutationObserver(syncProductionTestBanner);
+      ['game', 'dashboard', 'leaderboardPanel', 'rulesPanel', 'settingsPanel', 'developerPanel', 'tournamentPanel', 'garagePanel']
+        .map((id) => document.getElementById(id))
+        .filter(Boolean)
+        .forEach((element) => productionTestSceneObserver.observe(element, { attributes: true, attributeFilter: ['hidden'] }));
       window.CrazyTukDemoMode = isDemoMode;
       // Expose the imported wallet facade to the later classic script that
       // owns Agent Mode controls and authentication.
@@ -2060,8 +2143,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
 
         document.getElementById('swapInputToken')?.addEventListener('change', updateSwapPreview);
+        document.getElementById('swapInputToken')?.addEventListener('change', refreshSwapInputBalance);
         document.getElementById('swapOutputToken')?.addEventListener('change', updateSwapPreview);
         document.getElementById('swapInputAmount')?.addEventListener('input', updateSwapPreview);
+        document.getElementById('swapPercentButtons')?.addEventListener('click', (event) => {
+          const button = event.target.closest('button[data-percent]');
+          if (button) applySwapBalancePercent(Number(button.dataset.percent));
+        });
         document.getElementById('swapSheetBackdrop')?.addEventListener('click', (event) => {
           if (event.target === event.currentTarget) closeSwapSheet();
         });
@@ -2079,6 +2167,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         bindSheetAction('fareSheetClose', closeFareSheet);
         bindSheetAction('fareSheetAction', handleActionClick);
         bindSheetAction('swapSheetClose', closeSwapSheet);
+        bindSheetAction('swapContinue', continueAfterSuccessfulSwap);
         bindSheetAction('swapSubmit', () => isDemoMode() ? runMockFareLoop() : submitDFlowSwap());
         bindSheetAction('mockSwapSubmit', runMockFareLoop);
         bindSheetAction('tripRefuel', () => {
@@ -2206,8 +2295,41 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
       let swapContext = null;
       let swapQuote = null;
+      let swapInputBalanceAtomic = null;
+      let pendingSwapCompletion = null;
       let swapExecutionPending = false;
       let quoteDebounceTimer = null;
+      const SWAP_TOKEN_MINTS = { SOL: 'So11111111111111111111111111111111111111112', USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' };
+      async function refreshSwapInputBalance() {
+        const label = document.getElementById('swapInputBalance');
+        const wallet = WalletModule.getWalletPublicKey?.();
+        const symbol = document.getElementById('swapInputToken')?.value;
+        const token = TOKENS.find((entry) => entry.mint === symbol);
+        swapInputBalanceAtomic = null;
+        if (!label || !wallet || !token || !SWAP_TOKEN_MINTS[symbol]) { if (label) label.textContent = 'Balance unavailable'; return; }
+        try {
+          const rpcMethod = symbol === 'SOL' ? 'getBalance' : 'getTokenAccountsByOwner';
+          const params = symbol === 'SOL' ? [wallet, { commitment: 'confirmed' }] : [wallet, { mint: SWAP_TOKEN_MINTS[symbol] }, { encoding: 'jsonParsed', commitment: 'confirmed' }];
+          const response = await fetch('https://solana-rpc.publicnode.com', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: rpcMethod, params }) });
+          const body = await response.json();
+          if (body.error) throw new Error('balance unavailable');
+          swapInputBalanceAtomic = symbol === 'SOL'
+            ? Number(body.result?.value || 0)
+            : (body.result?.value || []).reduce((sum, account) => sum + Number(account.account?.data?.parsed?.info?.tokenAmount?.amount || 0), 0);
+          label.textContent = `Balance ${ (swapInputBalanceAtomic / (10 ** token.decimals)).toLocaleString(undefined, { maximumFractionDigits: token.decimals }) } ${token.symbol}`;
+          document.querySelectorAll('#swapPercentButtons button').forEach((button) => { button.disabled = swapInputBalanceAtomic <= 0; });
+        } catch (error) { label.textContent = 'Balance unavailable'; console.warn('[swap] balance lookup failed', error); }
+      }
+      function applySwapBalancePercent(percent) {
+        const token = TOKENS.find((entry) => entry.mint === document.getElementById('swapInputToken')?.value);
+        const input = document.getElementById('swapInputAmount');
+        const label = document.getElementById('swapInputBalance');
+        if (!token || !input || !Number.isFinite(swapInputBalanceAtomic) || swapInputBalanceAtomic <= 0) { if (label) label.title = 'You do not have enough balance to cover this amount and network cost.'; return; }
+        const reserve = token.mint === 'SOL' ? 2000000 : 0;
+        const spendable = Math.max(0, swapInputBalanceAtomic - reserve);
+        input.value = (spendable * (percent / 100) / (10 ** token.decimals)).toFixed(token.decimals);
+        updateSwapPreview();
+      }
       let quoteRequestId = 0;
       const RIDE_FEED_KEY = 'crazytuk_public_feed_v1';
       const CITY_TICKER_KEY = 'crazytuk_city_ticker_v1';
@@ -2340,15 +2462,49 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
       }
 
-      function closeSwapSheet({ restoreFare = true } = {}) {
+      function continueAfterSuccessfulSwap() {
+        const completion = pendingSwapCompletion;
+        if (!completion) return;
+        pendingSwapCompletion = null;
+        closeSwapSheet({ restoreFare: false, skipPendingCompletion: true });
+        completion.startRide();
+      }
+
+      function showSwapSuccess(result) {
+        const status = document.getElementById('swapStatus');
+        const submit = document.getElementById('swapSubmit');
+        const body = document.querySelector('#swapSheet .swap-sheet-body');
+        const processing = document.getElementById('swapProcessing');
+        const success = document.getElementById('swapSuccess');
+        const signature = result.signature;
+        document.getElementById('swapSheetTitle').textContent = 'SWAP SUCCESSFUL';
+        status.textContent = 'CONFIRMED ON SOLANA';
+        status.style.color = 'var(--good)';
+        if (body) body.hidden = true;
+        if (processing) processing.hidden = true;
+        if (success) success.hidden = false;
+        document.getElementById('swapError')?.setAttribute('hidden', '');
+        const solscanLink = document.getElementById('swapSolscanLink');
+        if (solscanLink) solscanLink.href = `https://solscan.io/tx/${encodeURIComponent(signature)}`;
+        submit.hidden = true;
+        const continueButton = document.getElementById('swapContinue');
+        if (continueButton) continueButton.hidden = false;
+      }
+
+      function closeSwapSheet({ restoreFare = true, skipPendingCompletion = false } = {}) {
         const submit = document.getElementById('swapSubmit');
         if (swapExecutionPending) return;
+        if (!skipPendingCompletion && pendingSwapCompletion) {
+          continueAfterSuccessfulSwap();
+          return;
+        }
         const previousContext = swapContext;
         if (submit) submit.disabled = false;
         document.getElementById('swapSheetBackdrop')?.setAttribute('hidden', '');
         document.querySelector('.stage')?.classList.remove('swap-open');
         swapContext = null;
         swapQuote = null;
+        pendingSwapCompletion = null;
         clearTimeout(quoteDebounceTimer);
         quoteRequestId += 1;
         const player = getPlayer();
@@ -2452,10 +2608,21 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           ? getAvailableFares().find((entry) => entry.id === context.fareId)
           : null;
         const preset = getQualifyingSwapPreset(fare);
-        input.value = preset.inputMint;
-        output.value = preset.outputMint;
-        document.getElementById('swapInputAmount').value = String(preset.amount);
+        const testSwap = isProductionTestMode();
+        input.value = testSwap ? 'SOL' : preset.inputMint;
+        output.value = testSwap ? 'USDC' : preset.outputMint;
+        document.getElementById('swapInputAmount').value = testSwap ? String(TEST_SWAP_DEFAULT_SOL) : String(preset.amount);
+        document.getElementById('swapInputAmount').max = testSwap ? String(TEST_SWAP_MAX_SOL) : '';
+        document.getElementById('testAmountHint').hidden = !testSwap;
         document.getElementById('swapStatus').textContent = '';
+        document.getElementById('swapStatus').style.color = '';
+        const swapBody = document.querySelector('#swapSheet .swap-sheet-body');
+        if (swapBody) swapBody.hidden = false;
+        document.getElementById('swapProcessing')?.setAttribute('hidden', '');
+        document.getElementById('swapSuccess')?.setAttribute('hidden', '');
+        document.getElementById('swapError')?.setAttribute('hidden', '');
+        document.getElementById('swapContinue')?.setAttribute('hidden', '');
+        document.getElementById('swapSubmit').hidden = false;
         document.getElementById('swapSheetTitle').textContent = context.context === 'SELECTED_FARE' ? 'SWAP & PICK UP' : 'MAKE A SWAP';
         document.getElementById('swapSubmit').textContent = 'FINDING RATE...';
         document.getElementById('swapSubmit').disabled = true;
@@ -2466,6 +2633,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         }
         document.querySelector('.stage')?.classList.add('swap-open');
         document.getElementById('swapSheetBackdrop').hidden = false;
+        refreshSwapInputBalance();
         updateSwapPreview();
       }
 
@@ -2505,7 +2673,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           outputToken: outputMint,
           inputCategory: STABLE_TOKENS.includes(inputMint) ? 'stable' : 'volatile',
           outputCategory: STABLE_TOKENS.includes(outputMint) ? 'stable' : 'volatile',
-          usdValue
+          usdValue,
+          testMode: isProductionTestMode()
         }, fare) : null;
         const qualificationEl = document.getElementById('swapFareQualification');
         qualificationEl.textContent = fare
@@ -2553,7 +2722,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             inputMint,
             outputMint,
             inputAmount: Math.round(amount * (10 ** inputToken.decimals)),
-            slippageTolerance: 0.5
+            slippageTolerance: 0.5,
+            testMode: isProductionTestMode()
           });
           if (requestId !== quoteRequestId || !swapContext) return;
           if (quoteResult.state !== 'SUCCESS') throw new Error(quoteResult.error || 'No route returned.');
@@ -2604,7 +2774,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
         submit.disabled = true;
         swapExecutionPending = true;
-        status.textContent = 'CHECK YOUR WALLET...';
+        status.textContent = 'SWAPPING… APPROVE IN WALLET';
+        submit.textContent = 'SWAPPING…';
+        const processingPanel = document.getElementById('swapProcessing');
+        if (processingPanel) processingPanel.hidden = false;
         try {
           const result = await processSwap({
             wallet: WalletModule.getWalletPublicKey(),
@@ -2616,40 +2789,68 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             fareId: swapContext.fareId || null,
             fareContext: swapContext.context,
             order: swapQuote,
-            confirm: true
-          });
+            confirm: true,
+            testMode: isProductionTestMode()
+        });
 
+          if (result.state === 'CONFIRMING') {
+            swapExecutionPending = false;
+            if (processingPanel) {
+              processingPanel.hidden = false;
+              processingPanel.querySelector('strong').textContent = 'SWAP STILL CONFIRMING';
+              processingPanel.querySelector('p').textContent = 'The transaction was submitted. Check Solscan; do not approve another swap while it confirms.';
+            }
+            status.textContent = 'CONFIRMING ON SOLANA';
+            status.style.color = 'var(--warn)';
+            submit.hidden = true;
+            return;
+          }
           if (result.state !== 'SUCCESS' || !result.confirmed) {
-            throw new Error(result.error || 'Swap was not confirmed on Solana.');
+            const pendingError = new Error(result.error || 'Swap failed on Solana.');
+            pendingError.signature = result.signature;
+            throw pendingError;
           }
 
-          status.textContent = 'SWAP CONFIRMED. STARTING ENGINE...';
+          await recordStandardTransaction(result, inputMint, outputMint, Math.round(amount * (10 ** inputToken.decimals)), isProductionTestMode());
+
+          const completedFareId = swapContext.fareId;
+          let startRide = () => {};
           if (swapContext.context === 'STALLED_REFUEL') {
-            const resumed = resumeStalledTrip(swapContext.fareId, getPlayer()?.wallet);
+            const resumed = resumeStalledTrip(completedFareId, getPlayer()?.wallet);
             if (resumed) {
               updateHUD(resumed);
               window.CrazyTukGame.syncMapState?.(resumed);
-              if (resumed.status === PLAYER_STATES.PICKUP) {
-                startPickupDrive(swapContext.fareId, resumed.wallet);
-              } else {
-                startPassengerDrive(swapContext.fareId, resumed.wallet);
-              }
+              startRide = () => resumed.status === PLAYER_STATES.PICKUP
+                ? startPickupDrive(completedFareId, resumed.wallet)
+                : startPassengerDrive(completedFareId, resumed.wallet);
             }
-          } else if (swapContext.fareId) {
-            const claimed = claimFare(swapContext.fareId, getPlayer()?.wallet);
+          } else if (completedFareId) {
+            const claimed = claimFare(completedFareId, getPlayer()?.wallet);
             if (claimed) {
               updateHUD(claimed);
               window.CrazyTukGame.syncMapState?.(claimed);
-              startPickupDrive(swapContext.fareId, claimed.wallet);
+              startRide = () => startPickupDrive(completedFareId, claimed.wallet);
             }
           }
-          setTimeout(() => {
-            swapExecutionPending = false;
-            submit.disabled = false;
-            closeSwapSheet({ restoreFare: false });
-          }, 900);
+          pendingSwapCompletion = { startRide };
+          swapExecutionPending = false;
+          showSwapSuccess(result);
         } catch (error) {
-          status.textContent = `NO DEAL. ${error.message}`;
+          document.getElementById('swapProcessing')?.setAttribute('hidden', '');
+          status.textContent = 'SWAP NOT CONFIRMED';
+          status.style.color = 'var(--danger)';
+          const errorPanel = document.getElementById('swapError');
+          if (errorPanel) errorPanel.hidden = false;
+          const errorMessage = document.getElementById('swapErrorMessage');
+          if (errorMessage) errorMessage.textContent = error.message || 'The transaction could not be confirmed.';
+          const errorLink = document.getElementById('swapErrorLink');
+          if (errorLink && error.signature) {
+            errorLink.href = `https://solscan.io/tx/${encodeURIComponent(error.signature)}`;
+            errorLink.hidden = false;
+          } else if (errorLink) {
+            errorLink.hidden = true;
+          }
+          submit.textContent = 'RETRY SWAP';
           swapExecutionPending = false;
           submit.disabled = false;
         }
@@ -2927,9 +3128,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function updateDashboardHero(player) {
         const nameEl = document.getElementById('dashboardPlayerName');
         const walletEl = document.getElementById('dashboardWalletLabel');
-        if (nameEl) nameEl.textContent = window.CrazyTukGame.getPlayerDisplayName?.() || player?.name || 'Anon';
+        if (nameEl) nameEl.textContent = player?.name || 'Anon';
         if (!walletEl) return;
-        const walletAddress = WalletModule?.getWalletAddress?.();
+        const walletAddress = WalletModule?.getWalletPublicKey?.() || WalletModule?.getWalletAddress?.();
         walletEl.textContent = walletAddress
           ? `${walletAddress.substring(0, 4)}...${walletAddress.substring(walletAddress.length - 4)}`
           : 'Wallet not connected';
@@ -2940,15 +3141,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         const currentPlayer = getPlayer();
         if (nameInput) {
           nameInput.value = currentPlayer?.name || '';
-          nameInput.addEventListener('change', () => updatePlayer((player) => ({ ...player, name: nameInput.value.trim().slice(0, 32) })));
+          nameInput.addEventListener('change', () => {
+            const value = nameInput.value.trim().slice(0, 32);
+            updatePlayer((player) => ({ ...player, name: value }));
+            const dashboardName = document.getElementById('dashboardPlayerName');
+            if (dashboardName) dashboardName.textContent = value || 'Anon';
+          });
         }
         const controls = [
           ['setting-sound', 'crazytuk_sound_enabled', true],
-          ['setting-music', 'crazytuk_music_enabled', false],
-          ['setting-vibration', 'crazytuk_vibration_enabled', true],
-          ['setting-notifications', 'crazytuk_notifications_enabled', true],
-          ['setting-fuel-warnings', 'crazytuk_fuel_warnings', true],
-          ['setting-demo-mode', 'crazytuk_demo_mode', false]
+          ['setting-music', 'crazytuk_music_enabled', true],
+          ['setting-demo-mode', 'crazytuk_demo_mode', false],
+          ['setting-production-test-mode', 'crazytuk_production_test_mode', false]
         ];
         const syncControl = ([id, key, defaultValue]) => {
           const input = document.getElementById(id);
@@ -2958,14 +3162,64 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
             : localStorage.getItem(key) === 'true';
           if (key === 'crazytuk_demo_mode' && input.checked) console.info('[demo-mode] enabled');
           input.addEventListener('change', () => {
+            if (key === 'crazytuk_demo_mode' && input.checked) {
+              localStorage.setItem('crazytuk_production_test_mode', 'false');
+              const productionTest = document.getElementById('setting-production-test-mode');
+              if (productionTest) productionTest.checked = false;
+            }
+            if (key === 'crazytuk_production_test_mode' && input.checked) {
+              localStorage.setItem('crazytuk_demo_mode', 'false');
+              const demo = document.getElementById('setting-demo-mode');
+              if (demo) demo.checked = false;
+            }
             localStorage.setItem(key, String(input.checked));
+            syncProductionTestBanner();
             if (key === 'crazytuk_demo_mode') console.info(`[demo-mode] ${input.checked ? 'enabled' : 'disabled'}`);
+            if (key === 'crazytuk_production_test_mode') console.info(`[production-test-mode] ${input.checked ? 'enabled' : 'disabled'}`);
           });
         };
         controls.forEach(syncControl);
+        if (isDemoMode() && isProductionTestMode()) {
+          localStorage.setItem('crazytuk_production_test_mode', 'false');
+          const productionTest = document.getElementById('setting-production-test-mode');
+          if (productionTest) productionTest.checked = false;
+        }
+        syncProductionTestBanner();
         document.getElementById('settingsSave')?.addEventListener('click', () => {
-          if (nameInput) updatePlayer((player) => ({ ...player, name: nameInput.value.trim().slice(0, 32) }));
+          if (nameInput) {
+            updatePlayer((player) => ({ ...player, name: nameInput.value.trim().slice(0, 32) }));
+            updateDashboardHero(getPlayer());
+          }
           showNotification('Settings saved on this device.', 'success');
+        });
+        const dashboardName = document.getElementById('dashboardPlayerName');
+        const dashboardNameInput = document.getElementById('dashboardPlayerNameInput');
+        const dashboardNameEdit = document.getElementById('dashboardNameEdit');
+        dashboardNameEdit?.addEventListener('click', async () => {
+          if (!dashboardNameInput || !dashboardName) return;
+          const editing = !dashboardNameInput.hidden;
+          if (!editing) {
+            dashboardNameInput.value = getPlayer()?.name || '';
+            dashboardName.hidden = true;
+            dashboardNameInput.hidden = false;
+            dashboardNameInput.focus();
+            dashboardNameEdit.textContent = '✓';
+            return;
+          }
+          const value = dashboardNameInput.value.trim().slice(0, 32);
+          updatePlayer((player) => ({ ...player, name: value }));
+          if (nameInput) nameInput.value = value;
+          dashboardName.textContent = value || 'Anon';
+          dashboardName.hidden = false;
+          dashboardNameInput.hidden = true;
+          dashboardNameEdit.textContent = '✎';
+          const wallet = WalletModule?.getWalletPublicKey?.();
+          if (wallet && !isDemoMode()) {
+            try {
+              await fetch('/api/standard?action=profile', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'profile', playerWallet: wallet, displayName: value }) });
+            } catch (error) { console.warn('[standard profile] save failed', error); }
+          }
+          showNotification('Driver name saved.', 'success');
         });
       }
 
@@ -3007,9 +3261,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
         if (walletState.state === WalletModule.WALLET_STATES.CONNECTED) {
           // Disconnect wallet
-          const result = WalletModule.disconnectWallet();
+          const result = await WalletModule.disconnectWallet();
           console.log('Wallet disconnected:', result);
           updateHUD(window.CrazyTukGame.getPlayer());
+          updateDashboardHero(window.CrazyTukGame.getPlayer());
         } else {
           const preferredWallet = WalletModule.getPreferredWallet?.();
           if (preferredWallet) {
@@ -3051,6 +3306,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         updateHUD(player);
         window.CrazyTukGame.initFareMarkers?.();
         window.CrazyTukGame.syncMapState?.(player);
+        updateDashboardHero(player);
       }
 
       function showNotification(message, type = 'info') {
@@ -3304,7 +3560,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               ? `PICKUP: ${pickupLocation?.properties?.name || 'Unknown'}`
               : player.status;
             activeFareDisplay.querySelector('.fare-stalls').textContent = isSelectedOnly
-              ? `${fareToShow.condition} • $${fareToShow.minimumUsd}+`
+              ? localStorage.getItem('crazytuk_production_test_mode') === 'true'
+                ? 'TEST: 0.0025 SOL → USDC'
+                : `${fareToShow.condition} • $${fareToShow.minimumUsd}+`
               : `${stalls} stalls`;
             const signalClass = (level) => `signal-${String(level || 'GREEN').toLowerCase()}`;
             const roadSignal = activeFareDisplay.querySelector('.fare-road-signal');
@@ -3559,6 +3817,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     </style>
   </head>
 <body>
+<div id="productionTestBanner" hidden role="status">⚠ TEST MODE — REAL ONCHAIN · capped at 0.01 SOL</div>
 
 <div id="bootScreen" aria-label="Loading Crazy Tuk">LOADING</div>
 <section id="installInterstitial" class="install-interstitial" role="dialog" aria-modal="true" aria-label="Add Crazy TukTuk to your home screen" tabindex="0" hidden>
@@ -3661,12 +3920,30 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           <h2 id="swapSheetTitle">SWAP &amp; PICK UP</h2>
           <div id="swapStatus" class="swap-status" role="status"></div>
         </div>
+        <div id="swapProcessing" class="swap-progress" role="status" hidden>
+          <span class="swap-progress-icon" aria-hidden="true">↻</span>
+          <strong>SWAP IN PROGRESS</strong>
+          <p>Approve the transaction in your wallet. Waiting for Solana confirmation…</p>
+        </div>
+        <div id="swapSuccess" class="swap-success" role="status" hidden>
+          <span class="swap-success-icon" aria-hidden="true">✓</span>
+          <strong>SWAP CONFIRMED</strong>
+          <p>Your transaction was confirmed on Solana. Continue when you’re ready to start the ride.</p>
+          <a id="swapSolscanLink" class="swap-solscan-link" href="#" target="_blank" rel="noopener noreferrer">View transaction on Solscan ↗</a>
+        </div>
+        <div id="swapError" class="swap-error" role="alert" hidden>
+          <strong>TRANSACTION NOT CONFIRMED</strong>
+          <span id="swapErrorMessage"></span>
+          <a id="swapErrorLink" class="swap-solscan-link" href="#" target="_blank" rel="noopener noreferrer" hidden>Check transaction on Solscan ↗</a>
+        </div>
         <div class="swap-sheet-body">
           <div class="swap-inputs">
             <div class="swap-row">
               <select id="swapInputToken" aria-label="Token to pay"></select>
-              <input id="swapInputAmount" type="number" min="1" step="0.01" value="5" inputmode="decimal" aria-label="Amount to pay">
+              <input id="swapInputAmount" type="number" min="0.000001" step="0.000001" value="5" inputmode="decimal" aria-label="Amount to pay">
             </div>
+            <div class="swap-input-tools"><span id="swapInputBalance" class="swap-balance">Balance unavailable</span><div id="swapPercentButtons" class="swap-percent-buttons" aria-label="Set amount from balance"><button type="button" data-percent="25">25%</button><button type="button" data-percent="50">50%</button><button type="button" data-percent="75">75%</button><button type="button" data-percent="100">MAX</button></div></div>
+            <p id="testAmountHint" class="settings-help" hidden>Production Test Mode: real SOL ↔ USDC swaps. SOL input is limited to 0.01 SOL; USDC input is limited by your wallet balance.</p>
             <div class="swap-row">
               <select id="swapOutputToken" aria-label="Token to receive"></select>
               <input id="swapOutputEstimate" type="text" value="Quote on submit" aria-label="Estimated output" readonly>
@@ -3678,6 +3955,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           </div>
         </div>
         <button id="swapSubmit" class="ui-button primary fare-sheet-action" type="button">SWAP &amp; PICK UP</button>
+        <button id="swapContinue" class="ui-button primary fare-sheet-action" type="button" hidden>CONTINUE TO RIDE</button>
         <button id="mockSwapSubmit" class="ui-button dev-swap-button" type="button" hidden>DEV SWAP</button>
       </section>
       <p class="swap-attribution">Powered by DFlow · Wallet approval required</p>
@@ -3798,7 +4076,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           <div class="driver-hero-art" aria-hidden="true">🛺</div>
           <div class="driver-hero-copy">
             <span>Driver</span>
-            <b id="dashboardPlayerName">Crazy Tuk Driver</b>
+            <div class="dashboard-name-editor"><span id="dashboardPlayerName">Anon</span><input id="dashboardPlayerNameInput" class="dashboard-player-name-input" maxlength="32" placeholder="Anon" aria-label="Driver name" hidden><button id="dashboardNameEdit" type="button" class="dashboard-name-edit" aria-label="Edit driver name">✎</button></div>
             <small id="dashboardWalletLabel">Wallet not connected</small>
           </div>
           <button id="topWalletButton" type="button" class="ui-button top-connect-button dashboard-wallet-button" aria-label="Connect wallet">
@@ -3895,7 +4173,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <div class="rules-content">
     <section>
       <h3>🔐 Connect Your Wallet</h3>
-      <p>Connect a supported Solana wallet before making real swaps or starting an Agent shift. Demo Mode can simulate wallet actions for showcases.</p>
+      <p>Connect a supported Solana wallet before making real swaps or starting an Agent shift. Agentic Mode is currently a preview of the autonomous game infrastructure; live DFlow Agent CLI trading is pending production API access. Demo Mode can simulate wallet actions for showcases.</p>
     </section>
     <section>
       <h3>📍 Accept Fares</h3>
@@ -3957,24 +4235,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <div class="settings-list">
     <div class="settings-row"><label for="setting-player-name">Player name</label><input id="setting-player-name" maxlength="32" placeholder="Anon driver" style="max-width:160px"></div>
     <div class="setting-item">
-      <span>Sound Enabled</span>
+      <span>UI Sounds</span>
       <label class="toggle-switch"><input type="checkbox" id="setting-sound" checked><span class="toggle-slider"></span></label>
     </div>
     <div class="setting-item">
       <span>Music Enabled</span>
-      <label class="toggle-switch"><input type="checkbox" id="setting-music"><span class="toggle-slider"></span></label>
-    </div>
-    <div class="setting-item">
-      <span>Vibration</span>
-      <label class="toggle-switch"><input type="checkbox" id="setting-vibration" checked><span class="toggle-slider"></span></label>
-    </div>
-    <div class="setting-item">
-      <span>Notifications</span>
-      <label class="toggle-switch"><input type="checkbox" id="setting-notifications" checked><span class="toggle-slider"></span></label>
-    </div>
-    <div class="setting-item">
-      <span>Fuel Warnings</span>
-      <label class="toggle-switch"><input type="checkbox" id="setting-fuel-warnings" checked><span class="toggle-slider"></span></label>
+      <label class="toggle-switch"><input type="checkbox" id="setting-music" checked><span class="toggle-slider"></span></label>
     </div>
   </div>
   <button id="settingsSave" class="ui-button primary settings-save" type="button">SAVE SETTINGS</button>
@@ -3989,6 +4255,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <span>Demo Mode <small>(simulated swaps and agent data)</small></span>
       <label class="toggle-switch"><input type="checkbox" id="setting-demo-mode"><span class="toggle-slider"></span></label>
     </div>
+    <div class="setting-item">
+      <span>Production Test Mode <small>(real onchain swaps, capped)</small></span>
+      <label class="toggle-switch"><input type="checkbox" id="setting-production-test-mode"><span class="toggle-slider"></span></label>
+    </div>
+    <p class="settings-help">⚠ TEST MODE — REAL ONCHAIN. Uses real wallets and Solana transactions; maximum test trade is 0.01 SOL.</p>
     <div class="settings-row"><span>Demo-only controls</span></div>
     <p class="settings-help">These controls never affect real wallet balances.</p>
     <div class="settings-row"><span>Set fuel for repeatable stall tests</span></div>
@@ -4695,7 +4966,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const lineIndex = [...fare.id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % (npc.pickupLines?.length || 1);
     const pickupLine = npc.pickupLines?.[lineIndex] || 'Hey, can you give me a ride?';
     document.getElementById('fareSheetRequest').textContent = `“${pickupLine} I need to go to ${destination.properties.name}.”`;
-    document.getElementById('fareSheetRequirement').textContent = conditionLabels[fare.condition] || fare.condition;
+    document.getElementById('fareSheetRequirement').textContent = localStorage.getItem('crazytuk_production_test_mode') === 'true'
+      ? 'TEST: 0.0025 SOL → USDC'
+      : conditionLabels[fare.condition] || fare.condition;
     document.getElementById('fareSheetReward').textContent = `+${fare.pointValue} pts`;
     const signalLevel = (level) => ['GREEN', 'YELLOW', 'RED'].includes(level) ? level : 'GREEN';
     const roadLevel = signalLevel(fare.roadTrafficLevel);
@@ -5050,8 +5323,40 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       : '<span class="agent-award">FIRST SHIFT COMPLETE</span>';
   }
 
-  function renderLeaderboard() {
+  async function renderLeaderboard() {
     const boardEl = $("leaderboardBoard");
+    if (!boardEl) return;
+    const environment = isProductionTestMode() ? 'PRODUCTION_TEST' : 'NORMAL';
+    try {
+      const response = await fetch(`/api/standard?environment=${environment}`);
+      if (response.ok) {
+        const payload = await response.json();
+        const currentWallet = window.CrazyTukGame?.getPlayer?.()?.wallet;
+        const entries = payload.leaderboard || [];
+        boardEl.replaceChildren();
+        if (!entries.length) {
+          boardEl.innerHTML = '<div class="board-empty">Complete a fare to set the first Standard score.</div>';
+          return;
+        }
+        entries.slice(0, 10).forEach((entry, index) => {
+          const row = document.createElement('div');
+          row.className = `board-row${entry.playerWallet === currentWallet ? ' is-me' : ''}`;
+          const rank = entry.rank || index + 1;
+          const badge = rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+          const wallet = entry.playerWallet || '';
+          const identity = wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Driver';
+          row.innerHTML = `<b><span>#${rank}</span><span>${badge}</span></b><span>${entry.displayName || 'Anon'} · ${identity}</span><strong>${Number(entry.score || 0).toLocaleString()}</strong>`;
+          boardEl.append(row);
+          setTimeout(() => row.classList.add('show'), index * 70);
+        });
+        return;
+      }
+    } catch (error) {
+      console.warn('[standard leaderboard] Neon unavailable', error);
+    }
+    boardEl.innerHTML = '<div class="board-empty">Live Standard leaderboard is temporarily unavailable.</div>';
+    return;
+    /* Local scores are intentionally not mixed into the authoritative board. */
     const player = window.CrazyTukGame?.getPlayer?.();
     const savedEntries = window.CrazyTukGame?.getTopPlayers?.(10) || [];
     const entries = [...savedEntries];

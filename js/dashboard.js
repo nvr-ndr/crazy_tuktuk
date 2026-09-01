@@ -238,7 +238,7 @@ export const SettingsPanel = {
   getSettings() {
     return {
       soundEnabled: localStorage.getItem('crazytuk_sound_enabled') !== 'false',
-      musicEnabled: localStorage.getItem('crazytuk_music_enabled') === 'true',
+      musicEnabled: localStorage.getItem('crazytuk_music_enabled') !== 'false',
       vibrationEnabled: localStorage.getItem('crazytuk_vibration_enabled') !== 'false',
       notificationsEnabled: localStorage.getItem('crazytuk_notifications_enabled') !== 'false',
       swapNotifications: localStorage.getItem('crazytuk_swap_notifications') !== 'false',
@@ -267,7 +267,7 @@ export const SettingsPanel = {
     try {
       const defaultSettings = {
         soundEnabled: true,
-        musicEnabled: false,
+        musicEnabled: true,
         vibrationEnabled: true,
         notificationsEnabled: true,
         swapNotifications: true,
