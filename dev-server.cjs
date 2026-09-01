@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const orderHandler = require('./api/dflow/order.js');
+const eligibilityHandler = require('./api/_handlers/dflowEligibility.js');
 const routeHandler = require('./api/route.js');
 
 const root = __dirname;
@@ -24,6 +25,10 @@ const server = http.createServer(async (request, response) => {
   if (url.pathname === '/api/dflow/order') {
     request.query = Object.fromEntries(url.searchParams);
     return orderHandler(request, response);
+  }
+  if (url.pathname === '/api/dflow/eligibility') {
+    request.query = Object.fromEntries(url.searchParams.entries());
+    return eligibilityHandler(request, response);
   }
 
   if (url.pathname === '/api/route') {

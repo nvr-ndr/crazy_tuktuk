@@ -1498,7 +1498,10 @@
     #leaderboardBack { align-self: center; width: fit-content; }
     .rules-panel { overflow-y: auto; }
     .rules-panel h2 { flex: 0 0 auto; }
-    .rules-content { display: grid; gap: 12px; flex: 1 1 auto; align-content: start; margin: 6px 0 18px; text-align: left; }
+    .rules-content { display: grid; gap: 12px; flex: 1 1 auto; min-height: 0; align-content: start; margin: 6px 0 18px; overflow-y: auto; overscroll-behavior: contain; padding: 2px 4px 8px 0; text-align: left; scrollbar-width: thin; scrollbar-color: rgba(246,212,107,.7) rgba(255,255,255,.08); }
+    .rules-content::-webkit-scrollbar { width: 7px; }
+    .rules-content::-webkit-scrollbar-track { background: rgba(255,255,255,.08); border-radius: 99px; }
+    .rules-content::-webkit-scrollbar-thumb { background: rgba(246,212,107,.7); border-radius: 99px; }
     .rules-content section { padding: 14px 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 18px; background: rgba(36,20,12,.76); }
     .rules-content h3 { margin: 0 0 4px; color: #f6d46b; font-size: 1.05rem; }
     .rules-content p { margin: 0; color: #fff5cf; font-size: .9rem; line-height: 1.35; }
@@ -1889,6 +1892,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         WALLET_STATES
         } from './js/wallet.js?v=20260830wallet1';
       import DFlowModule, { processSwap, getSwapHistoryWithFallback, getSwapStatistics, initDFlowIntegration } from './js/dflowIntegration.js?v=20260830swapconfirm4';
+      import { getDflowEligibility } from './js/dflowEligibility.js?v=20260902';
       import DashboardModule, {
         DashboardStats,
         TransactionHistory,
@@ -2233,6 +2237,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
         // Set up wallet connect listener
         document.addEventListener('wallet-connect', handleWalletConnect);
+        document.addEventListener('wallet-disconnect', handleWalletDisconnect);
+        if (WalletModule.isWalletConnected()) setTimeout(() => refreshDflowBonusEligibility(), 0);
 
         // Initialize HUD
         updateHUD(player);
@@ -2812,6 +2818,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           }
 
           await recordStandardTransaction(result, inputMint, outputMint, Math.round(amount * (10 ** inputToken.decimals)), isProductionTestMode());
+          await refreshDflowBonusEligibility({ notify: true });
 
           const completedFareId = swapContext.fareId;
           let startRide = () => {};
@@ -3139,6 +3146,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function setupFrontSettingsControls() {
         const nameInput = document.getElementById('setting-player-name');
         const currentPlayer = getPlayer();
+        setupDflowBonusControls();
         if (nameInput) {
           nameInput.value = currentPlayer?.name || '';
           nameInput.addEventListener('change', () => {
@@ -3221,6 +3229,39 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           }
           showNotification('Driver name saved.', 'success');
         });
+      }
+
+      const VEHICLE_STYLE_KEY = 'crazytuk_vehicle_style:';
+      let dflowBonusEligible = false;
+      function getVehicleStyle(wallet = WalletModule.getWalletPublicKey?.()) {
+        if (!wallet || !dflowBonusEligible) return 'classic';
+        return localStorage.getItem(`${VEHICLE_STYLE_KEY}${wallet}`) === 'dflow_bonus' ? 'dflow_bonus' : 'classic';
+      }
+      function refreshPlayerVehicleMarker() {
+        const icon = document.querySelector('.player-marker-icon');
+        if (icon) icon.textContent = getVehicleStyle() === 'dflow_bonus' ? '🚕' : '🛺';
+      }
+      function setupDflowBonusControls() {
+        document.querySelectorAll('input[name="vehicle-style"]').forEach((input) => input.addEventListener('change', () => {
+          const wallet = WalletModule.getWalletPublicKey?.();
+          if (!wallet || !dflowBonusEligible) return;
+          localStorage.setItem(`${VEHICLE_STYLE_KEY}${wallet}`, input.value === 'dflow_bonus' ? 'dflow_bonus' : 'classic');
+          refreshPlayerVehicleMarker();
+        }));
+      }
+      async function refreshDflowBonusEligibility({ notify = false } = {}) {
+        const wallet = WalletModule.getWalletPublicKey?.();
+        const result = await getDflowEligibility(wallet);
+        const wasEligible = dflowBonusEligible;
+        dflowBonusEligible = Boolean(wallet && result.eligible);
+        const section = document.getElementById('dflowBonusSettings');
+        if (section) section.hidden = !dflowBonusEligible;
+        document.querySelectorAll('input[name="vehicle-style"]').forEach((input) => {
+          input.checked = input.value === getVehicleStyle(wallet);
+        });
+        refreshPlayerVehicleMarker();
+        if (notify && dflowBonusEligible && !wasEligible) showNotification('DFlow Bonus Unlocked 🚕', 'success');
+        return result;
       }
 
       function handleFareClick(event) {
@@ -3307,6 +3348,14 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         window.CrazyTukGame.initFareMarkers?.();
         window.CrazyTukGame.syncMapState?.(player);
         updateDashboardHero(player);
+        refreshDflowBonusEligibility();
+      }
+
+      function handleWalletDisconnect() {
+        dflowBonusEligible = false;
+        const section = document.getElementById('dflowBonusSettings');
+        if (section) section.hidden = true;
+        refreshPlayerVehicleMarker();
       }
 
       function showNotification(message, type = 'info') {
@@ -4172,28 +4221,32 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   <h2 id="rulesTitle">HOW TO PLAY</h2>
   <div class="rules-content">
     <section>
-      <h3>🔐 Connect Your Wallet</h3>
-      <p>Connect a supported Solana wallet before making real swaps or starting an Agent shift. Agentic Mode is currently a preview of the autonomous game infrastructure; live DFlow Agent CLI trading is pending production API access. Demo Mode can simulate wallet actions for showcases.</p>
+      <h3>👋 Start Your Shift</h3>
+      <p>Connect your wallet, then tap START DRIVING. You can look around Bangkok and choose your next passenger from the map.</p>
     </section>
     <section>
-      <h3>📍 Accept Fares</h3>
-      <p>Tap a passenger on the map to review the road route, reward, patience timer, traffic, and swap requirement. Only one active fare appears in each pickup zone.</p>
+      <h3>📍 Choose A Fare</h3>
+      <p>Tap a passenger to see the pickup point, destination, time limit, traffic, fuel needed, and points available. Pick fares you can reach safely.</p>
     </section>
     <section>
       <h3>⛽ Swap For Fuel</h3>
-      <p>Use DFlow to complete an eligible SOL or token swap and earn fuel. The swap value and route distance determine the fuel reward; wallet approval is required outside Demo Mode.</p>
+      <p>Complete the swap shown on the fare card to fuel your tuk-tuk. Bigger swaps do not automatically mean a higher score—the fare and your ride are what matter.</p>
     </section>
     <section>
       <h3>🛺 Drive The Route</h3>
-      <p>Follow the cached road route from your tuk-tuk to pickup, then onward to the destination. Keep enough fuel for both legs or the ride can stall.</p>
+      <p>Follow the route to pick up your passenger, then continue to the destination. Watch your fuel and time; running out of fuel can stall the ride.</p>
     </section>
     <section>
-      <h3>✨ Watch The Moments</h3>
-      <p>Random road moments can affect the ride, fuel, score, or passenger mood. Read each event and adapt before completing the fare.</p>
+      <h3>✨ Handle Bangkok Moments</h3>
+      <p>Unexpected events can change your time, fuel, score, or passenger mood. Read the moment and choose the response that fits your ride.</p>
     </section>
     <section>
-      <h3>🏁 Finish The Ride</h3>
-      <p>Arrive at the destination to complete the fare and collect points. Your dashboard, reviews, swap history, and leaderboard reflect the connected wallet and Neon-backed game data.</p>
+      <h3>🏁 How Scoring Works</h3>
+      <p>You earn points by completing fares. The fare’s value is the starting point; your route, fuel use, passenger rating, and event choices can raise or lower the final score.</p>
+    </section>
+    <section>
+      <h3>🏆 Keep Improving</h3>
+      <p>Check your dashboard for your rides, fuel, reviews, and score. Complete fares smoothly, make good decisions, and climb the leaderboard.</p>
     </section>
   </div>
   <button id="rulesBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
@@ -4241,6 +4294,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     <div class="setting-item">
       <span>Music Enabled</span>
       <label class="toggle-switch"><input type="checkbox" id="setting-music" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div id="dflowBonusSettings" class="setting-item" hidden>
+      <span><b>DFlow Bonus</b><small>Previous DFlow activity detected.</small><small>Crazy Taxi unlocked! 🚕</small></span>
+      <span class="vehicle-style-options" role="group" aria-label="Vehicle Style">
+        <label><input type="radio" name="vehicle-style" value="classic"> 🛺 Classic TukTuk</label>
+        <label><input type="radio" name="vehicle-style" value="dflow_bonus"> 🚕 Crazy Taxi</label>
+      </span>
     </div>
   </div>
   <button id="settingsSave" class="ui-button primary settings-save" type="button">SAVE SETTINGS</button>
@@ -4426,6 +4486,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       return;
     }
 
+    // Keep manual zoom within the same detail range used by route fitting.
+    // Deeper zoom can request tiles/data that this playable map does not need.
+    const MAX_PLAYABLE_ZOOM = 14.5;
     // Crazy Tuk map configuration
     const mapConfig = {
       container: 'map',
@@ -4455,6 +4518,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       center: [100.5018, 13.7563], // Bangkok center
       zoom: 11.8,
       minZoom: 10.8,
+      maxZoom: MAX_PLAYABLE_ZOOM,
       maxBounds: getBangkokPlayableBounds(),
       pitch: 0,
       bearing: 0,
@@ -4575,6 +4639,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     const element = document.createElement('div');
     element.className = 'player-marker';
     element.innerHTML = '<span class="mood-emitter" hidden aria-hidden="true"></span><span class="npc-thought" hidden></span><span class="player-marker-icon">🛺</span>';
+    element.querySelector('.player-marker-icon').textContent = getVehicleStyle() === 'dflow_bonus' ? '🚕' : '🛺';
 
     playerMarker = new maplibregl.Marker({
       element,

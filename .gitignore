@@ -53,6 +53,13 @@ tests/
 # High-resolution NPC source art; optimized numbered portraits are tracked.
 assets/npc/original/
 
+# Large local media and browser session state.
+assets/CrazyTukTuk.mov
+playwright/
+
+# Route/cache data is published to Cloudflare R2 and should not be committed.
+cloudflare/routes/v1/*.json
+
 .vercel
 .neon
 .wrangler/
