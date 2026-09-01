@@ -3205,6 +3205,12 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         savePlayer({ ...getPlayer(), name: nameInput.value.trim().slice(0, 32) });
             updateDashboardHero(getPlayer());
           }
+          const wallet = WalletModule.getWalletPublicKey?.();
+          const selectedVehicle = document.querySelector('input[name="vehicle-style"]:checked')?.value;
+          if (wallet && dflowBonusEligible && selectedVehicle) {
+            localStorage.setItem(`${VEHICLE_STYLE_KEY}${wallet}`, selectedVehicle === 'dflow_bonus' ? 'dflow_bonus' : 'classic');
+            refreshPlayerVehicleMarker();
+          }
           showNotification('Settings saved on this device.', 'success');
         });
         const dashboardName = document.getElementById('dashboardPlayerName');

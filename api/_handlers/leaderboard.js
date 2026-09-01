@@ -1,4 +1,4 @@
-const { withDatabase, trustedNow } = require('./_lib/db');
+const { withDatabase, trustedNow } = require('../_lib/db');
 
 function respond(response, status, body) {
   response.status(status).json(body);
