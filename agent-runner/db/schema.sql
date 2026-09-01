@@ -244,6 +244,139 @@ CREATE TABLE IF NOT EXISTS public_activity (
 
 CREATE INDEX IF NOT EXISTS public_activity_created_idx ON public_activity (created_at DESC);
 
+-- Reward settlement is deliberately separate from fee accounting and from the
+-- wallet that receives DFlow fees. A settlement can be held until the reward
+-- treasury has enough USDC to fund the complete daily pool.
+CREATE TABLE IF NOT EXISTS reward_settlements (
+  id UUID PRIMARY KEY,
+  shift_id UUID NOT NULL UNIQUE REFERENCES daily_shifts(id),
+  shift_key DATE NOT NULL UNIQUE,
+  reward_wallet TEXT NOT NULL,
+  reward_mint TEXT NOT NULL,
+  treasury_balance_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  payout_pool_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  threshold_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  winner_count INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL CHECK (status IN ('HELD','READY','SUBMITTED','PARTIAL','CONFIRMED','FAILED')),
+  reason TEXT,
+  transaction_signature TEXT UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  submitted_at TIMESTAMPTZ,
+  confirmed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS reward_payout_entries (
+  id UUID PRIMARY KEY,
+  settlement_id UUID NOT NULL REFERENCES reward_settlements(id),
+  rank INTEGER NOT NULL CHECK (rank BETWEEN 1 AND 3),
+  agent_id UUID NOT NULL REFERENCES agents(id),
+  recipient_wallet TEXT NOT NULL,
+  points INTEGER NOT NULL,
+  share_bps INTEGER NOT NULL CHECK (share_bps IN (6000,2500,1500)),
+  amount_atomic NUMERIC(30,0) NOT NULL CHECK (amount_atomic > 0),
+  status TEXT NOT NULL CHECK (status IN ('PENDING','SUBMITTED','CONFIRMED','FAILED')) DEFAULT 'PENDING',
+  transaction_signature TEXT UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  submitted_at TIMESTAMPTZ,
+  confirmed_at TIMESTAMPTZ,
+  UNIQUE (settlement_id, rank),
+  UNIQUE (settlement_id, recipient_wallet)
+);
+
+CREATE INDEX IF NOT EXISTS reward_settlements_status_idx ON reward_settlements (status, shift_key);
+CREATE INDEX IF NOT EXISTS reward_payout_entries_status_idx ON reward_payout_entries (status, settlement_id);
+
+-- Immutable daily awards and aggregate unpaid balances. Awards remain audit
+-- records; a later payout may batch several awards for the same wallet.
+CREATE TABLE IF NOT EXISTS daily_reward_awards (
+  id UUID PRIMARY KEY,
+  shift_id UUID NOT NULL REFERENCES daily_shifts(id),
+  agent_id UUID NOT NULL REFERENCES agents(id),
+  player_wallet TEXT NOT NULL,
+  rank INTEGER NOT NULL CHECK (rank BETWEEN 1 AND 3),
+  pool_amount_atomic NUMERIC(30,0) NOT NULL CHECK (pool_amount_atomic > 0),
+  award_amount_atomic NUMERIC(30,0) NOT NULL CHECK (award_amount_atomic > 0),
+  source TEXT NOT NULL DEFAULT 'DAILY_AGENT_LEADERBOARD',
+  status TEXT NOT NULL DEFAULT 'ACCRUED' CHECK (status IN ('ACCRUED','RESERVED','PAID')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  paid_at TIMESTAMPTZ,
+  UNIQUE (shift_id, agent_id, rank)
+);
+ALTER TABLE daily_reward_awards ADD COLUMN IF NOT EXISTS pool TEXT NOT NULL DEFAULT 'AGENT'
+  CHECK (pool IN ('STANDARD','AGENT'));
+
+CREATE TABLE IF NOT EXISTS reward_balances (
+  player_wallet TEXT PRIMARY KEY,
+  accrued_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  paid_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  unpaid_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Pool-level accounting is deliberately separate from wallet balances. A
+-- player's Standard and Agent awards must never be mixed before settlement.
+CREATE TABLE IF NOT EXISTS reward_pool_balances (
+  pool TEXT PRIMARY KEY CHECK (pool IN ('STANDARD','AGENT')),
+  funded_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  allocated_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  paid_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO reward_pool_balances (pool) VALUES ('STANDARD'), ('AGENT') ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS reward_funding_transfers (
+  id UUID PRIMARY KEY,
+  source_wallet TEXT NOT NULL,
+  reward_wallet TEXT NOT NULL,
+  reward_mint TEXT NOT NULL,
+  pool TEXT NOT NULL CHECK (pool IN ('STANDARD','AGENT')),
+  amount_atomic NUMERIC(30,0) NOT NULL CHECK (amount_atomic > 0),
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUBMITTED','CONFIRMED','FAILED')),
+  transaction_signature TEXT UNIQUE,
+  idempotency_key TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  confirmed_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS reward_payout_batches (
+  id UUID PRIMARY KEY,
+  trigger_key DATE NOT NULL UNIQUE,
+  reward_wallet TEXT NOT NULL,
+  reward_mint TEXT NOT NULL,
+  treasury_balance_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  unpaid_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  threshold_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  recipient_count INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL CHECK (status IN ('HELD','READY','SUBMITTED','PARTIAL','CONFIRMED','FAILED')),
+  reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  submitted_at TIMESTAMPTZ,
+  confirmed_at TIMESTAMPTZ,
+  transaction_signature TEXT UNIQUE
+);
+ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS funding_source TEXT NOT NULL DEFAULT 'SEEDED_MANUAL'
+  CHECK (funding_source IN ('FEE_ACCRUED','SEEDED_MANUAL','MIXED','UNKNOWN'));
+ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS pool TEXT NOT NULL DEFAULT 'STANDARD'
+  CHECK (pool IN ('STANDARD','AGENT'));
+
+CREATE TABLE IF NOT EXISTS reward_payout_batch_entries (
+  id UUID PRIMARY KEY,
+  batch_id UUID NOT NULL REFERENCES reward_payout_batches(id),
+  player_wallet TEXT NOT NULL,
+  amount_atomic NUMERIC(30,0) NOT NULL CHECK (amount_atomic > 0),
+  status TEXT NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','SUBMITTED','CONFIRMED','FAILED')),
+  transaction_signature TEXT UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  submitted_at TIMESTAMPTZ,
+  confirmed_at TIMESTAMPTZ,
+  UNIQUE (batch_id, player_wallet)
+);
+
+CREATE INDEX IF NOT EXISTS daily_reward_awards_unpaid_idx ON daily_reward_awards (status, player_wallet);
+CREATE INDEX IF NOT EXISTS reward_balances_unpaid_idx ON reward_balances (unpaid_atomic DESC);
+
 CREATE TABLE IF NOT EXISTS auth_challenges (
   id UUID PRIMARY KEY,
   wallet_address TEXT NOT NULL,
@@ -300,6 +433,8 @@ CREATE TABLE IF NOT EXISTS standard_daily_reward_awards (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(), paid_at TIMESTAMPTZ,
   UNIQUE (competition_period, environment, player_wallet, rank)
 );
+ALTER TABLE standard_daily_reward_awards ADD COLUMN IF NOT EXISTS pool TEXT NOT NULL DEFAULT 'STANDARD'
+  CHECK (pool IN ('STANDARD','AGENT'));
 CREATE INDEX IF NOT EXISTS standard_results_period_idx ON standard_game_results (competition_period, environment, player_wallet);
 CREATE INDEX IF NOT EXISTS standard_transactions_wallet_idx ON standard_transactions (player_wallet, created_at DESC);
 CREATE INDEX IF NOT EXISTS standard_awards_unpaid_idx ON standard_daily_reward_awards (status, player_wallet);

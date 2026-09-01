@@ -13,7 +13,8 @@ const handlers = {
   '/api/dflow/order': require('./_handlers/order'),
   '/api/dflow/eligibility': require('./_handlers/dflowEligibility'),
   '/api/leaderboard': require('./_handlers/leaderboard'),
-  '/api/standard': require('./_handlers/standard')
+  '/api/standard': require('./_handlers/standard'),
+  '/api/rewards/settle': require('./_handlers/rewards')
 };
 
 module.exports = async function handler(request, response) {
