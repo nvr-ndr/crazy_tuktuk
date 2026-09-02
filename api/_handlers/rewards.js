@@ -145,7 +145,7 @@ module.exports = async function handler(request, response) {
       )).rows[0];
       if (payoutPending && batch.status === 'PAYOUT_PENDING') await client.query(`UPDATE reward_payout_batches SET payout_at=COALESCE(payout_at,now()+interval '1 hour'), reason='payout_pending_one_hour_notice', updated_at=now() WHERE id=$1`, [batch.id]);
       if (payoutDue) await client.query(`UPDATE reward_payout_batches SET status='READY',reason='payout_window_open',updated_at=now() WHERE id=$1`, [batch.id]);
-      const effectiveBatch = payoutDue ? (await client.query('SELECT * FROM reward_payout_batches WHERE id=$1', [batch.id])).rows[0] : batch;
+      const effectiveBatch = (payoutDue || payoutPending) ? (await client.query('SELECT * FROM reward_payout_batches WHERE id=$1', [batch.id])).rows[0] : batch;
       if (effectiveBatch.status === 'READY' && !['SUBMITTED', 'PARTIAL', 'CONFIRMED'].includes(existingBatch?.status)) {
         for (const row of unpaid) await client.query(
           `INSERT INTO reward_payout_batch_entries (id,batch_id,player_wallet,amount_atomic) VALUES ($1,$2,$3,$4) ON CONFLICT (batch_id,player_wallet) DO NOTHING`,
