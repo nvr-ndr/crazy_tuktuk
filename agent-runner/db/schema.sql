@@ -128,6 +128,21 @@ CREATE TABLE IF NOT EXISTS zone_states (
   UNIQUE (shift_id, zone_id)
 );
 
+CREATE TABLE IF NOT EXISTS game_activity (
+  id UUID PRIMARY KEY,
+  mode TEXT NOT NULL CHECK (mode IN ('STANDARD','AGENT')),
+  actor_id TEXT NOT NULL,
+  actor_name TEXT NOT NULL DEFAULT 'Anon',
+  zone_id TEXT,
+  type TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '10 minutes'),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS game_activity_feed_idx ON game_activity (mode, created_at DESC);
+CREATE INDEX IF NOT EXISTS game_activity_presence_idx ON game_activity (mode, zone_id, expires_at);
+
 CREATE TABLE IF NOT EXISTS daily_fares (
   id UUID PRIMARY KEY, shift_id UUID NOT NULL REFERENCES daily_shifts(id), passenger_id TEXT NOT NULL,
   pickup_location_id TEXT NOT NULL, destination_location_id TEXT NOT NULL, point_value INTEGER NOT NULL,

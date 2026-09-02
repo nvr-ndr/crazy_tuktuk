@@ -15,6 +15,7 @@ const handlers = {
   '/api/leaderboard': require('./_handlers/leaderboard'),
   '/api/standard': require('./_handlers/standard'),
   '/api/rewards/settle': require('./_handlers/rewards')
+  ,'/api/activity': require('./_handlers/activity')
 };
 
 module.exports = async function handler(request, response) {

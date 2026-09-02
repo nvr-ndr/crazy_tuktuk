@@ -1882,7 +1882,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       } from './data/player.js?v=20260824world2';
 
       // Import game logic modules
-        import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, getFareFuelBudget, getRemainingTripFuel, resumeStalledTrip, abandonStalledFare, claimRescueFare, getGameEvents, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress, hasCurrentCachedRouteTestFares, updateFare, updateFareRouteEconomy } from './js/game.js?v=20260827routes4';
+        import { generateInitialFares, refreshFares, getAvailableFares, getPickupFuelCost, getFareFuelBudget, getRemainingTripFuel, resumeStalledTrip, getGameEvents, selectFare, claimFare, completePickup, completeFare as completeGameFare, getPlayerFare, gameLoop, simulatePickupProgress, simulateTripProgress, hasCurrentCachedRouteTestFares, updateFare, updateFareRouteEconomy } from './js/game.js?v=20260827routes4';
       import { matchesFareCondition, findQualifyingFares, autoMatchFare, canReachFare } from './js/fareMatcher.js?v=20260823h';
       import { calculateFuelEarned, calculateProgress, isTripCompletable } from './js/fuel.js';
       import { CRAZY_EVENTS } from './data/events.js';
@@ -1933,7 +1933,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           if (!signature) return;
           const testMode = isProductionTestMode();
           try {
-            await fetch('/api/standard?action=result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'result', environment: testMode ? 'PRODUCTION_TEST' : 'NORMAL', playerWallet: wallet, fareSessionId: fareId, transactionSignature: signature, finalStars, fareSnapshot, fareCompleted }) });
+            const response = await fetch('/api/standard?action=result', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'result', environment: testMode ? 'PRODUCTION_TEST' : 'NORMAL', playerWallet: wallet, fareSessionId: fareId, transactionSignature: signature, finalStars, fareSnapshot, fareCompleted }) });
+            if (response.ok) localStorage.setItem(`crazytuk_standard_result:${fareId}`, JSON.stringify(await response.json()));
           } catch (error) { console.warn('[standard] result persistence unavailable', error); }
         }
       };
@@ -2019,8 +2020,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         startPassengerDrive,
         getRemainingTripFuel,
         resumeStalledTrip,
-        abandonStalledFare,
-        claimRescueFare,
         getGameEvents,
         simulateFakeSwap,
         gameLoop,
@@ -2185,16 +2184,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           const player = getPlayer();
           if (player?.activeFareId) openSwapSheet({ context: 'STALLED_REFUEL', fareId: player.activeFareId });
         });
-        bindSheetAction('tripAbandon', () => {
-          const player = getPlayer();
-          if (!player?.activeFareId) return;
-          const abandoned = abandonStalledFare(player.activeFareId, player.wallet);
-          if (abandoned) {
-            updateHUD(abandoned);
-            window.CrazyTukGame.syncMapState?.(abandoned);
-            showNotification('Rescue requested. Another driver can take this passenger.', 'info');
-          }
-        });
+        // Rescue/claim flow is intentionally disabled for V1. A stalled player
+        // must refuel with another swap to continue the current fare.
         document.querySelectorAll('[data-dev-fuel]').forEach((button) => {
           button.addEventListener('click', () => setDevelopmentFuel(button.dataset.devFuel));
         });
@@ -2348,10 +2339,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       const CITY_TICKER_KEY = 'crazytuk_city_ticker_v1';
       // Shared activity is opt-in. The normal Agent path must not silently
       // depend on the legacy Railway activity endpoint.
-      const ACTIVITY_API = window.CRAZY_TUK_ACTIVITY_API || localStorage.getItem('crazytuk_activity_api') || '';
+      const ACTIVITY_API = window.CRAZY_TUK_ACTIVITY_API || localStorage.getItem('crazytuk_activity_api') || '/api/activity';
       function getActivityIdentity() {
         const player = getPlayer() || {};
-        return { actorId: player.wallet || player.anonymousId || 'anon-local', actorName: getPlayerDisplayName() };
+        return { actorId: player.wallet || player.anonymousId || 'anon-local', actorName: getPlayerDisplayName(), mode: document.querySelector('.stage.agent-mode') ? 'AGENT' : 'STANDARD', zoneId: player.locationId || null };
       }
       async function publishSharedActivity(activity) {
         if (!ACTIVITY_API) return null;
@@ -2363,14 +2354,19 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       async function loadSharedActivity() {
         if (!ACTIVITY_API) return [];
         try {
-          const response = await fetch(`${ACTIVITY_API}?limit=30`, { cache: 'no-store' });
+          const mode = document.querySelector('.stage.agent-mode') ? 'AGENT' : 'STANDARD';
+          const response = await fetch(`${ACTIVITY_API}?limit=30&mode=${mode}`, { cache: 'no-store' });
           if (!response.ok) return [];
           const data = await response.json();
-          return Array.isArray(data.activity) ? data.activity.map((entry) => ({ icon: entry.type === 'REVIEW' ? '⭐' : '🛺', text: `${entry.actor_name} · ${entry.detail}`, createdAt: entry.created_at })) : [];
+          return Array.isArray(data.activity) ? data.activity.map((entry) => ({ icon: entry.type === 'REVIEW' ? '⭐' : entry.type === 'PLAYER_STALLED' ? '🔧' : entry.type === 'SURGE' ? '⚡' : '🛺', text: `${entry.actor_name} · ${entry.detail}`, createdAt: entry.created_at })) : [];
         } catch { return []; }
       }
       window.__loadSharedActivity = loadSharedActivity;
       window.CrazyTukActivityPublish = publishSharedActivity;
+      setInterval(() => {
+        const identity = getActivityIdentity();
+        void publishSharedActivity({ type: 'PRESENCE', detail: 'is driving through the city', zoneId: identity.zoneId, metadata: { heartbeat: true } });
+      }, 30000);
 
       function getCityTickerEntries() {
         try { const entries = JSON.parse(localStorage.getItem(CITY_TICKER_KEY) || '[]'); return Array.isArray(entries) ? entries : []; } catch { return []; }
@@ -2449,8 +2445,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       function renderGameEventCard(event) {
         const labels = {
           PLAYER_STALLED: ['🔧', 'Driver stalled', 'Out of fuel on route'],
-          RESCUE_REQUESTED: ['🛟', 'Rescue requested', 'A stranded passenger is waiting'],
-          RESCUE_ACCEPTED: ['🚕', 'Rescue accepted', 'Another driver is heading to the passenger'],
           TRIP_RESUMED: ['⛽', 'Trip resumed', 'Driver refueled and continued'],
           FARE_COMPLETED: ['⭐', 'Fare completed', 'Passenger ride completed'],
           FARE_EXPIRED: ['⌛', 'Fare expired', 'The opportunity timed out']
@@ -2586,7 +2580,9 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         document.getElementById('completionReview').textContent = `“${selectedReview}” — ${npc?.name || 'Passenger'}`;
         const finalMood = fare.passengerMood ?? JSON.parse(localStorage.getItem('crazytuk_last_passenger_mood') || '{"value":50}').value;
         document.getElementById('completionRating').textContent = renderStars(getPassengerRating(finalMood));
-        document.getElementById('completionPoints').textContent = `+${fare.pointValue || 0} POINTS`;
+        const storedResult = (() => { try { return JSON.parse(localStorage.getItem(`crazytuk_standard_result:${fare.id}`) || 'null'); } catch { return null; } })();
+        const multiplier = Number(storedResult?.score?.zoneMultiplier || 1);
+        document.getElementById('completionPoints').textContent = `+${fare.pointValue || 0} POINTS${multiplier > 1 ? ` · SURGE ${multiplier.toFixed(2)}×` : ''}`;
         const recap = document.getElementById('completionEvents');
         const history = fare.eventHistory || JSON.parse(localStorage.getItem('crazytuk_last_event_history') || '[]');
         recap.innerHTML = history.length ? history.map((entry) => {
@@ -3649,7 +3645,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
               const isStalled = player.status === PLAYER_STATES.STALLED;
               const isAgentMode = document.querySelector('.stage')?.classList.contains('agent-mode') || false;
               const stalledActions = tripCard.querySelector('[data-stalled-actions]');
-              if (stalledActions) stalledActions.hidden = !isStalled || isAgentMode;
+              if (stalledActions) stalledActions.hidden = true;
               tripCard.classList.toggle('stalled', isStalled);
               setNpcAvatar(document.getElementById('tripCardAvatar'), npc);
               document.getElementById('tripCardKicker').textContent = isStalled ? 'OUT OF FUEL · TRIP STALLED' : player.status === PLAYER_STATES.PICKUP ? 'HEADING TO PICKUP' : 'PASSENGER ON BOARD';
@@ -3933,7 +3929,6 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       <div class="trip-card-meta"><span id="tripCardPassenger"></span><span id="tripCardReward"></span></div>
       <div class="trip-card-actions" data-stalled-actions hidden>
         <button id="tripRefuel" class="primary-button" type="button">REFUEL &amp; CONTINUE</button>
-        <button id="tripAbandon" class="secondary-button" type="button">CALL FOR RESCUE</button>
       </div>
     </section>
 
@@ -5939,13 +5934,15 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         if (!agentShiftRunning) return;
         agentFareCount += 1;
         agentRun.fares += 1;
-        agentRun.score += Number(fare.pointValue || 0);
+        const surgeMultiplier = Math.max(1, Math.min(1.25, Number(fare.surgeMultiplier) || 1));
+        const fareScore = Math.round(Number(fare.pointValue || 0) * surgeMultiplier);
+        agentRun.score += fareScore;
         const routeFuel = Math.max(1, Math.ceil(Number(fare.routeMetrics?.totalFuel || fare.totalFuel || 2)));
         agentRun.fuel = Number(game.getPlayer?.()?.fuel || 0);
-        void recordDailyFareCompletion(fare, Number(fare.pointValue || 0), -routeFuel);
+        void recordDailyFareCompletion(fare, fareScore, -routeFuel);
         saveAgentRun();
         syncAgentHud();
-        recordAgentActivity('Fare complete', `${npc?.name || 'Passenger'} delivered · ${fare.pointValue || 0} points · -${routeFuel} gas.`, 'DRIVING');
+        recordAgentActivity('Fare complete', `${npc?.name || 'Passenger'} delivered · ${fareScore} points${surgeMultiplier > 1 ? ` · SURGE ${surgeMultiplier.toFixed(2)}×` : ''} · -${routeFuel} gas.`, 'DRIVING');
         agentNextFareTimer = setTimeout(runAutonomousFareCycle, 900);
       });
     }, 1100);

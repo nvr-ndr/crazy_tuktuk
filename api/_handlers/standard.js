@@ -29,7 +29,16 @@ async function result(request, response) {
   if (eventPoints === null) return respond(response, 400, { error: 'invalid_standard_event_outcome' });
   let score;
   try {
-    score = calculateStandardFareScore({ distanceKm: snapshot.distanceKm, totalFuel: snapshot.totalFuel, condition: snapshot.condition, finalStars: body.finalStars, eventPoints });
+    const zoneId = typeof snapshot.zoneId === 'string' ? snapshot.zoneId.slice(0, 80) : null;
+    const stalled = snapshot.stalled === true || Number(snapshot.stallCount || 0) > 0;
+    let zoneMultiplier = 1;
+    if (zoneId && !stalled) {
+      const activity = await withDatabase(async client => client.query(`SELECT COUNT(DISTINCT actor_id)::int AS active_players FROM game_activity WHERE mode='STANDARD' AND type='PRESENCE' AND zone_id=$1 AND expires_at > now()`, [zoneId]));
+      const activePlayers = Number(activity.rows[0]?.active_players || 0);
+      zoneMultiplier = activePlayers > 0 && activePlayers <= 2 ? 1.25 : activePlayers <= 5 ? 1.1 : 1;
+    }
+    score = calculateStandardFareScore({ distanceKm: snapshot.distanceKm, totalFuel: snapshot.totalFuel, condition: snapshot.condition, finalStars: body.finalStars, eventPoints, zoneMultiplier });
+    score.stalled = stalled;
   } catch (error) { return respond(response, 400, { error: error.message }); }
   const displayName = typeof body.displayName === 'string' && body.displayName.trim() ? body.displayName.trim().slice(0, 32) : null;
   const saved = await withDatabaseTransaction(async client => { const transactionRow = (await client.query(`SELECT transaction_signature FROM standard_transactions WHERE transaction_signature=$1 AND player_wallet=$2 AND status='CONFIRMED'`, [signature, wallet])).rows[0]; if (!transactionRow) return { missingTransaction: true }; const period = bangkokDateKey(), competitionEnvironment = env(body.environment); await client.query(`INSERT INTO standard_players (wallet_address,display_name) VALUES ($1,$2) ON CONFLICT (wallet_address) DO UPDATE SET display_name=COALESCE(EXCLUDED.display_name,standard_players.display_name), last_seen_at=now()`, [wallet, displayName]); const current = (await client.query(`SELECT COALESCE(SUM(score_delta),0)::int AS score FROM standard_game_results WHERE player_wallet=$1 AND competition_period=$2 AND environment=$3`, [wallet, period, competitionEnvironment])).rows[0]; const inserted = await client.query(`INSERT INTO standard_game_results (id,player_wallet,fare_session_id,competition_period,environment,score_delta,resulting_period_score,fare_completed,transaction_signature,final_stars,event_id,event_outcome_id,score_version,fare_snapshot) VALUES ($1,$2,$3,$4,$5,$6,$7,true,$8,$9,$10,$11,'standard-v2',$12) ON CONFLICT DO NOTHING RETURNING *`, [randomUUID(), wallet, body.fareSessionId, period, competitionEnvironment, score.finalScore, Number(current.score) + score.finalScore, signature, Number(body.finalStars), snapshot.eventId || null, snapshot.eventOutcomeId || null, JSON.stringify({ distanceKm: snapshot.distanceKm, totalFuel: snapshot.totalFuel, condition: snapshot.condition })]); return { duplicate: !inserted.rowCount, score, result: inserted.rows[0] || (await client.query('SELECT * FROM standard_game_results WHERE player_wallet=$1 AND fare_session_id=$2', [wallet, body.fareSessionId])).rows[0] }; });

@@ -15,7 +15,7 @@ module.exports = async function handler(request, response) {
       const now=await trustedNow(client); const state=await client.query(`SELECT a.*,s.status AS shift_status,s.ends_at FROM agent_shift_states a JOIN daily_shifts s ON s.id=a.shift_id WHERE a.agent_id=$1 FOR UPDATE`,[session.agent_id]);
       if(!state.rowCount||state.rows[0].shift_status!=='ACTIVE'||new Date(now)>=new Date(state.rows[0].ends_at)) throw fail('decision_unavailable');
       const agent=state.rows[0]; if(agent.status!=='ACTIVE') throw fail('decision_invalid_state');
-      const fares=await client.query(`SELECT id,point_value,surge_multiplier,expires_at,eligibility FROM daily_fares WHERE shift_id=$1 AND status='AVAILABLE' AND claimed_by IS NULL AND expires_at>$2 ORDER BY point_value DESC,created_at ASC`,[agent.shift_id,now]);
+      const fares=await client.query(`SELECT id,point_value,surge_multiplier,expires_at,eligibility FROM daily_fares WHERE shift_id=$1 AND status='AVAILABLE' AND claimed_by IS NULL AND expires_at>$2 ORDER BY (point_value * LEAST(1.25, GREATEST(1, surge_multiplier))) DESC,expires_at ASC,created_at ASC`,[agent.shift_id,now]);
       const eligible=fares.rows.filter(f=>{const ids=f.eligibility?.agentIds||f.eligibility?.agent_ids;return !(Array.isArray(ids)&&ids.length&&!ids.includes(agent.agent_id))&&(!f.eligibility?.minGas||Number(agent.gas_remaining)>=Number(f.eligibility.minGas));});
       if(!eligible.length) throw fail('no_current_fare',422);
       const fare=eligible[0]; await client.query(`UPDATE daily_fares SET status='CLAIMED',claimed_by=$1,claimed_at=$2,locked_surge_multiplier=surge_multiplier WHERE id=$3 AND status='AVAILABLE'`,[agent.agent_id,now,fare.id]);

@@ -40,6 +40,7 @@ export const CONFIG = {
   STALL_PENALTY_CAP: 30, // minutes
   RESCUE_REWARD: 25,
   STALL_THRESHOLD: 0,
+  STALL_SCORE_PENALTY: 0.25,
 
   // Tournament Configuration
   TOURNAMENT_SHIFT_DURATION_SECONDS: 600,

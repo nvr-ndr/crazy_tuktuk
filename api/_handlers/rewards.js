@@ -67,6 +67,34 @@ async function accrueStandardPeriods(client, poolAtomic) {
   return awardsCreated;
 }
 
+async function executePayouts(result) {
+  if (result.status !== 'READY') return { execution: 'held', payouts: [] };
+  if (!process.env.REWARD_PAYOUT_PRIVATE_KEY) return { execution: 'prepared_only', payouts: [] };
+  const payouts = [];
+  for (const entry of result.entries) {
+    try {
+      const transfer = await transferUsdc({ signerEnv: 'REWARD_PAYOUT_PRIVATE_KEY', destination: entry.player_wallet, mint: REWARD_MINT, amountAtomic: entry.amount_atomic });
+      if (!transfer.signature) { payouts.push({ wallet: entry.player_wallet, status: 'PENDING' }); continue; }
+      await withDatabaseTransaction(async client => {
+        await client.query(`UPDATE reward_payout_batch_entries SET status='CONFIRMED', transaction_signature=$2, submitted_at=now(), confirmed_at=now() WHERE batch_id=$1 AND player_wallet=$3 AND status='PENDING'`, [result.batchId, transfer.signature, entry.player_wallet]);
+        await client.query(`UPDATE daily_reward_awards SET status='PAID', paid_at=now() WHERE status='RESERVED' AND player_wallet=$1`, [entry.player_wallet]);
+        await client.query(`UPDATE standard_daily_reward_awards SET status='PAID', paid_at=now() WHERE status='RESERVED' AND player_wallet=$1`, [entry.player_wallet]);
+        await client.query(`UPDATE reward_balances SET paid_atomic=paid_atomic+$2, unpaid_atomic=GREATEST(0, unpaid_atomic-$2), updated_at=now() WHERE player_wallet=$1`, [entry.player_wallet, entry.amount_atomic]);
+        await client.query(`UPDATE reward_payout_batches SET status='SUBMITTED', submitted_at=COALESCE(submitted_at, now()), updated_at=now() WHERE id=$1`, [result.batchId]);
+      });
+      payouts.push({ wallet: entry.player_wallet, status: 'CONFIRMED', signature: transfer.signature, amountUsdc: entry.amountUsdc });
+    } catch (error) {
+      console.error('reward payout transfer failed', { wallet: entry.player_wallet, error: error.message });
+      await withDatabaseTransaction(async client => {
+        await client.query(`UPDATE reward_payout_batch_entries SET status='FAILED' WHERE batch_id=$1 AND player_wallet=$2 AND status='PENDING'`, [result.batchId, entry.player_wallet]);
+        await client.query(`UPDATE reward_payout_batches SET status='PARTIAL', reason='one_or_more_payouts_failed', updated_at=now() WHERE id=$1`, [result.batchId]);
+      });
+      payouts.push({ wallet: entry.player_wallet, status: 'FAILED' });
+    }
+  }
+  return { execution: 'submitted', payouts };
+}
+
 module.exports = async function handler(request, response) {
   if (!['GET', 'POST'].includes(request.method)) return respond(response, 405, { error: 'method_not_allowed' });
   if (!authorized(request)) return respond(response, process.env.REWARDS_ADMIN_TOKEN || process.env.CRON_SECRET ? 401 : 503, { error: process.env.REWARDS_ADMIN_TOKEN || process.env.CRON_SECRET ? 'reward_admin_unauthorized' : 'reward_admin_unconfigured' });
@@ -109,10 +137,11 @@ module.exports = async function handler(request, response) {
         await client.query(`UPDATE daily_reward_awards SET status='RESERVED' WHERE status='ACCRUED'`);
         await client.query(`UPDATE standard_daily_reward_awards SET status='RESERVED' WHERE status='ACCRUED'`);
       }
-      const entries = (await client.query(`SELECT player_wallet,amount_atomic,status,transaction_signature FROM reward_payout_batch_entries WHERE batch_id=$1 ORDER BY player_wallet`, [batch.id])).rows;
+      const entries = (await client.query(`SELECT player_wallet,amount_atomic,status,transaction_signature FROM reward_payout_batch_entries WHERE batch_id=$1 AND status='PENDING' ORDER BY player_wallet`, [batch.id])).rows;
       return { status: batch.status, reason: batch.reason, triggerKey, awardsCreated, funding, feeWallet: FEE_WALLET, batchId: batch.id, rewardWallet: REWARD_WALLET, rewardMint: REWARD_MINT, fundingSource: batch.funding_source, treasuryBalanceUsdc: formatAtomic(treasuryAtomic), unpaidRewardsUsdc: formatAtomic(unpaidAtomic), thresholdUsdc: formatAtomic(thresholdAtomic), recipientCount: unpaid.length, entries: entries.map(entry => ({ ...entry, amountUsdc: formatAtomic(entry.amount_atomic) })), execution: 'prepared_only', signerConfigured: Boolean(process.env.REWARD_PAYOUT_PRIVATE_KEY) };
     });
-    return respond(response, 200, result);
+    const execution = request.method === 'POST' ? await executePayouts(result) : { execution: result.execution, payouts: [] };
+    return respond(response, 200, { ...result, ...execution, signerConfigured: Boolean(process.env.REWARD_PAYOUT_PRIVATE_KEY) });
   } catch (error) {
     console.error('reward settlement failed', error);
     return respond(response, 503, { error: 'reward_settlement_unavailable' });

@@ -307,7 +307,8 @@ export function resumeStalledTrip(fareId, playerWallet) {
   });
 }
 
-export function abandonStalledFare(fareId, playerWallet) {
+/* Disabled for V1: stalled players refuel with another swap instead.
+function abandonStalledFare(fareId, playerWallet) {
   return updatePlayer(player => {
     if (player.status !== PLAYER_STATES.STALLED || player.activeFareId !== fareId) return null;
     const fare = getPlayerFare(playerWallet, fareId);
@@ -323,7 +324,8 @@ export function abandonStalledFare(fareId, playerWallet) {
   });
 }
 
-export function claimRescueFare(fareId, playerWallet) {
+// Disabled for V1: cross-player rescue is reserved for a future multiplayer pass.
+function claimRescueFare(fareId, playerWallet) {
   return updatePlayer(player => {
     if (player.status !== PLAYER_STATES.AVAILABLE || player.activeFareId || player.selectedFareId) return null;
     const fare = getPlayerFare(playerWallet, fareId);
@@ -344,6 +346,7 @@ export function claimRescueFare(fareId, playerWallet) {
     return player;
   });
 }
+*/
 
 // Game event emitter
 export function emitGameEvent(type, payload) {
@@ -358,6 +361,14 @@ export function emitGameEvent(type, payload) {
   const persistedEvents = JSON.parse(localStorage.getItem(GAME_EVENTS_KEY) || '[]');
   persistedEvents.unshift(event);
   localStorage.setItem(GAME_EVENTS_KEY, JSON.stringify(persistedEvents.slice(0, 100)));
+  if (typeof window !== 'undefined') {
+    void window.CrazyTukActivityPublish?.({
+      type,
+      detail: type === 'FARE_COMPLETED' ? 'completed a fare' : type === 'PLAYER_STALLED' ? 'stalled on a route' : type === 'TRIP_RESUMED' ? 'resumed after refueling' : type.toLowerCase().replaceAll('_', ' '),
+      zoneId: payload?.locationId || payload?.originLocationId || null,
+      metadata: payload || {}
+    });
+  }
 
   // Keep the runtime cache for map/HUD consumers.
   if (!window.CrazyTukGameState) {
@@ -545,6 +556,7 @@ export function simulatePickupProgress(fareId, playerWallet) {
       trip.progressAtStall = trip.progress;
       trip.stalledAt = Date.now();
       trip.remainingFuelRequired = Math.max(0, trip.fuelCost - trip.fuelSpent);
+      trip.stallCount = (trip.stallCount || 0) + 1;
       player.status = PLAYER_STATES.STALLED;
       player.stallCount = (player.stallCount || 0) + 1;
       emitGameEvent('PLAYER_STALLED', {
@@ -567,6 +579,7 @@ export function completeFare(fareId, playerWallet) {
   const completedFare = getPlayerFare(playerWallet, fareId);
   let completionEventHistory = [];
   let completionMood = 50;
+  let completionStallCount = 0;
   const updated = updatePlayer(player => {
     const fare = getPlayerFare(playerWallet, fareId);
     if (!fare) return null;
@@ -577,12 +590,15 @@ export function completeFare(fareId, playerWallet) {
     if (!trip) return null;
     completionEventHistory = trip.eventHistory || [];
     completionMood = Number(trip.passengerMood ?? 50);
+    completionStallCount = Number(trip.stallCount || 0);
     updateFare(fareId, { eventHistory: trip.eventHistory || [], passengerMood: trip.passengerMood, passengerMoodLabel: trip.passengerMoodLabel });
     localStorage.setItem('crazytuk_last_event_history', JSON.stringify(trip.eventHistory || []));
     localStorage.setItem('crazytuk_last_passenger_mood', JSON.stringify({ value: trip.passengerMood, label: trip.passengerMoodLabel }));
 
     // Add points
-    player.points += fare.pointValue;
+    const stallPenalty = Math.min(0.5, (trip.stallCount || 0) * CONFIG.STALL_SCORE_PENALTY);
+    const awardedPoints = Math.max(0, Math.round(fare.pointValue * (1 - stallPenalty)));
+    player.points += awardedPoints;
     player.completedFares += 1;
 
     if (localStorage.getItem('crazytuk_production_test_mode') !== 'true') {
@@ -614,7 +630,7 @@ export function completeFare(fareId, playerWallet) {
 
     emitGameEvent('FARE_COMPLETED', {
       fareId,
-      points: fare.pointValue,
+      points: awardedPoints,
       locationId: fare.destinationLocationId
     });
 
@@ -629,6 +645,9 @@ export function completeFare(fareId, playerWallet) {
         distanceKm: Number(completedFare?.routeMetrics?.distanceMeters || 0) / 1000,
         totalFuel: Number(completedFare?.routeMetrics?.totalFuel || completedFare?.totalFuel || 0),
         condition: completedFare?.condition || 'ANY_SWAP',
+        zoneId: completedFare?.pickupLocationId || null,
+        stalled: completionStallCount > 0,
+        stallCount: completionStallCount,
         eventId: completionEventHistory.at(-1)?.eventId || null,
         eventOutcomeId: completionEventHistory.at(-1)?.outcomeId || null,
       },
@@ -667,6 +686,7 @@ export function simulateTripProgress(fareId, playerWallet, isStalled = false) {
       trip.progressAtStall = progress;
       trip.stalledAt = Date.now();
       trip.remainingFuelRequired = Math.max(0, trip.fuelCost - (trip.fuelSpent || 0));
+      trip.stallCount = (trip.stallCount || 0) + 1;
       player.status = PLAYER_STATES.STALLED;
       player.stallCount = (player.stallCount || 0) + 1;
     } else {
