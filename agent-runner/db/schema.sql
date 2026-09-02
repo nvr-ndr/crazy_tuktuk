@@ -274,7 +274,7 @@ CREATE TABLE IF NOT EXISTS reward_settlements (
   payout_pool_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   threshold_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   winner_count INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL CHECK (status IN ('HELD','READY','SUBMITTED','PARTIAL','CONFIRMED','FAILED')),
+  status TEXT NOT NULL CHECK (status IN ('HELD','PAYOUT_PENDING','READY','SUBMITTED','PARTIAL','CONFIRMED','FAILED')),
   reason TEXT,
   transaction_signature TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -297,6 +297,7 @@ CREATE TABLE IF NOT EXISTS reward_payout_entries (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   submitted_at TIMESTAMPTZ,
   confirmed_at TIMESTAMPTZ,
+  payout_at TIMESTAMPTZ,
   UNIQUE (settlement_id, rank),
   UNIQUE (settlement_id, recipient_wallet)
 );
@@ -378,6 +379,9 @@ ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS funding_source TEXT N
   CHECK (funding_source IN ('FEE_ACCRUED','SEEDED_MANUAL','MIXED','UNKNOWN'));
 ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS pool TEXT NOT NULL DEFAULT 'STANDARD'
   CHECK (pool IN ('STANDARD','AGENT'));
+ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS payout_at TIMESTAMPTZ;
+ALTER TABLE reward_payout_batches DROP CONSTRAINT IF EXISTS reward_payout_batches_status_check;
+ALTER TABLE reward_payout_batches ADD CONSTRAINT reward_payout_batches_status_check CHECK (status IN ('HELD','PAYOUT_PENDING','READY','SUBMITTED','PARTIAL','CONFIRMED','FAILED'));
 
 CREATE TABLE IF NOT EXISTS reward_payout_batch_entries (
   id UUID PRIMARY KEY,
