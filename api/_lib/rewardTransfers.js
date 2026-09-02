@@ -1,4 +1,5 @@
 const { Connection, Keypair, PublicKey, Transaction, TransactionInstruction, sendAndConfirmTransaction } = require('@solana/web3.js');
+const bs58 = require('bs58');
 
 const RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_PROGRAM = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
@@ -9,8 +10,9 @@ const RENT_SYSVAR = new PublicKey('SysvarRent111111111111111111111111111111111')
 function signer(name) {
   const raw = process.env[name];
   if (!raw) return null;
-  const values = JSON.parse(raw);
-  return Keypair.fromSecretKey(Uint8Array.from(values));
+  const normalized = raw.trim().replace(/^\[|\]$/g, '').trim();
+  if (/^\d+(?:\s*,\s*\d+){63}$/.test(normalized)) return Keypair.fromSecretKey(Uint8Array.from(normalized.split(',').map(Number)));
+  return Keypair.fromSecretKey(bs58.decode(normalized));
 }
 
 function ata(owner, mint) {
