@@ -218,6 +218,7 @@ CREATE TABLE IF NOT EXISTS agent_swaps (
   platform_fee_bps SMALLINT CHECK (platform_fee_bps BETWEEN 0 AND 10000),
   platform_fee_mode TEXT CHECK (platform_fee_mode IN ('inputMint', 'outputMint')),
   platform_fee_amount NUMERIC(30,0),
+  reward_contribution_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   platform_fee_account TEXT,
   signature TEXT UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -228,6 +229,7 @@ ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_mode TEXT CHECK (p
 ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_amount NUMERIC(30,0);
 ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS platform_fee_account TEXT;
 ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS notional_usd NUMERIC(18,6);
+ALTER TABLE agent_swaps ADD COLUMN IF NOT EXISTS reward_contribution_atomic NUMERIC(30,0) NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS pit_calls (
   id UUID PRIMARY KEY,
@@ -334,6 +336,7 @@ CREATE TABLE IF NOT EXISTS reward_balances (
 CREATE TABLE IF NOT EXISTS reward_pool_balances (
   pool TEXT PRIMARY KEY CHECK (pool IN ('STANDARD','AGENT')),
   funded_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  accrued_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   allocated_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   paid_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -425,6 +428,7 @@ CREATE TABLE IF NOT EXISTS standard_transactions (
   input_mint TEXT NOT NULL, output_mint TEXT NOT NULL, input_amount_raw NUMERIC(30,0) NOT NULL, output_amount_raw NUMERIC(30,0),
   transaction_signature TEXT NOT NULL UNIQUE, platform_fee_bps SMALLINT NOT NULL CHECK (platform_fee_bps BETWEEN 0 AND 10000),
   platform_fee_mode TEXT NOT NULL CHECK (platform_fee_mode IN ('inputMint','outputMint')), platform_fee_account TEXT,
+  platform_fee_amount NUMERIC(30,0), platform_fee_mint TEXT, reward_contribution_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
   status TEXT NOT NULL CHECK (status IN ('SUBMITTED','CONFIRMED','FAILED')), created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(), confirmed_at TIMESTAMPTZ, backfilled BOOLEAN NOT NULL DEFAULT false
 );
@@ -440,6 +444,9 @@ ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS event_id TEXT;
 ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS event_outcome_id TEXT;
 ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS score_version TEXT;
 ALTER TABLE standard_game_results ADD COLUMN IF NOT EXISTS fare_snapshot JSONB;
+ALTER TABLE standard_transactions ADD COLUMN IF NOT EXISTS platform_fee_amount NUMERIC(30,0);
+ALTER TABLE standard_transactions ADD COLUMN IF NOT EXISTS platform_fee_mint TEXT;
+ALTER TABLE standard_transactions ADD COLUMN IF NOT EXISTS reward_contribution_atomic NUMERIC(30,0) NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS standard_daily_reward_awards (
   id UUID PRIMARY KEY, competition_period DATE NOT NULL, environment TEXT NOT NULL CHECK (environment IN ('NORMAL','PRODUCTION_TEST')),
   player_wallet TEXT NOT NULL REFERENCES standard_players(wallet_address), rank INTEGER NOT NULL CHECK (rank BETWEEN 1 AND 3),

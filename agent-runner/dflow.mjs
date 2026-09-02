@@ -162,6 +162,18 @@ export async function requestQuote({ inputMint, outputMint, amount, slippageBps 
   return { quote: payload, fee };
 }
 
+export async function executeTrade({ amount, inputMint, outputMint, slippageBps = '100', walletName }) {
+  assertTradingCanExecute();
+  const args = ['trade', String(amount), inputMint, outputMint, '--slippage', String(slippageBps), '--confirm', '--json'];
+  if (walletName) args.push('--wallet', walletName);
+  const { stdout } = await run(args, { timeoutMs: 120_000 });
+  let result;
+  try { result = JSON.parse(stdout); } catch { throw new Error('DFlow CLI returned invalid JSON'); }
+  const signature = result?.data?.signature || result?.data?.transaction?.signature || result?.signature || result?.transactionSignature;
+  if (!signature) throw new Error('DFlow CLI did not return a transaction signature');
+  return { result, signature };
+}
+
 export function tradingConfiguration() {
   // Buildathon development quotes are intentionally keyless. Production API
   // keys are optional here and only sent when an operator configures one.

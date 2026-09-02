@@ -3,12 +3,22 @@ const { withDatabase, withDatabaseTransaction } = require('../_lib/db');
 const { bangkokDateKey } = require('../_lib/dailyPeriod');
 const { calculateStandardFareScore } = require('../_lib/standardScoring');
 const { getStandardEventPoints } = require('../_lib/standardEventScores');
+const { REWARD_MINT } = require('../_lib/rewards');
 
 const RPC = process.env.SOLANA_RPC_URL || 'https://solana-rpc.publicnode.com';
 function respond(response, status, body) { return response.status(status).json(body); }
 function env(value) { return value === 'PRODUCTION_TEST' ? value : 'NORMAL'; }
 function validWallet(value) { return typeof value === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value); }
 function validSignature(value) { return typeof value === 'string' && /^[1-9A-HJ-NP-Za-km-z]{80,100}$/.test(value); }
+function rewardContribution({ environment, inputMint, outputMint, inputAmountRaw, outputAmountRaw, platformFeeBps, platformFeeMode }) {
+  if (environment !== 'NORMAL') return { feeAmount: 0n, feeMint: null, contribution: 0n };
+  const feeMint = platformFeeMode === 'inputMint' ? inputMint : outputMint;
+  if (feeMint !== REWARD_MINT) return { feeAmount: 0n, feeMint, contribution: 0n };
+  const base = BigInt(platformFeeMode === 'inputMint' ? inputAmountRaw : (outputAmountRaw ?? 0));
+  const feeAmount = base * BigInt(platformFeeBps) / 10000n;
+  const shareBps = Math.max(0, Math.min(10000, Number(process.env.REWARD_FEE_SHARE_BPS ?? 5000)));
+  return { feeAmount, feeMint, contribution: feeAmount * BigInt(shareBps) / 10000n };
+}
 async function rpc(method, params) { const response = await fetch(RPC, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) }); if (!response.ok) throw new Error('solana_rpc_unavailable'); const body = await response.json(); if (body.error) throw new Error('solana_rpc_error'); return body.result; }
 async function confirmedByWallet(signature, wallet) { const status = (await rpc('getSignatureStatuses', [[signature], { searchTransactionHistory: true }]))?.value?.[0]; if (!status || status.err || !['confirmed', 'finalized'].includes(status.confirmationStatus)) return false; const transaction = await rpc('getTransaction', [signature, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }]); return (transaction?.transaction?.message?.accountKeys || []).some(key => key.signer === true && key.pubkey === wallet); }
 async function transaction(request, response) {
@@ -16,7 +26,9 @@ async function transaction(request, response) {
   if (!validWallet(wallet) || !validSignature(signature) || body.mode !== 'STANDARD' || body.environment === 'DEMO') return respond(response, 400, { error: 'invalid_standard_transaction' });
   if (!(await confirmedByWallet(signature, wallet))) return respond(response, 409, { error: 'standard_transaction_not_confirmed_or_wallet_mismatch' });
   const displayName = typeof body.displayName === 'string' && body.displayName.trim() ? body.displayName.trim().slice(0, 32) : null;
-  const saved = await withDatabaseTransaction(async client => { await client.query(`INSERT INTO standard_players (wallet_address,display_name) VALUES ($1,$2) ON CONFLICT (wallet_address) DO UPDATE SET display_name=COALESCE(EXCLUDED.display_name,standard_players.display_name), last_seen_at=now()`, [wallet, displayName]); const inserted = await client.query(`INSERT INTO standard_transactions (id,player_wallet,environment,input_mint,output_mint,input_amount_raw,output_amount_raw,transaction_signature,platform_fee_bps,platform_fee_mode,platform_fee_account,status,submitted_at,confirmed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'CONFIRMED',$12,$12) ON CONFLICT (transaction_signature) DO NOTHING RETURNING *`, [randomUUID(), wallet, env(body.environment), String(body.inputMint || ''), String(body.outputMint || ''), String(body.inputAmountRaw || 0), body.outputAmountRaw == null ? null : String(body.outputAmountRaw), signature, Number(body.platformFeeBps ?? process.env.DFLOW_PLATFORM_FEE_BPS ?? 80), body.platformFeeMode || process.env.DFLOW_PLATFORM_FEE_MODE || 'outputMint', body.platformFeeAccount || process.env.DFLOW_PLATFORM_FEE_ACCOUNT || null, new Date()]); return { duplicate: !inserted.rowCount, transaction: inserted.rows[0] || (await client.query('SELECT * FROM standard_transactions WHERE transaction_signature=$1', [signature])).rows[0] }; });
+  const environment = env(body.environment), inputMint = String(body.inputMint || ''), outputMint = String(body.outputMint || ''), inputAmountRaw = String(body.inputAmountRaw || 0), outputAmountRaw = body.outputAmountRaw == null ? null : String(body.outputAmountRaw), platformFeeBps = Number(body.platformFeeBps ?? process.env.DFLOW_PLATFORM_FEE_BPS ?? 80), platformFeeMode = body.platformFeeMode || process.env.DFLOW_PLATFORM_FEE_MODE || 'outputMint';
+  const contribution = rewardContribution({ environment, inputMint, outputMint, inputAmountRaw, outputAmountRaw, platformFeeBps, platformFeeMode });
+  const saved = await withDatabaseTransaction(async client => { await client.query(`INSERT INTO standard_players (wallet_address,display_name) VALUES ($1,$2) ON CONFLICT (wallet_address) DO UPDATE SET display_name=COALESCE(EXCLUDED.display_name,standard_players.display_name), last_seen_at=now()`, [wallet, displayName]); const inserted = await client.query(`INSERT INTO standard_transactions (id,player_wallet,environment,input_mint,output_mint,input_amount_raw,output_amount_raw,transaction_signature,platform_fee_bps,platform_fee_mode,platform_fee_account,platform_fee_amount,platform_fee_mint,reward_contribution_atomic,status,submitted_at,confirmed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'CONFIRMED',$15,$15) ON CONFLICT (transaction_signature) DO NOTHING RETURNING *`, [randomUUID(), wallet, environment, inputMint, outputMint, inputAmountRaw, outputAmountRaw, signature, platformFeeBps, platformFeeMode, body.platformFeeAccount || process.env.DFLOW_PLATFORM_FEE_ACCOUNT || null, contribution.feeAmount.toString(), contribution.feeMint, contribution.contribution.toString(), new Date()]); if (inserted.rowCount && contribution.contribution > 0n) await client.query(`UPDATE reward_pool_balances SET accrued_atomic=accrued_atomic+$2,updated_at=now() WHERE pool='STANDARD'`, [environment, contribution.contribution.toString()]); return { duplicate: !inserted.rowCount, transaction: inserted.rows[0] || (await client.query('SELECT * FROM standard_transactions WHERE transaction_signature=$1', [signature])).rows[0] }; });
   return respond(response, saved.duplicate ? 200 : 201, saved);
 }
 async function result(request, response) {

@@ -5,10 +5,19 @@
   "engines": {
     "node": ">=20"
   },
-  "scripts": { "test:e2e": "playwright test", "e2e:save-agent-state": "node tests/e2e/save-agent-state.cjs", "e2e:agent-cdp": "node tests/e2e/agent-cdp.cjs", "routes:prepare": "node scripts/prepare-route-chunks.cjs", "routes:missing": "node scripts/report-missing-route-pairs.cjs" },
+  "scripts": {
+    "test:e2e": "playwright test",
+    "e2e:save-agent-state": "node tests/e2e/save-agent-state.cjs",
+    "e2e:agent-cdp": "node tests/e2e/agent-cdp.cjs",
+    "routes:prepare": "node scripts/prepare-route-chunks.cjs",
+    "routes:missing": "node scripts/report-missing-route-pairs.cjs"
+  },
   "dependencies": {
-    "@solana/web3.js": "^1.95.8",
+    "@solana/web3.js": "1.95.8",
     "pg": "^8.13.1"
+  },
+  "overrides": {
+    "rpc-websockets": "9.0.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1"

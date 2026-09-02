@@ -46,17 +46,19 @@ async function accrueStandardPeriods(client, poolAtomic) {
   const periods = (await client.query(`SELECT DISTINCT competition_period, environment FROM standard_game_results WHERE competition_period < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::date ORDER BY competition_period ASC, environment ASC`)).rows;
   let awardsCreated = 0;
   for (const period of periods) {
+    const configuredPool = period.environment === 'PRODUCTION_TEST' ? poolAtomic : BigInt((await client.query(`SELECT COALESCE(SUM(reward_contribution_atomic),0)::numeric AS amount FROM standard_transactions WHERE environment='NORMAL' AND created_at::date=$1`, [period.competition_period])).rows[0].amount);
+    if (configuredPool <= 0n) continue;
     const winners = (await client.query(
       `SELECT player_wallet, SUM(score_delta)::int AS points, COUNT(*) FILTER (WHERE fare_completed)::int AS fares_completed
        FROM standard_game_results WHERE competition_period=$1 AND environment=$2
        GROUP BY player_wallet ORDER BY points DESC, fares_completed DESC, player_wallet ASC LIMIT 3`, [period.competition_period, period.environment]
     )).rows;
     if (winners.length < MIN_WINNERS) continue;
-    for (const award of allocatePrizePool(poolAtomic, winners)) {
+    for (const award of allocatePrizePool(configuredPool, winners)) {
       const inserted = await client.query(
         `INSERT INTO standard_daily_reward_awards (id,competition_period,environment,player_wallet,rank,pool_amount_atomic,award_amount_atomic)
          VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (competition_period,environment,player_wallet,rank) DO NOTHING RETURNING id`,
-        [randomUUID(), period.competition_period, period.environment, award.player_wallet, award.rank, poolAtomic.toString(), award.amountAtomic.toString()]
+        [randomUUID(), period.competition_period, period.environment, award.player_wallet, award.rank, configuredPool.toString(), award.amountAtomic.toString()]
       );
       if (inserted.rowCount) {
         awardsCreated += 1;
@@ -107,8 +109,17 @@ module.exports = async function handler(request, response) {
       const awardsCreated = (await accrueCompletedShifts(client, poolAtomic)) + (await accrueStandardPeriods(client, poolAtomic));
       const funding = [];
       if (request.method === 'POST' && process.env.REWARD_FUNDING_ENABLED === 'true' && FEE_WALLET) {
-        const half = poolAtomic / 2n;
-        for (const [pool, amount] of [['STANDARD', half], ['AGENT', poolAtomic - half]]) {
+        const balances = (await client.query(`SELECT pool, accrued_atomic, funded_atomic FROM reward_pool_balances`)).rows;
+        const balanceFor = pool => balances.find(row => row.pool === pool);
+        const standardBalance = balanceFor('STANDARD');
+        const standardAmount = standardBalance ? BigInt(standardBalance.accrued_atomic) - BigInt(standardBalance.funded_atomic) : 0n;
+        const agentBalance = balanceFor('AGENT');
+        const agentAmount = FUNDING_SOURCE === 'FEE_ACCRUED' && agentBalance
+          ? BigInt(agentBalance.accrued_atomic) - BigInt(agentBalance.funded_atomic)
+          : poolAtomic;
+        const amounts = [['STANDARD', standardAmount], ['AGENT', agentAmount]];
+        for (const [pool, amount] of amounts) {
+          if (amount <= 0n) continue;
           const key = `${triggerKey}:${pool}`;
           const existing = await client.query('SELECT transaction_signature,status FROM reward_funding_transfers WHERE idempotency_key=$1', [key]);
           if (existing.rowCount) { funding.push({ pool, status: existing.rows[0].status, signature: existing.rows[0].transaction_signature }); continue; }
