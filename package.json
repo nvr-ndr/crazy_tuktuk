@@ -10,7 +10,8 @@
     "e2e:save-agent-state": "node tests/e2e/save-agent-state.cjs",
     "e2e:agent-cdp": "node tests/e2e/agent-cdp.cjs",
     "routes:prepare": "node scripts/prepare-route-chunks.cjs",
-    "routes:missing": "node scripts/report-missing-route-pairs.cjs"
+    "routes:missing": "node scripts/report-missing-route-pairs.cjs",
+    "test:routes": "node --experimental-vm-modules --test scripts/remote-route-cache.test.cjs"
   },
   "dependencies": {
     "@solana/web3.js": "1.95.8",
