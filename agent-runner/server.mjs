@@ -1,9 +1,13 @@
 import http from 'node:http';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
 import pg from 'pg';
 import bs58 from 'bs58';
 import nacl from 'tweetnacl';
 import { DflowQuoteError, agentGuardrails, assertQuoteGuardrails, executeTrade, getDflowCliVersion, quoteConfiguration, requestQuote, tradingConfiguration } from './dflow.mjs';
+
+const require = createRequire(import.meta.url);
+const { recordEpochContributionBestEffort } = require('../api/_lib/rewardEpochConfirmation');
 
 const port = Number(process.env.PORT || 8080);
 const requiredForDatabase = ['DATABASE_URL'];
@@ -90,6 +94,22 @@ async function queryDatabase(query, values = []) {
   try {
     await client.connect();
     return await client.query(query, values);
+  } finally {
+    await client.end();
+  }
+}
+
+async function withDatabaseTransaction(work) {
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  try {
+    await client.connect();
+    await client.query('BEGIN');
+    const result = await work(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch { /* preserve original failure */ }
+    throw error;
   } finally {
     await client.end();
   }
@@ -500,7 +520,7 @@ const server = http.createServer(async (request, response) => {
       const body = await readJson(request);
       const inputMint = String(body.inputMint || ''), outputMint = String(body.outputMint || ''), amount = String(body.amount || ''), slippageBps = String(body.slippageBps || '100');
       const guardrails = assertQuoteGuardrails({ inputMint, outputMint, notionalUsd: body.notionalUsd });
-      const agent = await queryDatabase('SELECT dflow_wallet_name FROM agents WHERE id=(SELECT agent_id FROM agent_runs WHERE id=$1)', [tradeMatch[1]]);
+      const agent = await queryDatabase('SELECT dflow_wallet_name, owner_wallet FROM agents WHERE id=(SELECT agent_id FROM agent_runs WHERE id=$1)', [tradeMatch[1]]);
       if (!agent.rowCount) return json(response, 404, { error: 'agent_not_found' }, request);
       const trade = await executeTrade({ amount, inputMint, outputMint, slippageBps, walletName: agent.rows[0].dflow_wallet_name });
       const feeAmount = BigInt(String(body.platformFeeAmount || trade.result?.data?.platformFee?.amount || trade.result?.platformFee?.amount || 0));
@@ -508,9 +528,19 @@ const server = http.createServer(async (request, response) => {
       const feeMint = feeMode === 'inputMint' ? inputMint : outputMint;
       const contribution = feeMint === 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' ? feeAmount * BigInt(Math.max(0, Math.min(10000, Number(process.env.REWARD_FEE_SHARE_BPS || 5000)))) / 10000n : 0n;
       const swapId = randomUUID();
-      await queryDatabase(`INSERT INTO agent_swaps (id,agent_run_id,fare_id,status,input_mint,output_mint,input_amount,output_amount,notional_usd,platform_fee_bps,platform_fee_mode,platform_fee_amount,platform_fee_account,reward_contribution_atomic,signature) VALUES ($1,$2,$3,'CONFIRMED',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`, [swapId, tradeMatch[1], String(body.fareId || 'agent-trade'), inputMint, outputMint, amount, trade.result?.data?.outputAmount || trade.result?.data?.outAmount || null, guardrails.notionalUsd, Number(body.platformFeeBps || process.env.DFLOW_PLATFORM_FEE_BPS || 50), feeMode, feeAmount.toString(), process.env.DFLOW_PLATFORM_FEE_ACCOUNT || null, contribution.toString(), trade.signature]);
-      if (contribution > 0n) await queryDatabase(`UPDATE reward_pool_balances SET accrued_atomic=accrued_atomic+$1,updated_at=now() WHERE pool='AGENT'`, [contribution.toString()]);
-      return json(response, 201, { id: swapId, status: 'CONFIRMED', signature: trade.signature, rewardContributionAtomic: contribution.toString() }, request);
+      const saved = await withDatabaseTransaction(async client => {
+        const inserted = await client.query(`INSERT INTO agent_swaps (id,agent_run_id,fare_id,status,input_mint,output_mint,input_amount,output_amount,notional_usd,platform_fee_bps,platform_fee_mode,platform_fee_amount,platform_fee_account,reward_contribution_atomic,signature) VALUES ($1,$2,$3,'CONFIRMED',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) ON CONFLICT (signature) DO NOTHING RETURNING *`, [swapId, tradeMatch[1], String(body.fareId || 'agent-trade'), inputMint, outputMint, amount, trade.result?.data?.outputAmount || trade.result?.data?.outAmount || null, guardrails.notionalUsd, Number(body.platformFeeBps || process.env.DFLOW_PLATFORM_FEE_BPS || 50), feeMode, feeAmount.toString(), process.env.DFLOW_PLATFORM_FEE_ACCOUNT || null, contribution.toString(), trade.signature]);
+        if (inserted.rowCount && contribution > 0n) {
+          await recordEpochContributionBestEffort(client, {
+            contributionId: randomUUID(), initialEpochId: randomUUID(), nextEpochId: randomUUID(),
+            pool: 'AGENT', playerWallet: agent.rows[0].owner_wallet, signature: trade.signature,
+            amountAtomic: contribution, confirmedAt: inserted.rows[0].created_at,
+            thresholdAtomic: Math.round(Number(process.env.REWARD_SETTLEMENT_THRESHOLD_USDC || 50) * 1000000),
+          }, { beforeRecord: database => database.query(`UPDATE reward_pool_balances SET accrued_atomic=accrued_atomic+$1,updated_at=now() WHERE pool='AGENT'`, [contribution.toString()]) });
+        }
+        return { duplicate: !inserted.rowCount, swap: inserted.rows[0] };
+      });
+      return json(response, saved.duplicate ? 200 : 201, { id: saved.swap?.id || swapId, status: 'CONFIRMED', signature: trade.signature, rewardContributionAtomic: contribution.toString() }, request);
     } catch (error) { return json(response, error instanceof DflowQuoteError ? error.status : 503, { error: error.message || 'agent_trade_unavailable' }, request); }
   }
   const historyMatch = url.pathname.match(/^\/v1\/agent-runs\/([0-9a-f-]{36})\/history$/i);

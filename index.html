@@ -789,8 +789,9 @@
     #dflowBonusSettings > span:first-child { display: grid; gap: 3px; min-width: 0; }
     #dflowBonusSettings > span:first-child b { color: #f6d46b; }
     #dflowBonusSettings small { display: block; color: rgba(255,255,255,.72); font-size: 11px; line-height: 1.2; }
-    .vehicle-style-options { display: grid; flex: 0 0 min(190px, 48%); gap: 7px; }
-    .vehicle-style-options label { display: flex; align-items: center; gap: 7px; min-height: 30px; padding: 6px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 9px; color: #fff5cf; font-size: 11px; line-height: 1.1; white-space: nowrap; }
+    .vehicle-style-options { display: grid; flex: 0 0 min(210px, 48%); gap: 7px; }
+    .vehicle-style-options label { display: flex; align-items: center; gap: 7px; min-height: 30px; padding: 7px 9px; border: 1px solid rgba(255,255,255,.2); border-radius: 9px; background: #4b3020; box-shadow: inset 0 1px rgba(255,255,255,.08), 0 3px 0 rgba(23,12,7,.35); color: #fff5cf; font-size: 11px; line-height: 1.1; white-space: nowrap; cursor: pointer; }
+    .vehicle-style-options label:has(input:checked) { border-color: #f6d46b; background: #70452b; box-shadow: inset 0 1px rgba(255,255,255,.12), 0 0 0 2px rgba(246,212,107,.18); }
     .vehicle-style-options input { margin: 0; accent-color: #f6d46b; }
     .toggle-switch {
       position: relative;
@@ -1492,7 +1493,7 @@
     .leaderboard-intern-note p { margin: 0; }
     .leaderboard-intern-note b { color: #f6d46b; }
     .leaderboard-intern-note button { position: absolute; top: 7px; right: 7px; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 2px solid #ff8f86; border-radius: 50%; background: #c83232; color: #fff; font: 900 16px/1 system-ui, sans-serif; cursor: pointer; }
-    #leaderboardBoard { display: grid; align-content: start; flex: 1; gap: 8px; min-height: 0; margin: 12px 0 18px; overflow-y: auto; }
+    #leaderboardBoard { display: grid; align-content: start; align-self: center; width: min(100%, 760px); flex: 1; gap: 8px; min-height: 0; margin: 12px auto 18px; overflow-y: auto; }
     .board-row { display: grid; grid-template-columns: 58px 1fr auto; gap: 10px; padding: 10px 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 15px; background: rgba(255,255,255,.08); opacity: 0; transform: translateY(10px); transition: opacity .22s ease, transform .3s ease; }
     .board-row.show { opacity: 1; transform: none; }
     .board-row.is-local { border-style: dashed; }
@@ -1825,7 +1826,18 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     .agent-record .agent-record-muted { color:rgba(255,255,255,.55); }
     .leaderboard-tabs { display:flex; justify-content:center; gap:8px; margin:0 0 8px; }
     .leaderboard-tabs button { width:fit-content; min-height:34px; padding:7px 13px; font-size:11px; }
-    #tournamentLeaderboardBoard { display:grid; align-content:start; flex:1; gap:8px; min-height:0; margin:12px 0 18px; overflow-y:auto; }
+    .reward-epoch-summary { width:min(100%, 760px); margin:0 auto 4px; padding:9px 12px; border:1px solid rgba(255,255,255,.14); border-radius:13px; background:rgba(36,20,12,.76); text-align:left; }
+    .reward-epoch-summary[hidden] { display:none; }
+    .reward-epoch-heading { display:flex; justify-content:space-between; gap:12px; color:#fff5cf; font-size:11px; font-weight:900; }
+    .reward-epoch-heading strong { color:#f6d46b; }
+    .reward-epoch-meter { height:7px; margin-top:7px; overflow:hidden; border-radius:99px; background:rgba(255,255,255,.14); }
+    .reward-epoch-meter span { display:block; height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#d69b2d,#f6d46b); transition:width .3s ease; }
+    .reward-epoch-note { margin-top:5px; color:rgba(255,255,255,.7); font-size:10px; }
+    .reward-epoch-leaders { margin-top:6px; color:#fff5cf; font-size:11px; font-weight:800; line-height:1.35; }
+    .reward-epoch-leaders-label { display:block; margin-bottom:2px; color:#f6d46b; font-size:9px; letter-spacing:.08em; }
+    .reward-epoch-payout { margin-top:6px; color:rgba(255,255,255,.78); font-size:10px; line-height:1.3; }
+    .leaderboard-scope { width:min(100%,760px); margin:0 auto -5px; color:rgba(255,255,255,.7); font-size:10px; font-weight:900; letter-spacing:.08em; text-align:left; }
+    #tournamentLeaderboardBoard { display:grid; align-content:start; align-self:center; width:min(100%, 760px); flex:1; gap:8px; min-height:0; margin:12px auto 18px; overflow-y:auto; }
     #tournamentLeaderboardBoard[hidden], #leaderboardBoard[hidden] { display:none; }
     #leaderboardBack.panel-scene-back, #rulesBack.panel-scene-back, #settingsBack.panel-scene-back, #developerBack.panel-scene-back { position:absolute; z-index:3; top:12px; left:12px; width:fit-content; margin:0 !important; }
     #leaderboardPanel > h2, #rulesPanel > h2, #settingsPanel > h2, #developerPanel > h2 { margin-top:52px; }
@@ -4221,6 +4233,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   </div>
   <h2>LEADERBOARD</h2>
   <div class="leaderboard-tabs" role="tablist" aria-label="Leaderboard mode"><button id="leaderboardDriveTab" class="ui-button primary" role="tab" type="button">DRIVE</button><button id="leaderboardTournamentTab" class="ui-button" role="tab" type="button">DAILY AGENT</button></div>
+  <div id="rewardEpochSummary" class="reward-epoch-summary" hidden aria-live="polite"></div>
+  <div id="leaderboardScope" class="leaderboard-scope">TODAY'S STANDINGS</div>
   <div id="leaderboardBoard"></div>
   <div id="tournamentLeaderboardBoard" hidden></div>
   <button id="leaderboardBack" class="ui-button map-back-button panel-scene-back" type="button">BACK</button>
@@ -5396,8 +5410,32 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       ? awards.map((award) => `<span class="agent-award${award.rare ? ' is-rare' : ''}">${award.label}</span>`).join('')
       : '<span class="agent-award">FIRST SHIFT COMPLETE</span>';
   }
+  function renderRewardEpochSummary(payload, poolName) {
+    const summaryEl = $('rewardEpochSummary');
+    const poolPayload = payload?.rewardPool === poolName ? payload : {};
+    let epoch = poolPayload.epoch || null;
+    const preview = !epoch && window.CrazyTukDemoMode?.();
+    if (!epoch) epoch = { status: 'OPEN', thresholdAtomic: '50000000', poolAtomic: '0' };
+    if (preview) epoch = { status: 'OPEN', thresholdAtomic: '50000000', poolAtomic: poolName === 'STANDARD' ? '18500000' : '32750000' };
+    if (!summaryEl) return;
+    const threshold = Number(epoch.thresholdAtomic) / 1e6;
+    const amount = Number(epoch.poolAtomic) / 1e6;
+    const percent = threshold > 0 ? Math.min(100, amount / threshold * 100) : 0;
+    summaryEl.hidden = false;
+    const previewLeaders = poolName === 'STANDARD'
+      ? [{ rank: 1, playerWallet: 'drive-driver-alpha', points: 196 }, { rank: 2, playerWallet: 'drive-driver-bravo', points: 167 }, { rank: 3, playerWallet: 'drive-driver-charlie', points: 139 }]
+      : [{ rank: 1, playerWallet: 'agent-driver-alpha', points: 184 }, { rank: 2, playerWallet: 'agent-driver-bravo', points: 151 }, { rank: 3, playerWallet: 'agent-driver-charlie', points: 122 }];
+    const topEpoch = (preview ? previewLeaders : (poolPayload.epochLeaderboard || [])).slice(0, 3).map((entry) => { const badge = entry.rank === 1 ? '👑' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : ''; return `${badge} #${entry.rank} ${entry.playerWallet.slice(0, 4)}...${entry.playerWallet.slice(-4)} · ${entry.points.toLocaleString()} pts`; }).join(' · ');
+    const payoutText = epoch.status === 'PAYOUT_PENDING' && epoch.payoutAt ? (() => { const ms = Math.max(0, new Date(epoch.payoutAt).getTime() - Date.now()); return `PAYOUT WINDOW: ${Math.floor(ms / 3600000)}h ${Math.floor(ms % 3600000 / 60000)}m remaining`; })() : '';
+    const projected = [60, 25, 15].map((share) => `$${(amount * share / 100).toFixed(2)} (${share}%)`).join(' · ');
+    const epochLabel = poolName === 'AGENT' ? 'AGENT REWARD EPOCH' : 'DRIVE REWARD EPOCH';
+    summaryEl.innerHTML = `<div class="reward-epoch-heading"><span>${preview ? 'DEMO PREVIEW · ' : ''}${epochLabel}</span><strong>$${amount.toFixed(2)} / $${threshold.toFixed(2)}</strong></div><div class="reward-epoch-meter"><span style="width:${percent}%"></span></div><div class="reward-epoch-note">${payoutText || `${percent.toFixed(0)}% funded toward the next payout.`}</div>${topEpoch ? `<div class="reward-epoch-leaders"><span class="reward-epoch-leaders-label">CUMULATIVE EPOCH LEADERS</span>${topEpoch}</div><div class="reward-epoch-payout"><b>PROJECTED PAYOUTS</b> · ${projected}</div>` : ''}${preview ? '<div class="reward-epoch-note">Demo-only preview — no reward records were written.</div>' : ''}`;
+  }
 
+  let leaderboardRequestToken = 0;
   async function renderLeaderboard() {
+    const requestToken = ++leaderboardRequestToken;
+    if ($('leaderboardScope')) $('leaderboardScope').textContent = "TODAY'S DRIVE STANDINGS";
     const boardEl = $("leaderboardBoard");
     if (!boardEl) return;
     const environment = isProductionTestMode() ? 'PRODUCTION_TEST' : 'NORMAL';
@@ -5405,8 +5443,11 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
       const response = await fetch(`/api/standard?environment=${environment}`);
       if (response.ok) {
         const payload = await response.json();
+        if (requestToken !== leaderboardRequestToken) return;
+        renderRewardEpochSummary(payload, 'STANDARD');
         const currentWallet = window.CrazyTukGame?.getPlayer?.()?.wallet;
-        const entries = payload.leaderboard || [];
+        const liveEntries = payload.leaderboard || [];
+        const entries = liveEntries.length || !window.CrazyTukDemoMode?.() ? liveEntries : Array.from({ length: 10 }, (_, index) => ({ rank: index + 1, displayName: `Demo Driver ${index + 1}`, playerWallet: `demo-drive-${index + 1}`, score: Math.max(12, 184 - index * 17) }));
         boardEl.replaceChildren();
         if (!entries.length) {
           boardEl.innerHTML = '<div class="board-empty">Complete a fare to set the first Standard score.</div>';
@@ -5415,7 +5456,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
         entries.slice(0, 10).forEach((entry, index) => {
           const row = document.createElement('div');
           row.className = `board-row${entry.playerWallet === currentWallet ? ' is-me' : ''}`;
-          const rank = entry.rank || index + 1;
+          const rank = index + 1;
           const badge = rank === 1 ? '👑' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
           const wallet = entry.playerWallet || '';
           const identity = wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Driver';
@@ -5465,11 +5506,15 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   }
 
   async function renderTournamentLeaderboard() {
+    const requestToken = ++leaderboardRequestToken;
     const boardEl = $("tournamentLeaderboardBoard");
     try {
       const response = await fetch('/api/leaderboard');
       if (response.ok) {
         const payload = await response.json();
+        if (requestToken !== leaderboardRequestToken) return;
+        if ($('leaderboardScope')) $('leaderboardScope').textContent = "TODAY'S AGENT STANDINGS";
+        renderRewardEpochSummary(payload, 'AGENT');
         const entries = payload.leaderboard || [];
         boardEl.replaceChildren();
         if (!entries.length) {
@@ -5482,7 +5527,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
           const wallet = entry.ownerWallet || entry.walletPublicKey || '';
           const identity = wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Wallet pending';
           const badge = index === 0 ? '👑' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
-          row.innerHTML = `<b><span>#${entry.rank || index + 1}</span><span>${badge}</span></b><span>${entry.name} · ${identity}</span><strong>${entry.points.toLocaleString()}</strong>`;
+          row.innerHTML = `<b><span>#${index + 1}</span><span>${badge}</span></b><span>${entry.name} · ${identity}</span><strong>${entry.points.toLocaleString()}</strong>`;
           boardEl.append(row);
           setTimeout(() => row.classList.add('show'), index * 70);
         });
@@ -5513,6 +5558,8 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
 
   function setLeaderboardMode(mode) {
     const isTournament = mode === 'tournament';
+    if ($('leaderboardScope')) $('leaderboardScope').textContent = isTournament ? "TODAY'S AGENT STANDINGS" : "TODAY'S DRIVE STANDINGS";
+    renderRewardEpochSummary({ rewardPools: [] }, isTournament ? 'AGENT' : 'STANDARD');
     $("leaderboardBoard").hidden = isTournament;
     $("tournamentLeaderboardBoard").hidden = !isTournament;
     $("leaderboardDriveTab").classList.toggle('primary', !isTournament);
@@ -5996,7 +6043,10 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
   const developerPanelEl = $("developerPanel");
   const devFuelControlsEl = $("devFuelControls");
   const developerOpenEl = $("developerOpen");
-  const developerUnlocked = () => localStorage.getItem('crazytuk_developer_unlocked') === 'true';
+  // This is only a demo convenience gate, not authorization. Keep it in memory
+  // so a fresh page load hides developer tools again.
+  let developerToolsUnlocked = false;
+  const developerUnlocked = () => developerToolsUnlocked;
   const syncDeveloperPanel = () => {
     if (developerOpenEl) developerOpenEl.hidden = !developerUnlocked();
   };
@@ -6007,7 +6057,7 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     settingsTitleTapTimer = setTimeout(() => { settingsTitleTaps = 0; }, 3000);
     if (settingsTitleTaps >= 7) {
       settingsTitleTaps = 0;
-      localStorage.setItem('crazytuk_developer_unlocked', 'true');
+      developerToolsUnlocked = true;
       syncDeveloperPanel();
       window.CrazyTukGame?.showNotification?.('Developer tools unlocked.', 'info');
     }
@@ -6018,13 +6068,13 @@ background: url('assets/backgrounds/start-screen.png') center / cover no-repeat;
     settingsTitleTapTimer = setTimeout(() => { settingsTitleTaps = 0; }, 3000);
     if (settingsTitleTaps >= 7) {
       settingsTitleTaps = 0;
-      localStorage.setItem('crazytuk_developer_unlocked', 'true');
+      developerToolsUnlocked = true;
       syncDeveloperPanel();
       window.CrazyTukGame?.showNotification?.('Developer tools unlocked.', 'info');
     }
   });
   $("devLockButton")?.addEventListener('click', () => {
-    localStorage.removeItem('crazytuk_developer_unlocked');
+    developerToolsUnlocked = false;
     syncDeveloperPanel();
     window.CrazyTukGame?.showNotification?.('Developer tools locked.', 'info');
   });

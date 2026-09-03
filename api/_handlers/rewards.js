@@ -1,164 +1,98 @@
 const { randomUUID } = require('node:crypto');
 const { withDatabaseTransaction } = require('../_lib/db');
-const { bangkokDateKey } = require('../_lib/dailyPeriod');
-const { atomicUsdc, allocatePrizePool, formatAtomic, readTreasuryBalanceAtomic, shouldSettle, REWARD_WALLET, REWARD_MINT, DAILY_POOL_USDC, SETTLEMENT_THRESHOLD_USDC, MIN_WINNERS } = require('../_lib/rewards');
+const { atomicUsdc, formatAtomic, readTreasuryBalanceAtomic, REWARD_WALLET, REWARD_MINT, SETTLEMENT_THRESHOLD_USDC } = require('../_lib/rewards');
 const { transferUsdc } = require('../_lib/rewardTransfers');
-const FEE_WALLET = process.env.DFLOW_PLATFORM_FEE_ACCOUNT || null;
-const FUNDING_SOURCE = ['FEE_ACCRUED', 'SEEDED_MANUAL', 'MIXED', 'UNKNOWN'].includes(process.env.REWARD_FUNDING_SOURCE) ? process.env.REWARD_FUNDING_SOURCE : 'SEEDED_MANUAL';
+const { dueEpochQuery, payoutEntries, settlementNetwork } = require('../_lib/rewardSettlement');
 
 function respond(response, status, body) { return response.status(status).json(body); }
 function authorized(request) {
   const token = request.headers.authorization?.replace(/^Bearer\s+/i, '') || request.headers['x-rewards-admin-token'];
   return Boolean(token && ((process.env.REWARDS_ADMIN_TOKEN && token === process.env.REWARDS_ADMIN_TOKEN) || (process.env.CRON_SECRET && token === process.env.CRON_SECRET)));
 }
-async function accrueCompletedShifts(client, poolAtomic) {
-  const shifts = (await client.query(`SELECT id, shift_key FROM daily_shifts WHERE status='COMPLETE' ORDER BY shift_key ASC`)).rows;
-  let awardsCreated = 0;
-  for (const shift of shifts) {
-    const winners = (await client.query(
-      `SELECT r.agent_id, a.owner_wallet AS player_wallet, r.final_rank AS rank, r.crazy_score AS points
-       FROM daily_shift_results r JOIN agents a ON a.id=r.agent_id
-       WHERE r.shift_id=$1 AND r.final_rank <= 3 AND r.crazy_score > 0
-       ORDER BY r.final_rank ASC, r.crazy_score DESC, r.agent_id ASC`, [shift.id]
-    )).rows;
-    if (winners.length < MIN_WINNERS) continue;
-    for (const award of allocatePrizePool(poolAtomic, winners)) {
-      const inserted = await client.query(
-        `INSERT INTO daily_reward_awards (id,shift_id,agent_id,player_wallet,rank,pool_amount_atomic,award_amount_atomic)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (shift_id,agent_id,rank) DO NOTHING RETURNING id`,
-        [randomUUID(), shift.id, award.agent_id, award.player_wallet, award.rank, poolAtomic.toString(), award.amountAtomic.toString()]
+
+async function buildDuePoolBatches(pool, treasuryAtomic) {
+  return withDatabaseTransaction(async (client) => {
+    const epochs = (await client.query(dueEpochQuery, [pool])).rows;
+    const batches = [];
+    for (const epoch of epochs) {
+      const scores = (await client.query(`SELECT player_wallet,points,days_played FROM reward_epoch_scores WHERE epoch_id=$1 ORDER BY points DESC, days_played DESC, player_wallet ASC LIMIT 3`, [epoch.id])).rows;
+      const entries = payoutEntries({ poolAtomic: BigInt(epoch.pool_atomic), scores });
+      const obligationAtomic = entries.reduce((sum, entry) => sum + entry.amountAtomic, 0n);
+      const status = entries.length === 3 && treasuryAtomic >= obligationAtomic ? 'READY' : 'HELD';
+      const reason = entries.length === 3 ? (status === 'READY' ? 'payout_window_open' : 'treasury_below_epoch_obligation') : 'epoch_requires_three_ranked_recipients';
+      const batch = (await client.query(
+        `INSERT INTO reward_payout_batches (id,trigger_key,epoch_id,pool,reward_wallet,reward_mint,treasury_balance_atomic,unpaid_atomic,threshold_atomic,recipient_count,status,payout_at,reason)
+         VALUES ($1,(CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::date,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         ON CONFLICT (pool,epoch_id) WHERE epoch_id IS NOT NULL DO UPDATE SET treasury_balance_atomic=EXCLUDED.treasury_balance_atomic, unpaid_atomic=EXCLUDED.unpaid_atomic, recipient_count=EXCLUDED.recipient_count, status=CASE WHEN reward_payout_batches.status IN ('SUBMITTED','CONFIRMED') THEN reward_payout_batches.status ELSE EXCLUDED.status END, reason=EXCLUDED.reason, updated_at=now()
+         RETURNING *`,
+        [randomUUID(), epoch.id, pool, REWARD_WALLET, REWARD_MINT, treasuryAtomic.toString(), obligationAtomic.toString(), epoch.threshold_atomic, entries.length, status, epoch.payout_at, reason]
+      )).rows[0];
+      // The first insert freezes winner identity, rank, share, and amount.
+      for (const entry of entries) await client.query(
+        `INSERT INTO reward_payout_batch_entries (id,batch_id,player_wallet,rank,share_bps,amount_atomic) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (batch_id,player_wallet) DO NOTHING`,
+        [randomUUID(), batch.id, entry.playerWallet, entry.rank, entry.shareBps, entry.amountAtomic.toString()]
       );
-      if (inserted.rowCount) {
-        awardsCreated += 1;
-        await client.query(
-          `INSERT INTO reward_balances (player_wallet,accrued_atomic,unpaid_atomic)
-           VALUES ($1,$2,$2) ON CONFLICT (player_wallet) DO UPDATE
-           SET accrued_atomic=reward_balances.accrued_atomic+$2, unpaid_atomic=reward_balances.unpaid_atomic+$2, updated_at=now()`,
-          [award.player_wallet, award.amountAtomic.toString()]
-        );
-      }
+      const pending = (await client.query(`SELECT player_wallet,amount_atomic,status,transaction_signature FROM reward_payout_batch_entries WHERE batch_id=$1 AND status IN ('PENDING','FAILED') ORDER BY rank ASC`, [batch.id])).rows;
+      batches.push({ pool, epochId: epoch.id, batchId: batch.id, status: batch.status, reason: batch.reason, payoutAt: batch.payout_at, entries: pending });
     }
-  }
-  return awardsCreated;
+    return batches;
+  });
 }
 
-async function accrueStandardPeriods(client, poolAtomic) {
-  const periods = (await client.query(`SELECT DISTINCT competition_period, environment FROM standard_game_results WHERE competition_period < (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Bangkok')::date ORDER BY competition_period ASC, environment ASC`)).rows;
-  let awardsCreated = 0;
-  for (const period of periods) {
-    const configuredPool = period.environment === 'PRODUCTION_TEST' ? poolAtomic : BigInt((await client.query(`SELECT COALESCE(SUM(reward_contribution_atomic),0)::numeric AS amount FROM standard_transactions WHERE environment='NORMAL' AND created_at::date=$1`, [period.competition_period])).rows[0].amount);
-    if (configuredPool <= 0n) continue;
-    const winners = (await client.query(
-      `SELECT player_wallet, SUM(score_delta)::int AS points, COUNT(*) FILTER (WHERE fare_completed)::int AS fares_completed
-       FROM standard_game_results WHERE competition_period=$1 AND environment=$2
-       GROUP BY player_wallet ORDER BY points DESC, fares_completed DESC, player_wallet ASC LIMIT 3`, [period.competition_period, period.environment]
-    )).rows;
-    if (winners.length < MIN_WINNERS) continue;
-    for (const award of allocatePrizePool(configuredPool, winners)) {
-      const inserted = await client.query(
-        `INSERT INTO standard_daily_reward_awards (id,competition_period,environment,player_wallet,rank,pool_amount_atomic,award_amount_atomic)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (competition_period,environment,player_wallet,rank) DO NOTHING RETURNING id`,
-        [randomUUID(), period.competition_period, period.environment, award.player_wallet, award.rank, configuredPool.toString(), award.amountAtomic.toString()]
-      );
-      if (inserted.rowCount) {
-        awardsCreated += 1;
-        await client.query(`INSERT INTO reward_balances (player_wallet,accrued_atomic,unpaid_atomic) VALUES ($1,$2,$2) ON CONFLICT (player_wallet) DO UPDATE SET accrued_atomic=reward_balances.accrued_atomic+$2, unpaid_atomic=reward_balances.unpaid_atomic+$2, updated_at=now()`, [award.player_wallet, award.amountAtomic.toString()]);
-      }
+async function finalizeIfComplete(batchId, epochId) {
+  await withDatabaseTransaction(async (client) => {
+    const summary = (await client.query(`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='CONFIRMED')::int AS confirmed FROM reward_payout_batch_entries WHERE batch_id=$1`, [batchId])).rows[0];
+    if (summary.total === 3 && summary.confirmed === 3) {
+      await client.query(`UPDATE reward_payout_batches SET status='CONFIRMED',confirmed_at=COALESCE(confirmed_at,now()),updated_at=now() WHERE id=$1`, [batchId]);
+      await client.query(`UPDATE reward_epochs SET status='CLOSED',closed_at=COALESCE(closed_at,now()) WHERE id=$1 AND status IN ('PAYOUT_PENDING','READY','SUBMITTED','PAID')`, [epochId]);
     }
-  }
-  return awardsCreated;
+  });
 }
 
-async function executePayouts(result) {
-  if (result.status !== 'READY') return { execution: 'held', payouts: [] };
-  if (!process.env.REWARD_PAYOUT_PRIVATE_KEY) return { execution: 'prepared_only', payouts: [] };
+async function executeBatch(batch, network) {
+  if (!['READY','SUBMITTED','PARTIAL'].includes(batch.status)) return { ...batch, execution: 'held', payouts: [] };
+  if (!network.enabled || !process.env.REWARD_PAYOUT_PRIVATE_KEY) return { ...batch, execution: 'prepared_only', payouts: [] };
   const payouts = [];
-  for (const entry of result.entries) {
+  for (const entry of batch.entries) {
     try {
       const transfer = await transferUsdc({ signerEnv: 'REWARD_PAYOUT_PRIVATE_KEY', destination: entry.player_wallet, mint: REWARD_MINT, amountAtomic: entry.amount_atomic });
-      if (!transfer.signature) { payouts.push({ wallet: entry.player_wallet, status: 'PENDING' }); continue; }
-      await withDatabaseTransaction(async client => {
-        await client.query(`UPDATE reward_payout_batch_entries SET status='CONFIRMED', transaction_signature=$2, submitted_at=now(), confirmed_at=now() WHERE batch_id=$1 AND player_wallet=$3 AND status='PENDING'`, [result.batchId, transfer.signature, entry.player_wallet]);
-        await client.query(`UPDATE daily_reward_awards SET status='PAID', paid_at=now() WHERE status='RESERVED' AND player_wallet=$1`, [entry.player_wallet]);
-        await client.query(`UPDATE standard_daily_reward_awards SET status='PAID', paid_at=now() WHERE status='RESERVED' AND player_wallet=$1`, [entry.player_wallet]);
-        await client.query(`UPDATE reward_balances SET paid_atomic=paid_atomic+$2, unpaid_atomic=GREATEST(0, unpaid_atomic-$2), updated_at=now() WHERE player_wallet=$1`, [entry.player_wallet, entry.amount_atomic]);
-        await client.query(`UPDATE reward_payout_batches SET status='SUBMITTED', submitted_at=COALESCE(submitted_at, now()), updated_at=now() WHERE id=$1`, [result.batchId]);
+      if (!transfer.signature) throw new Error(transfer.reason || 'reward_transfer_unavailable');
+      await withDatabaseTransaction(async (client) => {
+        await client.query(`UPDATE reward_payout_batch_entries SET status='CONFIRMED',transaction_signature=$2,submitted_at=COALESCE(submitted_at,now()),confirmed_at=COALESCE(confirmed_at,now()) WHERE batch_id=$1 AND player_wallet=$3 AND status IN ('PENDING','FAILED')`, [batch.batchId, transfer.signature, entry.player_wallet]);
+        await client.query(`UPDATE reward_payout_batches SET status='SUBMITTED',submitted_at=COALESCE(submitted_at,now()),updated_at=now() WHERE id=$1 AND status <> 'CONFIRMED'`, [batch.batchId]);
       });
-      payouts.push({ wallet: entry.player_wallet, status: 'CONFIRMED', signature: transfer.signature, amountUsdc: entry.amountUsdc });
+      await finalizeIfComplete(batch.batchId, batch.epochId);
+      payouts.push({ wallet: entry.player_wallet, status: 'CONFIRMED', signature: transfer.signature, amountUsdc: formatAtomic(entry.amount_atomic) });
     } catch (error) {
-      console.error('reward payout transfer failed', { wallet: entry.player_wallet, error: error.message });
-      await withDatabaseTransaction(async client => {
-        await client.query(`UPDATE reward_payout_batch_entries SET status='FAILED' WHERE batch_id=$1 AND player_wallet=$2 AND status='PENDING'`, [result.batchId, entry.player_wallet]);
-        await client.query(`UPDATE reward_payout_batches SET status='PARTIAL', reason='one_or_more_payouts_failed', updated_at=now() WHERE id=$1`, [result.batchId]);
+      await withDatabaseTransaction(async (client) => {
+        await client.query(`UPDATE reward_payout_batch_entries SET status='FAILED' WHERE batch_id=$1 AND player_wallet=$2 AND status='PENDING'`, [batch.batchId, entry.player_wallet]);
+        await client.query(`UPDATE reward_payout_batches SET status='PARTIAL',reason='one_or_more_payouts_failed',updated_at=now() WHERE id=$1`, [batch.batchId]);
       });
       payouts.push({ wallet: entry.player_wallet, status: 'FAILED' });
     }
   }
-  return { execution: 'submitted', payouts };
+  return { ...batch, execution: 'submitted', payouts };
 }
 
 module.exports = async function handler(request, response) {
   if (!['GET', 'POST'].includes(request.method)) return respond(response, 405, { error: 'method_not_allowed' });
   if (!authorized(request)) return respond(response, process.env.REWARDS_ADMIN_TOKEN || process.env.CRON_SECRET ? 401 : 503, { error: process.env.REWARDS_ADMIN_TOKEN || process.env.CRON_SECRET ? 'reward_admin_unauthorized' : 'reward_admin_unconfigured' });
+  const network = settlementNetwork();
   try {
-    const poolAtomic = atomicUsdc(DAILY_POOL_USDC);
-    const thresholdAtomic = atomicUsdc(SETTLEMENT_THRESHOLD_USDC);
-    const treasuryAtomic = await readTreasuryBalanceAtomic();
-    const triggerKey = bangkokDateKey();
-    const result = await withDatabaseTransaction(async client => {
-      const awardsCreated = (await accrueCompletedShifts(client, poolAtomic)) + (await accrueStandardPeriods(client, poolAtomic));
-      const funding = [];
-      if (request.method === 'POST' && process.env.REWARD_FUNDING_ENABLED === 'true' && FEE_WALLET) {
-        const balances = (await client.query(`SELECT pool, accrued_atomic, funded_atomic FROM reward_pool_balances`)).rows;
-        const balanceFor = pool => balances.find(row => row.pool === pool);
-        const standardBalance = balanceFor('STANDARD');
-        const standardAmount = standardBalance ? BigInt(standardBalance.accrued_atomic) - BigInt(standardBalance.funded_atomic) : 0n;
-        const agentBalance = balanceFor('AGENT');
-        const agentAmount = FUNDING_SOURCE === 'FEE_ACCRUED' && agentBalance
-          ? BigInt(agentBalance.accrued_atomic) - BigInt(agentBalance.funded_atomic)
-          : poolAtomic;
-        const amounts = [['STANDARD', standardAmount], ['AGENT', agentAmount]];
-        for (const [pool, amount] of amounts) {
-          if (amount <= 0n) continue;
-          const key = `${triggerKey}:${pool}`;
-          const existing = await client.query('SELECT transaction_signature,status FROM reward_funding_transfers WHERE idempotency_key=$1', [key]);
-          if (existing.rowCount) { funding.push({ pool, status: existing.rows[0].status, signature: existing.rows[0].transaction_signature }); continue; }
-          const transfer = await transferUsdc({ signerEnv: 'FEE_WALLET_PRIVATE_KEY', destination: REWARD_WALLET, mint: REWARD_MINT, amountAtomic: amount });
-          const status = transfer.signature ? 'CONFIRMED' : 'PENDING';
-          await client.query('INSERT INTO reward_funding_transfers (id,source_wallet,reward_wallet,reward_mint,pool,amount_atomic,status,transaction_signature,idempotency_key,confirmed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,CASE WHEN $7=\'CONFIRMED\' THEN now() ELSE NULL END)', [randomUUID(), FEE_WALLET, REWARD_WALLET, REWARD_MINT, pool, amount.toString(), status, transfer.signature || null, key]);
-          if (transfer.signature) await client.query('UPDATE reward_pool_balances SET funded_atomic=funded_atomic+$2,updated_at=now() WHERE pool=$1', [pool, amount.toString()]);
-          funding.push({ pool, status, signature: transfer.signature || null, signerConfigured: transfer.configured });
-        }
+    // GET is read-only, and an unguarded environment never touches a treasury.
+    const treasuryAtomic = network.enabled ? await readTreasuryBalanceAtomic() : 0n;
+    const settlements = [];
+    for (const pool of ['STANDARD', 'AGENT']) {
+      try { settlements.push(...await buildDuePoolBatches(pool, treasuryAtomic)); }
+      catch (error) {
+        console.error('reward pool settlement failed', { pool, error: error.message });
+        settlements.push({ pool, status: 'UNAVAILABLE', reason: 'pool_settlement_unavailable', entries: [] });
       }
-      const unpaid = (await client.query(`SELECT player_wallet, SUM(award_amount_atomic)::numeric AS amount_atomic FROM (SELECT player_wallet,award_amount_atomic FROM daily_reward_awards WHERE status IN ('ACCRUED','RESERVED') UNION ALL SELECT player_wallet,award_amount_atomic FROM standard_daily_reward_awards WHERE status IN ('ACCRUED','RESERVED')) awards GROUP BY player_wallet HAVING SUM(award_amount_atomic)>0 ORDER BY player_wallet`)).rows;
-      const unpaidAtomic = unpaid.reduce((sum, row) => sum + BigInt(row.amount_atomic), 0n);
-      const ready = shouldSettle({ unpaidAtomic, treasuryAtomic, thresholdAtomic }) && unpaid.length > 0;
-      const reason = !unpaid.length ? 'no_unpaid_awards' : unpaidAtomic < thresholdAtomic ? 'unpaid_rewards_below_threshold' : treasuryAtomic < unpaidAtomic ? 'treasury_below_total_unpaid_obligation' : 'payout_prepared_signer_required';
-      const existingBatch = (await client.query('SELECT status,payout_at FROM reward_payout_batches WHERE trigger_key=$1', [triggerKey])).rows[0];
-      const payoutDue = existingBatch?.status === 'PAYOUT_PENDING' && existingBatch.payout_at && new Date(existingBatch.payout_at) <= new Date();
-      const payoutPending = ready && !payoutDue && !['SUBMITTED', 'PARTIAL', 'CONFIRMED'].includes(existingBatch?.status);
-      const batch = (await client.query(
-        `INSERT INTO reward_payout_batches (id,trigger_key,reward_wallet,reward_mint,treasury_balance_atomic,unpaid_atomic,threshold_atomic,recipient_count,status,reason,funding_source)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
-         ON CONFLICT (trigger_key) DO UPDATE SET treasury_balance_atomic=EXCLUDED.treasury_balance_atomic, unpaid_atomic=EXCLUDED.unpaid_atomic, recipient_count=EXCLUDED.recipient_count, status=CASE WHEN reward_payout_batches.status IN ('SUBMITTED','PARTIAL','CONFIRMED') THEN reward_payout_batches.status ELSE EXCLUDED.status END, reason=EXCLUDED.reason, updated_at=now()
-         RETURNING *`, [randomUUID(), triggerKey, REWARD_WALLET, REWARD_MINT, treasuryAtomic.toString(), unpaidAtomic.toString(), thresholdAtomic.toString(), unpaid.length, payoutPending ? 'PAYOUT_PENDING' : (ready ? 'READY' : 'HELD'), reason, FUNDING_SOURCE]
-      )).rows[0];
-      if (payoutPending && batch.status === 'PAYOUT_PENDING') await client.query(`UPDATE reward_payout_batches SET payout_at=COALESCE(payout_at,now()+interval '1 hour'), reason='payout_pending_one_hour_notice', updated_at=now() WHERE id=$1`, [batch.id]);
-      if (payoutDue) await client.query(`UPDATE reward_payout_batches SET status='READY',reason='payout_window_open',updated_at=now() WHERE id=$1`, [batch.id]);
-      const effectiveBatch = (payoutDue || payoutPending) ? (await client.query('SELECT * FROM reward_payout_batches WHERE id=$1', [batch.id])).rows[0] : batch;
-      if (effectiveBatch.status === 'READY' && !['SUBMITTED', 'PARTIAL', 'CONFIRMED'].includes(existingBatch?.status)) {
-        for (const row of unpaid) await client.query(
-          `INSERT INTO reward_payout_batch_entries (id,batch_id,player_wallet,amount_atomic) VALUES ($1,$2,$3,$4) ON CONFLICT (batch_id,player_wallet) DO NOTHING`,
-          [randomUUID(), effectiveBatch.id, row.player_wallet, row.amount_atomic]
-        );
-        await client.query(`UPDATE daily_reward_awards SET status='RESERVED' WHERE status='ACCRUED'`);
-        await client.query(`UPDATE standard_daily_reward_awards SET status='RESERVED' WHERE status='ACCRUED'`);
-      }
-      const entries = (await client.query(`SELECT player_wallet,amount_atomic,status,transaction_signature FROM reward_payout_batch_entries WHERE batch_id=$1 AND status='PENDING' ORDER BY player_wallet`, [effectiveBatch.id])).rows;
-      return { status: effectiveBatch.status, reason: effectiveBatch.reason, payoutAt: effectiveBatch.payout_at, triggerKey, awardsCreated, funding, feeWallet: FEE_WALLET, batchId: effectiveBatch.id, rewardWallet: REWARD_WALLET, rewardMint: REWARD_MINT, fundingSource: effectiveBatch.funding_source, treasuryBalanceUsdc: formatAtomic(treasuryAtomic), unpaidRewardsUsdc: formatAtomic(unpaidAtomic), thresholdUsdc: formatAtomic(thresholdAtomic), recipientCount: unpaid.length, entries: entries.map(entry => ({ ...entry, amountUsdc: formatAtomic(entry.amount_atomic) })), execution: 'prepared_only', signerConfigured: Boolean(process.env.REWARD_PAYOUT_PRIVATE_KEY) };
-    });
-    const execution = request.method === 'POST' ? await executePayouts(result) : { execution: result.execution, payouts: [] };
-    return respond(response, 200, { ...result, ...execution, signerConfigured: Boolean(process.env.REWARD_PAYOUT_PRIVATE_KEY) });
+    }
+    const result = request.method === 'POST'
+      ? await Promise.all(settlements.map((batch) => executeBatch(batch, network)))
+      : settlements.map((batch) => ({ ...batch, execution: 'read_only', payouts: [] }));
+    return respond(response, 200, { rewardWallet: REWARD_WALLET, rewardMint: REWARD_MINT, thresholdUsdc: formatAtomic(atomicUsdc(SETTLEMENT_THRESHOLD_USDC)), treasuryBalanceUsdc: formatAtomic(treasuryAtomic), devnetPayoutEnabled: network.enabled, settlements: result });
   } catch (error) {
     console.error('reward settlement failed', error);
     return respond(response, 503, { error: 'reward_settlement_unavailable' });

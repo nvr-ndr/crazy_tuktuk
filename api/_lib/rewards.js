@@ -1,5 +1,5 @@
-const REWARD_WALLET = process.env.REWARD_TREASURY_WALLET || 'eAifgpmygs8UuhQpjpjmw1dzxW5xdM2LJMF5rnXPGug';
-const REWARD_MINT = process.env.REWARD_MINT || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const REWARD_WALLET = process.env.REWARD_TREASURY_WALLET || null;
+const REWARD_MINT = process.env.REWARD_MINT || null;
 const DAILY_POOL_USDC = process.env.REWARD_DAILY_POOL_USDC || '1';
 const SETTLEMENT_THRESHOLD_USDC = process.env.REWARD_SETTLEMENT_THRESHOLD_USDC || DAILY_POOL_USDC;
 const MIN_WINNERS = Math.max(3, Number.parseInt(process.env.REWARD_MIN_WINNERS || '3', 10));
@@ -35,7 +35,10 @@ function formatAtomic(value) {
 }
 
 async function readTreasuryBalanceAtomic() {
-  const rpc = process.env.SOLANA_RPC_URL || 'https://solana-rpc.publicnode.com';
+  const { settlementNetwork } = require('./rewardSettlement');
+  const network = settlementNetwork();
+  if (!network.enabled || !REWARD_WALLET) throw new Error('devnet_reward_payout_not_enabled');
+  const rpc = network.rpc;
   const response = await fetch(rpc, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

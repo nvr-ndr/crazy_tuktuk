@@ -344,6 +344,182 @@ CREATE TABLE IF NOT EXISTS reward_pool_balances (
 );
 INSERT INTO reward_pool_balances (pool) VALUES ('STANDARD'), ('AGENT') ON CONFLICT DO NOTHING;
 
+-- A reward epoch is an independently funded competition window. Standard and
+-- Agent epochs never share points or thresholds.
+CREATE TABLE IF NOT EXISTS reward_epochs (
+  id UUID PRIMARY KEY,
+  pool TEXT NOT NULL CHECK (pool IN ('STANDARD','AGENT')),
+  status TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','THRESHOLD_REACHED','PAYOUT_PENDING','PAID','CLOSED')),
+  threshold_atomic NUMERIC(30,0) NOT NULL CHECK (threshold_atomic > 0),
+  pool_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
+  starts_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  threshold_reached_at TIMESTAMPTZ,
+  payout_at TIMESTAMPTZ,
+  closed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+DROP INDEX IF EXISTS reward_epochs_one_open_per_pool_idx;
+CREATE UNIQUE INDEX reward_epochs_one_open_per_pool_idx
+  ON reward_epochs (pool) WHERE status = 'OPEN';
+ALTER TABLE reward_epochs DROP CONSTRAINT IF EXISTS reward_epochs_status_check;
+ALTER TABLE reward_epochs ADD CONSTRAINT reward_epochs_status_check
+  CHECK (status IN ('OPEN','THRESHOLD_REACHED','PAYOUT_PENDING','READY','SUBMITTED','PAID','CLOSED'));
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+      WHERE conrelid = 'reward_epochs'::regclass
+        AND conname IN ('reward_epochs_id_pool_key', 'reward_epochs_id_pool_uq')
+  ) THEN
+    ALTER TABLE reward_epochs ADD CONSTRAINT reward_epochs_id_pool_uq UNIQUE (id, pool);
+  END IF;
+EXCEPTION WHEN duplicate_object OR duplicate_table THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS reward_epoch_scores (
+  epoch_id UUID NOT NULL REFERENCES reward_epochs(id),
+  player_wallet TEXT NOT NULL,
+  points BIGINT NOT NULL DEFAULT 0,
+  days_played INTEGER NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (epoch_id, player_wallet)
+);
+CREATE INDEX IF NOT EXISTS reward_epoch_scores_rank_idx
+  ON reward_epoch_scores (epoch_id, points DESC, days_played DESC, player_wallet ASC);
+
+CREATE TABLE IF NOT EXISTS reward_epoch_days (
+  epoch_id UUID NOT NULL REFERENCES reward_epochs(id),
+  pool TEXT NOT NULL CHECK (pool IN ('STANDARD','AGENT')),
+  period_key TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (epoch_id, period_key)
+);
+DO $$ BEGIN
+  ALTER TABLE reward_epoch_days ADD CONSTRAINT reward_epoch_days_epoch_pool_fkey
+    FOREIGN KEY (epoch_id, pool) REFERENCES reward_epochs (id, pool);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+CREATE TABLE IF NOT EXISTS reward_epoch_contributions (
+  id UUID PRIMARY KEY,
+  epoch_id UUID NOT NULL REFERENCES reward_epochs(id),
+  pool TEXT NOT NULL CHECK (pool IN ('STANDARD','AGENT')),
+  player_wallet TEXT,
+  transaction_signature TEXT NOT NULL UNIQUE,
+  amount_atomic NUMERIC(30,0) NOT NULL CHECK (amount_atomic >= 0),
+  confirmed_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS reward_epoch_contributions_epoch_idx ON reward_epoch_contributions (epoch_id, confirmed_at);
+DO $$ BEGIN
+  ALTER TABLE reward_epoch_contributions ADD CONSTRAINT reward_epoch_contributions_epoch_pool_fkey
+    FOREIGN KEY (epoch_id, pool) REFERENCES reward_epochs (id, pool);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+-- This is the only mutation path for a confirmed reward contribution.  The
+-- transaction signature is immutable across pools; the advisory lock makes a
+-- pool's epoch selection, ledger insert, and pool increment one operation.
+-- When the threshold contribution arrives, the old epoch is frozen at that
+-- contribution's confirmation timestamp and a new OPEN epoch starts at the
+-- same timestamp.  This lets a later confirmation be assigned to the next
+-- epoch without waiting for the one-hour payout window to close.
+CREATE OR REPLACE FUNCTION reward_record_epoch_contribution(
+  p_contribution_id UUID,
+  p_initial_epoch_id UUID,
+  p_next_epoch_id UUID,
+  p_pool TEXT,
+  p_player_wallet TEXT,
+  p_transaction_signature TEXT,
+  p_amount_atomic NUMERIC(30,0),
+  p_confirmed_at TIMESTAMPTZ,
+  p_threshold_atomic NUMERIC(30,0)
+) RETURNS TABLE (
+  epoch_id UUID,
+  inserted BOOLEAN,
+  epoch_status TEXT,
+  pool_atomic NUMERIC(30,0),
+  threshold_reached_at TIMESTAMPTZ,
+  payout_at TIMESTAMPTZ
+) LANGUAGE plpgsql AS $$
+DECLARE
+  v_epoch reward_epochs%ROWTYPE;
+  v_existing reward_epoch_contributions%ROWTYPE;
+  v_inserted_id UUID;
+BEGIN
+  IF p_pool NOT IN ('STANDARD', 'AGENT') THEN RAISE EXCEPTION 'reward_pool_invalid'; END IF;
+  IF p_amount_atomic <= 0 THEN RAISE EXCEPTION 'reward_contribution_amount_invalid'; END IF;
+  IF p_confirmed_at IS NULL THEN RAISE EXCEPTION 'reward_contribution_confirmation_required'; END IF;
+  IF p_threshold_atomic <= 0 THEN RAISE EXCEPTION 'reward_threshold_invalid'; END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext('reward-epoch:' || p_pool));
+
+  SELECT * INTO v_existing FROM reward_epoch_contributions
+    WHERE transaction_signature = p_transaction_signature;
+  IF FOUND THEN
+    SELECT * INTO v_epoch FROM reward_epochs WHERE id = v_existing.epoch_id;
+    RETURN QUERY SELECT v_epoch.id, false, v_epoch.status, v_epoch.pool_atomic,
+      v_epoch.threshold_reached_at, v_epoch.payout_at;
+    RETURN;
+  END IF;
+
+  -- A delayed confirmation that predates a pending cutoff is still part of
+  -- that closing epoch.  This preserves assignment by confirmed_at, not by
+  -- the time the accounting worker happens to run.
+  SELECT * INTO v_epoch FROM reward_epochs
+    WHERE reward_epochs.pool = p_pool
+      AND reward_epochs.status = 'PAYOUT_PENDING'
+      AND reward_epochs.threshold_reached_at IS NOT NULL
+      AND p_confirmed_at <= reward_epochs.threshold_reached_at
+    ORDER BY reward_epochs.threshold_reached_at DESC
+    LIMIT 1;
+
+  IF NOT FOUND THEN
+    SELECT * INTO v_epoch FROM reward_epochs
+      WHERE pool = p_pool AND status = 'OPEN'
+      ORDER BY starts_at DESC
+      LIMIT 1;
+  END IF;
+
+  IF NOT FOUND THEN
+    INSERT INTO reward_epochs (id, pool, status, threshold_atomic, starts_at)
+      VALUES (p_initial_epoch_id, p_pool, 'OPEN', p_threshold_atomic, p_confirmed_at)
+      RETURNING * INTO v_epoch;
+  END IF;
+
+  INSERT INTO reward_epoch_contributions
+    (id, epoch_id, pool, player_wallet, transaction_signature, amount_atomic, confirmed_at)
+    VALUES (p_contribution_id, v_epoch.id, p_pool, p_player_wallet,
+      p_transaction_signature, p_amount_atomic, p_confirmed_at)
+    ON CONFLICT (transaction_signature) DO NOTHING
+    RETURNING id INTO v_inserted_id;
+
+  IF v_inserted_id IS NULL THEN
+    SELECT * INTO v_existing FROM reward_epoch_contributions
+      WHERE transaction_signature = p_transaction_signature;
+    SELECT * INTO v_epoch FROM reward_epochs WHERE id = v_existing.epoch_id;
+    RETURN QUERY SELECT v_epoch.id, false, v_epoch.status, v_epoch.pool_atomic,
+      v_epoch.threshold_reached_at, v_epoch.payout_at;
+    RETURN;
+  END IF;
+
+  UPDATE reward_epochs SET pool_atomic = reward_epochs.pool_atomic + p_amount_atomic
+    WHERE reward_epochs.id = v_epoch.id
+    RETURNING * INTO v_epoch;
+
+  IF v_epoch.status = 'OPEN' AND v_epoch.pool_atomic >= v_epoch.threshold_atomic THEN
+    UPDATE reward_epochs
+      SET status = 'PAYOUT_PENDING',
+          threshold_reached_at = COALESCE(reward_epochs.threshold_reached_at, p_confirmed_at),
+          payout_at = COALESCE(reward_epochs.payout_at, p_confirmed_at + interval '1 hour')
+      WHERE reward_epochs.id = v_epoch.id
+      RETURNING * INTO v_epoch;
+    INSERT INTO reward_epochs (id, pool, status, threshold_atomic, starts_at)
+      VALUES (p_next_epoch_id, p_pool, 'OPEN', v_epoch.threshold_atomic, p_confirmed_at)
+      ON CONFLICT DO NOTHING;
+  END IF;
+
+  RETURN QUERY SELECT v_epoch.id, true, v_epoch.status, v_epoch.pool_atomic,
+    v_epoch.threshold_reached_at, v_epoch.payout_at;
+END;
+$$;
+
 CREATE TABLE IF NOT EXISTS reward_funding_transfers (
   id UUID PRIMARY KEY,
   source_wallet TEXT NOT NULL,
@@ -360,7 +536,7 @@ CREATE TABLE IF NOT EXISTS reward_funding_transfers (
 
 CREATE TABLE IF NOT EXISTS reward_payout_batches (
   id UUID PRIMARY KEY,
-  trigger_key DATE NOT NULL UNIQUE,
+  trigger_key DATE NOT NULL,
   reward_wallet TEXT NOT NULL,
   reward_mint TEXT NOT NULL,
   treasury_balance_atomic NUMERIC(30,0) NOT NULL DEFAULT 0,
@@ -375,10 +551,17 @@ CREATE TABLE IF NOT EXISTS reward_payout_batches (
   confirmed_at TIMESTAMPTZ,
   transaction_signature TEXT UNIQUE
 );
-ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS funding_source TEXT NOT NULL DEFAULT 'SEEDED_MANUAL'
-  CHECK (funding_source IN ('FEE_ACCRUED','SEEDED_MANUAL','MIXED','UNKNOWN'));
+ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS epoch_id UUID REFERENCES reward_epochs(id);
 ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS pool TEXT NOT NULL DEFAULT 'STANDARD'
   CHECK (pool IN ('STANDARD','AGENT'));
+ALTER TABLE reward_payout_batches DROP CONSTRAINT IF EXISTS reward_payout_batches_trigger_key_key;
+DROP INDEX IF EXISTS reward_payout_batches_trigger_key_key;
+DROP INDEX IF EXISTS reward_payout_batches_pool_trigger_idx;
+CREATE UNIQUE INDEX IF NOT EXISTS reward_payout_batches_pool_epoch_idx
+  ON reward_payout_batches (pool, epoch_id) WHERE epoch_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS reward_payout_batches_trigger_key_idx ON reward_payout_batches (trigger_key);
+ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS funding_source TEXT NOT NULL DEFAULT 'SEEDED_MANUAL'
+  CHECK (funding_source IN ('FEE_ACCRUED','SEEDED_MANUAL','MIXED','UNKNOWN'));
 ALTER TABLE reward_payout_batches ADD COLUMN IF NOT EXISTS payout_at TIMESTAMPTZ;
 ALTER TABLE reward_payout_batches DROP CONSTRAINT IF EXISTS reward_payout_batches_status_check;
 ALTER TABLE reward_payout_batches ADD CONSTRAINT reward_payout_batches_status_check CHECK (status IN ('HELD','PAYOUT_PENDING','READY','SUBMITTED','PARTIAL','CONFIRMED','FAILED'));
@@ -395,6 +578,18 @@ CREATE TABLE IF NOT EXISTS reward_payout_batch_entries (
   confirmed_at TIMESTAMPTZ,
   UNIQUE (batch_id, player_wallet)
 );
+ALTER TABLE reward_payout_batch_entries ADD COLUMN IF NOT EXISTS rank INTEGER;
+ALTER TABLE reward_payout_batch_entries ADD COLUMN IF NOT EXISTS share_bps INTEGER;
+DO $$ BEGIN
+  ALTER TABLE reward_payout_batch_entries ADD CONSTRAINT reward_payout_batch_entries_rank_check
+    CHECK (rank BETWEEN 1 AND 3);
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN
+  ALTER TABLE reward_payout_batch_entries ADD CONSTRAINT reward_payout_batch_entries_share_bps_check
+    CHECK (share_bps IN (6000,2500,1500));
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS reward_payout_batch_entries_rank_idx
+  ON reward_payout_batch_entries (batch_id, rank) WHERE rank IS NOT NULL;
 
 CREATE INDEX IF NOT EXISTS daily_reward_awards_unpaid_idx ON daily_reward_awards (status, player_wallet);
 CREATE INDEX IF NOT EXISTS reward_balances_unpaid_idx ON reward_balances (unpaid_atomic DESC);

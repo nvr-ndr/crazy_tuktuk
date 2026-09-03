@@ -1,7 +1,6 @@
 const { Connection, Keypair, PublicKey, Transaction, TransactionInstruction, sendAndConfirmTransaction } = require('@solana/web3.js');
 const bs58 = require('bs58');
 
-const RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const TOKEN_PROGRAM = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOCIATED_PROGRAM = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL');
 const SYSTEM_PROGRAM = new PublicKey('11111111111111111111111111111111');
@@ -20,13 +19,16 @@ function ata(owner, mint) {
 }
 
 async function transferUsdc({ signerEnv, destination, mint, amountAtomic }) {
+  const { settlementNetwork } = require('./rewardSettlement');
+  const network = settlementNetwork();
+  if (!network.enabled || mint !== network.mint) return { configured: false, reason: network.reason };
   const payer = signer(signerEnv);
   if (!payer) return { configured: false };
   const mintKey = new PublicKey(mint);
   const destinationKey = new PublicKey(destination);
   const sourceAta = ata(payer.publicKey, mintKey);
   const destinationAta = ata(destinationKey, mintKey);
-  const connection = new Connection(RPC, 'confirmed');
+  const connection = new Connection(network.rpc, 'confirmed');
   const instructions = [];
   const info = await connection.getAccountInfo(destinationAta);
   if (!info) instructions.push(new TransactionInstruction({ programId: ASSOCIATED_PROGRAM, keys: [
